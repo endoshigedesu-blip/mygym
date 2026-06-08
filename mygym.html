@@ -11,7 +11,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body { background: #0f0f13; color: #f0f0f0; font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif; overscroll-behavior: none; }
-    #root { height: 100dvh; }
+    #root { height: 100dvh; } body { padding-top: env(safe-area-inset-top, 0); }
   </style>
 </head>
 <body>
@@ -86,7 +86,7 @@ function App() {
   const [confirmDeleteTicket, setConfirmDeleteTicket] = useState(null);
 
   const [newClient, setNewClient] = useState({ name:"", age:"", goal:"", birthday:"", job:"", colorId:"yellow" });
-  const [newRecord, setNewRecord] = useState({ date: TODAY, ticketId: null, exercises:[{name:"",weight:"",reps:"",sets:""}] });
+  const [newRecord, setNewRecord] = useState({ date: TODAY, ticketId: null, exercises:[{name:"",weight:"",reps:"",sets:"",memo:""}] });
   const [newTicket, setNewTicket] = useState({ price:"", total:"", expiry:"" });
   const [profileForm, setProfileForm] = useState({ rom:"", injuries:"", condition:"", supplements:"", medications:"" });
   const [basicForm, setBasicForm] = useState({ name:"", age:"", birthday:"", job:"", goal:"", colorId:"yellow" });
@@ -121,7 +121,7 @@ function App() {
   };
 
   const accentColor = selectedClient ? getColor(selectedClient.colorId).hex : "#e8ff5a";
-  const selectClient = (c) => { setSelectedClient(c); setTab("record"); setSidebarOpen(false); };
+  const selectClient = (c) => { setSelectedClient(c); setTab("record"); if (!isWide) setSidebarOpen(false); };
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(clientSearch.toLowerCase()) || (c.goal||"").includes(clientSearch)
   );
@@ -165,7 +165,7 @@ function App() {
     if (!selectedClient) return;
     const cid = selectedClient.id;
     const list = records[cid] || [];
-    const rec = { ...newRecord, ticketId: newRecord.ticketId || null };
+    const rec = { ...newRecord, ticketId: newRecord.ticketId || null, memo: newRecord.memo || "" };
     const oldTicketId = editingRecord ? (editingRecord.ticketId || null) : null;
     const newTicketId = rec.ticketId;
     let updatedTickets = { ...tickets };
@@ -180,11 +180,11 @@ function App() {
     } else {
       setRecords({ ...records, [cid]: [{ id: Date.now(), ...rec }, ...list] });
     }
-    setNewRecord({ date: TODAY, ticketId: null, exercises:[{name:"",weight:"",reps:"",sets:""}] });
+    setNewRecord({ date: TODAY, ticketId: null, memo: "", exercises:[{name:"",weight:"",reps:"",sets:"",memo:""}] });
     setEditingRecord(null);
     setShowAddRecord(false);
   };
-  const openEditRecord = (r) => { setEditingRecord(r); setNewRecord({ date: r.date, ticketId: r.ticketId||null, exercises: r.exercises.map(e=>({...e})) }); setShowAddRecord(true); };
+  const openEditRecord = (r) => { setEditingRecord(r); setNewRecord({ date: r.date, ticketId: r.ticketId||null, memo: r.memo||"", exercises: r.exercises.map(e=>({...e})) }); setShowAddRecord(true); };
   const doDeleteRecord = () => {
     if (confirmDeleteRecord === null) return;
     const cid = selectedClient.id;
@@ -201,7 +201,7 @@ function App() {
     setRecords({ ...records, [cid]: records[cid].filter(r => r.id !== confirmDeleteRecord) });
     setConfirmDeleteRecord(null);
   };
-  const addExerciseRow = () => setNewRecord({ ...newRecord, exercises: [...newRecord.exercises, {name:"",weight:"",reps:"",sets:""}] });
+  const addExerciseRow = () => setNewRecord({ ...newRecord, exercises: [...newRecord.exercises, {name:"",weight:"",reps:"",sets:"",memo:""}] });
   const removeExerciseRow = (i) => { if (newRecord.exercises.length === 1) return; setNewRecord({ ...newRecord, exercises: newRecord.exercises.filter((_,idx)=>idx!==i) }); };
   const updateExercise = (i, field, value) => setNewRecord({ ...newRecord, exercises: newRecord.exercises.map((ex,idx)=>idx===i?{...ex,[field]:value}:ex) });
   const adjustField = (recordId, exIdx, field, delta) => {
@@ -277,7 +277,7 @@ function App() {
       )}
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-        <div style={{padding:"0 16px",height:52,borderBottom:"1px solid #2a2a3a",display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#17171f"}}>
+        <div style={{padding:"0 16px",paddingTop:"env(safe-area-inset-top, 0px)",minHeight:52,borderBottom:"1px solid #2a2a3a",display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#17171f"}}>
           <button onClick={()=>setSidebarOpen(v=>!v)} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:4}}>☰</button>
           <div style={{fontWeight:700,color:"#e8ff5a",fontSize:16}}>MyGym</div>
           {selectedClient&&<><div style={{color:"#444"}}>›</div><div style={{fontWeight:600,fontSize:15}}>{selectedClient.name}</div></>}
@@ -363,6 +363,7 @@ function App() {
                                       <AdjustField label="回数" value={ex.reps} unit="回" onAdj={d=>adjustField(r.id,i,"reps",d)} step={1} accent={accentColor}/>
                                       <AdjustField label="セット" value={ex.sets} unit="set" onAdj={d=>adjustField(r.id,i,"sets",d)} step={1} accent={accentColor}/>
                                     </div>
+                                    {ex.memo&&<div style={{marginTop:6,padding:"5px 10px",background:"#1a1a2e",borderRadius:8,fontSize:12,color:"#aaa",borderLeft:"2px solid #3a3a5a"}}>📝 {ex.memo}</div>}
                                   </div>
                                 ))}
                               </div>
@@ -458,7 +459,7 @@ function App() {
       )}
 
       {showAddRecord&&(
-        <Modal title={editingRecord?"記録を修正":"トレーニング記録"} onClose={()=>{setShowAddRecord(false);setEditingRecord(null);setNewRecord({date:TODAY,ticketId:null,exercises:[{name:"",weight:"",reps:"",sets:""}]});}}>
+        <Modal title={editingRecord?"記録を修正":"トレーニング記録"} onClose={()=>{setShowAddRecord(false);setEditingRecord(null);setNewRecord({date:TODAY,ticketId:null,exercises:[{name:"",weight:"",reps:"",sets:"",memo:""}]});}}>
           <Label>日付</Label><Input type="date" value={newRecord.date} onChange={e=>setNewRecord({...newRecord,date:e.target.value})}/>
           <Label>チケット</Label>
           <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
@@ -477,6 +478,9 @@ function App() {
               <Input type="number" value={ex.reps} onChange={e=>updateExercise(i,"reps",e.target.value)} placeholder="回"/>
               <Input type="number" value={ex.sets} onChange={e=>updateExercise(i,"sets",e.target.value)} placeholder="set"/>
               <button onClick={()=>removeExerciseRow(i)} style={{background:"none",border:"none",color:"#666",fontSize:18,cursor:"pointer",marginBottom:14,padding:"0 4px"}}>✕</button>
+              <div style={{gridColumn:"1 / -1",marginTop:-8,marginBottom:6}}>
+                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{width:"100%",padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#aaa",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+              </div>
             </div>
           ))}
           <button onClick={addExerciseRow} style={{background:"none",border:"1px dashed #444",color:"#888",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:13,marginBottom:14,width:"100%"}}>＋ 種目を追加</button>
