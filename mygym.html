@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MyGym">
@@ -44,8 +44,28 @@ const fmtMonth = (k) => { const [y,m] = k.split("-"); return `${y}年${parseInt(
 
 const SAVE_KEY = "mygym_data_v1";
 const loadSaved = () => {
-  try { const r = localStorage.getItem(SAVE_KEY); return r ? JSON.parse(r) : null; }
-  catch { return null; }
+  try {
+    // localStorage と sessionStorage 両方試す
+    const r = localStorage.getItem(SAVE_KEY) || sessionStorage.getItem(SAVE_KEY);
+    return r ? JSON.parse(r) : null;
+  } catch { return null; }
+};
+const persistSave = (data) => {
+  const json = JSON.stringify(data);
+  try { localStorage.setItem(SAVE_KEY, json); } catch(e) {}
+  try { sessionStorage.setItem(SAVE_KEY, json); } catch(e) {}
+  // URLハッシュにも保存（GitHub Pages対応）
+  try {
+    const compressed = btoa(encodeURIComponent(json));
+    history.replaceState(null, "", "#" + compressed);
+  } catch(e) {}
+};
+const loadFromHash = () => {
+  try {
+    if (!location.hash || location.hash.length < 2) return null;
+    const json = decodeURIComponent(atob(location.hash.slice(1)));
+    return JSON.parse(json);
+  } catch { return null; }
 };
 
 const initialClients = [];
@@ -54,7 +74,7 @@ const initialRecords = {};
 const initialProfiles = {};
 
 function App() {
-  const saved = loadSaved();
+  const saved = loadFromHash() || loadSaved();
   const [clients, setClients] = useState(saved?.clients ?? initialClients);
   const [tickets, setTickets] = useState(saved?.tickets ?? initialTickets);
   const [records, setRecords] = useState(saved?.records ?? initialRecords);
@@ -88,9 +108,21 @@ function App() {
     return () => window.removeEventListener("resize", h);
   }, []);
 
+  // 自動保存：データが変わるたびに自動保存
+  useEffect(() => {
+    try {
+      persistSave({ clients, tickets, records, profiles });
+      setSaveStatus("saved");
+      const t = setTimeout(() => setSaveStatus(""), 1500);
+      return () => clearTimeout(t);
+    } catch {
+      setSaveStatus("error");
+    }
+  }, [clients, tickets, records, profiles]);
+
   const saveData = () => {
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ clients, tickets, records, profiles }));
+      persistSave({ clients, tickets, records, profiles });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus(""), 2000);
     } catch {
@@ -233,7 +265,7 @@ function App() {
             {!isWide && <button onClick={()=>setSidebarOpen(false)} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>✕</button>}
           </div>
           <div style={{padding:"10px 12px",borderBottom:"1px solid #2a2a3a",display:"flex",flexDirection:"column",gap:8}}>
-            <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 クライアント検索" style={{width:"100%",padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:13,outline:"none"}}/>
+            <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 クライアント検索" style={{width:"100%",padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:16,outline:"none"}}/>
             <button onClick={()=>{setShowAddClient(true);if(!isWide)setSidebarOpen(false);}} style={{padding:"9px 0",background:"#e8ff5a",color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ クライアント追加</button>
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"8px 0"}}>
@@ -522,8 +554,8 @@ function Modal({title,onClose,children}){
   return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}><div style={{background:"#1a1a24",border:"1px solid #2a2a3a",borderRadius:16,padding:24,width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><div style={{fontWeight:700,fontSize:16}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>✕</button></div>{children}</div></div>;
 }
 function Label({children}){return <div style={{fontSize:12,color:"#888",marginBottom:6}}>{children}</div>;}
-function Input(props){return <input {...props} style={{width:"100%",padding:"9px 12px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:14,marginBottom:14,boxSizing:"border-box",outline:"none"}}/>;}
-function Textarea(props){return <textarea {...props} rows={3} style={{width:"100%",padding:"9px 12px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:14,marginBottom:14,boxSizing:"border-box",outline:"none",resize:"vertical",fontFamily:"inherit"}}/>;}
+function Input(props){return <input {...props} style={{width:"100%",padding:"9px 12px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none"}}/>;}
+function Textarea(props){return <textarea {...props} rows={3} style={{width:"100%",padding:"9px 12px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none",resize:"vertical",fontFamily:"inherit"}}/>;}
 function SubmitBtn({onClick,children,accent}){const ac=accent||"#e8ff5a";return <button onClick={onClick} style={{width:"100%",padding:"11px 0",background:ac,color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginTop:4}}>{children}</button>;}
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
