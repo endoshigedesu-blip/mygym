@@ -73,6 +73,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isWide, setIsWide] = useState(window.innerWidth >= 768);
   const [collapsedMonths, setCollapsedMonths] = useState({});
+  const [collapsedRecords, setCollapsedRecords] = useState({});
   const [clientSearch, setClientSearch] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
 
@@ -203,6 +204,12 @@ function App() {
   };
   const addExerciseRow = () => setNewRecord({ ...newRecord, exercises: [...newRecord.exercises, {name:"",weight:"",reps:"",sets:"",memo:""}] });
   const removeExerciseRow = (i) => { if (newRecord.exercises.length === 1) return; setNewRecord({ ...newRecord, exercises: newRecord.exercises.filter((_,idx)=>idx!==i) }); };
+  const duplicateExercise = (i) => {
+    const ex = newRecord.exercises[i];
+    const copy = { name: ex.name, weight: "", reps: "", sets: "", memo: "" };
+    const newExs = [...newRecord.exercises.slice(0, i+1), copy, ...newRecord.exercises.slice(i+1)];
+    setNewRecord({ ...newRecord, exercises: newExs });
+  };
   const updateExercise = (i, field, value) => setNewRecord({ ...newRecord, exercises: newRecord.exercises.map((ex,idx)=>idx===i?{...ex,[field]:value}:ex) });
   const adjustField = (recordId, exIdx, field, delta) => {
     setRecords({ ...records, [selectedClient.id]: records[selectedClient.id].map(r =>
@@ -236,6 +243,7 @@ function App() {
   const saveProfile = () => { setProfiles({...profiles,[selectedClient.id]:{...profileForm}}); setEditingProfile(false); };
   const saveBasic = () => { const u={...selectedClient,...basicForm,age:Number(basicForm.age)}; setClients(clients.map(c=>c.id===selectedClient.id?u:c)); setSelectedClient(u); setEditingProfile(false); };
   const toggleMonth = (k) => setCollapsedMonths(prev=>({...prev,[k]:!prev[k]}));
+  const toggleRecord = (id) => setCollapsedRecords(prev=>({...prev,[id]:!prev[id]}));
 
   const clientRecords = selectedClient ? (records[selectedClient.id]||[]) : [];
   const clientTickets = selectedClient ? (tickets[selectedClient.id]||[]) : [];
@@ -338,14 +346,16 @@ function App() {
                           <div style={{display:"flex",flexDirection:"column",gap:1,background:"#0f0f13"}}>
                             {recs.map(r=>(
                               <div key={r.id} style={{background:"#17171f",borderTop:"1px solid #2a2a3a",padding:"12px 16px"}}>
-                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:collapsedRecords[r.id]?0:8}}>
+                                  <div onClick={()=>toggleRecord(r.id)} style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",cursor:"pointer",flex:1}}>
+                                    <span style={{color:"#555",fontSize:14,transform:collapsedRecords[r.id]?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.2s",display:"inline-block"}}>▾</span>
                                     <div style={{fontSize:12,color:"#888"}}>{r.date}</div>
                                     {r.ticketId!=null
                                       ? <span style={{fontSize:11,background:"#1a2a1a",color:"#5affb0",border:"1px solid #2a4a2a",borderRadius:6,padding:"2px 8px"}}>🎟 チケット利用</span>
                                       : <span style={{fontSize:11,background:"#1a1a2a",color:"#888",border:"1px solid #2a2a3a",borderRadius:6,padding:"2px 8px"}}>チケットなし</span>
                                     }
                                   </div>
+                                  {r.memo&&<div style={{fontSize:12,color:"#aaa",background:"#1a1a2e",borderRadius:6,padding:"4px 10px",marginTop:4,borderLeft:"2px solid #3a3a5a"}}>📋 {r.memo}</div>}
                                   <div style={{display:"flex",gap:6}}>
                                     <button onClick={()=>{
                                       const text=[`【${r.date} トレーニング】`,...r.exercises.map(ex=>`・${ex.name}　${ex.weight}kg × ${ex.reps}回 × ${ex.sets}セット`)].join("\n");
@@ -355,15 +365,31 @@ function App() {
                                     <button onClick={()=>setConfirmDeleteRecord(r.id)} style={{background:"none",border:"1px solid #5a2a2a",color:"#c66",padding:"3px 10px",borderRadius:6,fontSize:12,cursor:"pointer"}}>削除</button>
                                   </div>
                                 </div>
-                                {r.exercises.map((ex,i)=>(
-                                  <div key={i} style={{borderTop:i===0?"none":"1px solid #222",paddingTop:i===0?0:10,marginTop:i===0?0:10}}>
-                                    <div style={{fontWeight:600,fontSize:14,marginBottom:6}}>{ex.name}</div>
-                                    <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-                                      <AdjustField label="重量" value={ex.weight} unit="kg" onAdj={d=>adjustField(r.id,i,"weight",d)} step={2.5} accent={accentColor}/>
-                                      <AdjustField label="回数" value={ex.reps} unit="回" onAdj={d=>adjustField(r.id,i,"reps",d)} step={1} accent={accentColor}/>
-                                      <AdjustField label="セット" value={ex.sets} unit="set" onAdj={d=>adjustField(r.id,i,"sets",d)} step={1} accent={accentColor}/>
+                                {!collapsedRecords[r.id] && r.exercises.map((ex,i)=>(
+                                  <div key={i} style={{borderTop:i===0?"none":"1px solid #222",paddingTop:i===0?0:8,marginTop:i===0?0:8}}>
+                                    <div style={{fontWeight:600,fontSize:13,marginBottom:4}}>{ex.name}</div>
+                                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                                      <div style={{display:"flex",alignItems:"center",gap:4}}>
+                                        <span style={{fontSize:11,color:"#666"}}>重</span>
+                                        <button onClick={()=>adjustField(r.id,i,"weight",-2.5)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                        <span style={{minWidth:30,textAlign:"center",fontWeight:700,fontSize:13,color:accentColor}}>{ex.weight}</span>
+                                        <button onClick={()=>adjustField(r.id,i,"weight",2.5)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
+                                        <span style={{fontSize:11,color:"#888"}}>kg</span>
+                                      </div>
+                                      <div style={{display:"flex",alignItems:"center",gap:4}}>
+                                        <span style={{fontSize:11,color:"#666"}}>回</span>
+                                        <button onClick={()=>adjustField(r.id,i,"reps",-1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                        <span style={{minWidth:30,textAlign:"center",fontWeight:700,fontSize:13,color:accentColor}}>{ex.reps}</span>
+                                        <button onClick={()=>adjustField(r.id,i,"reps",1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
+                                      </div>
+                                      <div style={{display:"flex",alignItems:"center",gap:4}}>
+                                        <span style={{fontSize:11,color:"#666"}}>set</span>
+                                        <button onClick={()=>adjustField(r.id,i,"sets",-1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                        <span style={{minWidth:30,textAlign:"center",fontWeight:700,fontSize:13,color:accentColor}}>{ex.sets}</span>
+                                        <button onClick={()=>adjustField(r.id,i,"sets",1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
+                                      </div>
                                     </div>
-                                    {ex.memo&&<div style={{marginTop:6,padding:"5px 10px",background:"#1a1a2e",borderRadius:8,fontSize:12,color:"#aaa",borderLeft:"2px solid #3a3a5a"}}>📝 {ex.memo}</div>}
+                                    {ex.memo&&<div style={{marginTop:4,padding:"3px 8px",background:"#1a1a2e",borderRadius:6,fontSize:11,color:"#888",borderLeft:"2px solid #3a3a5a"}}>📝 {ex.memo}</div>}
                                   </div>
                                 ))}
                               </div>
@@ -461,6 +487,8 @@ function App() {
       {showAddRecord&&(
         <Modal title={editingRecord?"記録を修正":"トレーニング記録"} onClose={()=>{setShowAddRecord(false);setEditingRecord(null);setNewRecord({date:TODAY,ticketId:null,exercises:[{name:"",weight:"",reps:"",sets:"",memo:""}]});}}>
           <Label>日付</Label><Input type="date" value={newRecord.date} onChange={e=>setNewRecord({...newRecord,date:e.target.value})}/>
+          <Label>その日のメモ（任意）</Label>
+          <Textarea value={newRecord.memo||""} onChange={e=>setNewRecord({...newRecord,memo:e.target.value})} placeholder="例：体調良好、全体的に強度高め" rows={2}/>
           <Label>チケット</Label>
           <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
             <button onClick={()=>setNewRecord({...newRecord,ticketId:null})} style={{padding:"7px 14px",background:newRecord.ticketId==null?accentColor:"#2a2a3a",color:newRecord.ticketId==null?"#0f0f13":"#888",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>なし</button>
@@ -478,8 +506,9 @@ function App() {
               <Input type="number" value={ex.reps} onChange={e=>updateExercise(i,"reps",e.target.value)} placeholder="回"/>
               <Input type="number" value={ex.sets} onChange={e=>updateExercise(i,"sets",e.target.value)} placeholder="set"/>
               <button onClick={()=>removeExerciseRow(i)} style={{background:"none",border:"none",color:"#666",fontSize:18,cursor:"pointer",marginBottom:14,padding:"0 4px"}}>✕</button>
-              <div style={{gridColumn:"1 / -1",marginTop:-8,marginBottom:6}}>
-                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{width:"100%",padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#aaa",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+              <div style={{gridColumn:"1 / -1",marginTop:-8,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}>
+                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{flex:1,padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#aaa",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+                <button onClick={()=>duplicateExercise(i)} title="この種目を複製" style={{padding:"7px 10px",background:"#2a2a3a",border:"1px solid #3a3a4a",color:"#aaa",borderRadius:8,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>複製</button>
               </div>
             </div>
           ))}
@@ -534,7 +563,13 @@ function ColorPicker({selected,onChange}){
 }
 function AdjustField({label,value,unit,onAdj,step,accent}){
   const ac=accent||"#e8ff5a";
-  return <div style={{display:"flex",flexDirection:"column",gap:4,minWidth:80}}><div style={{fontSize:10,color:"#666"}}>{label}</div><div style={{display:"flex",alignItems:"center",gap:6}}><button onClick={()=>onAdj(-step)} style={{width:28,height:28,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:6,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button><span style={{minWidth:38,textAlign:"center",fontWeight:700,fontSize:15,color:ac}}>{value}</span><button onClick={()=>onAdj(step)} style={{width:28,height:28,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:6,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button><span style={{fontSize:11,color:"#888"}}>{unit}</span></div></div>;
+  return <div style={{display:"flex",alignItems:"center",gap:4}}>
+    <span style={{fontSize:11,color:"#666",minWidth:24}}>{label}</span>
+    <button onClick={()=>onAdj(-step)} style={{width:22,height:22,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</button>
+    <span style={{minWidth:28,textAlign:"center",fontWeight:700,fontSize:13,color:ac}}>{value}</span>
+    <button onClick={()=>onAdj(step)} style={{width:22,height:22,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>＋</button>
+    <span style={{fontSize:11,color:"#888"}}>{unit}</span>
+  </div>;
 }
 function ConfirmModal({emoji,title,sub,onCancel,onConfirm,confirmLabel,danger}){
   return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}><div style={{background:"#1a1a24",border:`1px solid ${danger?"#5a2a2a":"#2a2a3a"}`,borderRadius:16,padding:28,width:"100%",maxWidth:340,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>{emoji}</div><div style={{fontWeight:700,fontSize:15,marginBottom:6}}>{title}</div>{sub&&<div style={{fontSize:12,color:"#888",marginBottom:24}}>{sub}</div>}<div style={{display:"flex",gap:10}}><button onClick={onCancel} style={{flex:1,padding:"10px 0",background:"#2a2a3a",color:"#aaa",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer"}}>キャンセル</button><button onClick={onConfirm} style={{flex:1,padding:"10px 0",background:danger?"#c44":"#e8ff5a",color:danger?"#fff":"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer"}}>{confirmLabel}</button></div></div></div>;
