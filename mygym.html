@@ -76,6 +76,7 @@ function App() {
   const [collapsedRecords, setCollapsedRecords] = useState({});
   const [clientSearch, setClientSearch] = useState("");
   const [saveStatus, setSaveStatus] = useState("");
+  const [showBackup, setShowBackup] = useState(false);
 
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddRecord, setShowAddRecord] = useState(false);
@@ -109,6 +110,35 @@ function App() {
       setSaveStatus("error");
     }
   }, [clients, tickets, records, profiles]);
+
+  const backupData = () => {
+    const data = JSON.stringify({ clients, tickets, records, profiles }, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `mygym_backup_${TODAY}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const restoreData = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.clients) setClients(data.clients);
+        if (data.tickets) setTickets(data.tickets);
+        if (data.records) setRecords(data.records);
+        if (data.profiles) setProfiles(data.profiles);
+        setShowBackup(false);
+        alert("復元しました！");
+      } catch { alert("ファイルが正しくありません"); }
+    };
+    reader.readAsText(file);
+  };
 
   const saveData = () => {
     try {
@@ -549,11 +579,28 @@ function App() {
         </Modal>
       )}
       {/* 右下固定の保存ボタン */}
-      <div style={{position:"fixed",bottom:24,right:16,zIndex:300}}>
+      <div style={{position:"fixed",bottom:24,right:16,zIndex:300,display:"flex",gap:8}}>
+        <button onClick={()=>setShowBackup(true)} style={{padding:"10px 14px",background:"#1a1a2e",color:"#aaa",border:"1px solid #3a3a4a",borderRadius:24,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.5)"}}>📦</button>
         <button onClick={saveData} style={{padding:"10px 18px",background:saveStatus==="saved"?"#5affb0":saveStatus==="error"?"#ff6b6b":"#1a1a2e",color:saveStatus==="saved"?"#0f0f13":saveStatus==="error"?"#fff":"#e8ff5a",border:"1px solid #3a3a4a",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.3s",boxShadow:"0 4px 16px rgba(0,0,0,0.5)"}}>
           {saveStatus==="saved"?"✓ 保存済み":saveStatus==="error"?"⚠ 失敗":"💾 保存"}
         </button>
       </div>
+
+      {showBackup&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
+          <div style={{background:"#1a1a24",border:"1px solid #2a2a3a",borderRadius:16,padding:28,width:"100%",maxWidth:340,textAlign:"center"}}>
+            <div style={{fontSize:28,marginBottom:12}}>📦</div>
+            <div style={{fontWeight:700,fontSize:16,marginBottom:6}}>バックアップ</div>
+            <div style={{fontSize:12,color:"#888",marginBottom:20}}>データをファイルに保存・復元できます</div>
+            <button onClick={backupData} style={{width:"100%",padding:"11px 0",background:"#e8ff5a",color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>📥 バックアップを保存</button>
+            <label style={{display:"block",width:"100%",padding:"11px 0",background:"#2a2a3a",color:"#aaa",border:"1px solid #3a3a4a",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:16,boxSizing:"border-box"}}>
+              📤 バックアップから復元
+              <input type="file" accept=".json" onChange={restoreData} style={{display:"none"}}/>
+            </label>
+            <button onClick={()=>setShowBackup(false)} style={{background:"none",border:"none",color:"#666",fontSize:14,cursor:"pointer"}}>キャンセル</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
