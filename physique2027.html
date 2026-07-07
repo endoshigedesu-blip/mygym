@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>PHYSIQUE 2027 — Training Log</title>
+<style>
+  :root{
+    --bg:#0a0c0e; --bg2:#0e1216; --card:#14191e; --card2:#1a2127; --line:#222b32;
+    --txt:#e7edf1; --mut:#7f8b94; --mut2:#566069;
+    --cyan:#29d3e0; --cyan-dim:#0e3b40; --gold:#f3b34a; --gold-dim:#3a2d12; --red:#e0564a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #11181d 0%, transparent 60%), var(--bg);
+    color:var(--txt);
+    font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+    line-height:1.5;min-height:100vh;padding-bottom:150px;
+  }
+  .num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px}
+
+  header{padding:18px 0 6px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--mut);text-transform:uppercase;font-weight:700}
+  .title{font-size:20px;font-weight:800;letter-spacing:.04em;margin:2px 0 0}
+  .title b{color:var(--cyan)}
+  .countdown{display:flex;align-items:baseline;gap:10px;margin-top:12px;
+    background:linear-gradient(180deg,var(--card) 0%,var(--bg2) 100%);
+    border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .countdown .big{font-size:40px;font-weight:800;color:var(--cyan);letter-spacing:-.02em}
+  .countdown .lab{font-size:11px;color:var(--mut);letter-spacing:.18em;text-transform:uppercase}
+  .countdown .phase{margin-left:auto;text-align:right}
+  .chip{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.05em;padding:6px 12px;border-radius:999px;
+    border:1px solid var(--cyan-dim);background:rgba(41,211,224,.08);color:var(--cyan);cursor:pointer;user-select:none}
+  .chip small{display:block;font-size:9px;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;font-weight:700;margin-bottom:2px}
+
+  .eyebrow-row{margin:22px 0 10px;display:flex;align-items:center;gap:10px}
+  .eyebrow-row .ln{flex:1;height:1px;background:var(--line)}
+  .days{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  .day{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--mut);
+    border-radius:11px;padding:11px 4px;font-weight:800;font-size:13px;letter-spacing:.03em;cursor:pointer;transition:.12s}
+  .day small{display:block;font-size:9px;font-weight:700;color:var(--mut2);letter-spacing:.1em;margin-top:3px}
+  .day:active{transform:scale(.96)}
+  .day.on{background:var(--cyan);color:#04181a;border-color:var(--cyan)}
+  .day.on small{color:#063b40}
+  .day.leg.on{background:var(--gold);color:#1c1304;border-color:var(--gold)}
+  .day.leg.on small{color:#3a2a08}
+
+  .sessbar{display:flex;align-items:center;gap:10px;margin:18px 0 12px}
+  .sessbar h2{font-size:16px;font-weight:800;margin:0;letter-spacing:.02em}
+  .sessbar input[type=date]{margin-left:auto;background:var(--card);border:1px solid var(--line);color:var(--txt);
+    border-radius:9px;padding:7px 9px;font-size:13px;font-family:inherit}
+
+  .metacard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px;margin-bottom:14px}
+  .metacard label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:700;margin-bottom:5px}
+  .metacard .fld{margin-bottom:11px}
+  .mrow{display:flex;gap:10px}
+  .mrow .fld{flex:1}
+  .metacard input,.metacard select,.metacard textarea{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:11px;font-size:15px;font-family:inherit}
+  .metacard input:focus,.metacard select:focus,.metacard textarea:focus{outline:none;border-color:var(--cyan)}
+  .metacard select{appearance:none;-webkit-appearance:none;padding-right:30px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%237f8b94' stroke-width='1.6'><path d='M1 1l4 4 4-4'/></svg>");
+    background-repeat:no-repeat;background-position:right 11px center}
+  .metacard textarea{resize:vertical;min-height:58px;line-height:1.5}
+
+  .ex{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:13px 13px 9px;margin-bottom:11px;position:relative;overflow:hidden}
+  .ex.big3{border-color:var(--gold-dim)}
+  .ex.big3::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold)}
+  .selrow{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+  .ex.big3 .selrow{padding-left:5px}
+  .exsel{flex:1;min-width:0;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:9px;
+    padding:11px 30px 11px 11px;font-size:15px;font-weight:700;font-family:inherit;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%237f8b94' stroke-width='1.6'><path d='M1 1l4 4 4-4'/></svg>");
+    background-repeat:no-repeat;background-position:right 11px center}
+  .exsel:focus{outline:none;border-color:var(--cyan)}
+  .exdel{background:none;border:1px solid var(--line);color:var(--mut2);border-radius:9px;
+    width:38px;height:42px;font-size:16px;cursor:pointer;flex:0 0 auto}
+  .exdel:active{border-color:var(--red);color:var(--red)}
+  .excustom{width:100%;margin-bottom:8px;background:var(--bg2);border:1px solid var(--cyan-dim);color:var(--txt);
+    border-radius:9px;padding:11px;font-size:15px;font-family:inherit}
+  .excustom:focus{outline:none;border-color:var(--cyan)}
+  .mgsel{width:100%;margin-bottom:8px;background:var(--bg2);border:1px solid var(--line);color:var(--mut);border-radius:9px;
+    padding:10px 30px 10px 11px;font-size:13px;font-family:inherit;appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%237f8b94' stroke-width='1.6'><path d='M1 1l4 4 4-4'/></svg>");
+    background-repeat:no-repeat;background-position:right 11px center}
+  .mgsel:focus{outline:none;border-color:var(--cyan)}
+  .meta{font-size:11.5px;color:var(--mut);margin-bottom:9px;display:flex;flex-wrap:wrap;gap:5px 12px;align-items:center}
+  .ex.big3 .meta{padding-left:5px}
+  .tag{font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 7px;border-radius:6px;white-space:nowrap}
+  .tag.t-target{background:rgba(41,211,224,.1);color:var(--cyan)}
+  .tag.t-str{background:var(--gold-dim);color:var(--gold)}
+  .meta .pr{color:var(--gold);font-weight:700}
+  .meta .prev .num{color:var(--txt)}
+
+  table.sets{width:100%;border-collapse:collapse}
+  table.sets th{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);font-weight:700;text-align:left;padding:0 0 4px}
+  table.sets td{padding:3px 0}
+  .setno{width:30px;color:var(--mut);font-weight:800;font-size:13px}
+  .ex.big3 .setno{padding-left:5px}
+  .sets input{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:9px;
+    padding:11px 8px;font-size:16px;text-align:center;font-family:ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .sets input:focus{outline:none;border-color:var(--cyan);background:#0c141a}
+  .xcell{width:14px;color:var(--mut2);text-align:center;font-size:13px}
+  .rm{width:30px}
+  .rm button{background:none;border:none;color:var(--mut2);font-size:19px;line-height:1;cursor:pointer;padding:4px}
+  .addset{margin-top:7px;width:100%;background:transparent;border:1px dashed var(--line);color:var(--mut);
+    border-radius:9px;padding:9px;font-weight:700;font-size:12.5px;cursor:pointer;letter-spacing:.04em}
+  .addset:active{border-color:var(--cyan);color:var(--cyan)}
+  .addex{width:100%;background:rgba(41,211,224,.06);border:1px solid var(--cyan-dim);color:var(--cyan);
+    border-radius:11px;padding:13px;font-weight:800;font-size:13.5px;cursor:pointer;letter-spacing:.04em;margin-top:4px}
+  .addex:active{transform:translateY(1px)}
+  .ordno{flex:0 0 auto;width:20px;height:42px;display:flex;align-items:center;justify-content:center;color:var(--mut2);font-weight:800;font-size:13px;font-family:ui-monospace,monospace}
+  .ex.big3 .ordno{color:var(--gold)}
+  .exbtns{display:flex;gap:5px;flex:0 0 auto}
+  .exbtns button{background:none;border:1px solid var(--line);color:var(--mut2);border-radius:8px;width:34px;height:42px;font-size:14px;cursor:pointer;padding:0}
+  .exbtns button:active{border-color:var(--cyan);color:var(--cyan)}
+  .exbtns .del:active{border-color:var(--red);color:var(--red)}
+  .exbtns button[disabled]{opacity:.3}
+  .editban{background:var(--gold-dim);color:var(--gold);font-size:12.5px;font-weight:700;border-radius:10px;padding:11px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+  .editban button{margin-left:auto;background:none;border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer}
+  .chips{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap}
+  .fchip{background:var(--card);border:1px solid var(--line);color:var(--mut);border-radius:999px;padding:7px 16px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .fchip.on{background:var(--cyan);color:#04181a;border-color:var(--cyan)}
+  .mhdr{font-size:12px;font-weight:800;color:var(--mut);letter-spacing:.05em;margin:18px 0 9px;display:flex;align-items:center;gap:8px}
+  .mhdr .ln{flex:1;height:1px;background:var(--line)}
+  .mhdr .ct{color:var(--mut2);font-weight:700;font-size:11px}
+  .hactions{display:flex;gap:8px;margin-top:6px}
+  .hbtn{flex:1;background:none;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:10px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .hbtn:active{border-color:var(--cyan);color:var(--cyan)}
+  .hbtn.del{color:var(--mut2)}
+  .hbtn.del:active{border-color:var(--red);color:var(--red)}
+  .loadhint{background:rgba(41,211,224,.07);border:1px solid var(--cyan-dim);border-radius:9px;padding:8px 10px;margin-bottom:9px;font-size:12px;color:var(--cyan);font-family:ui-monospace,monospace;line-height:1.6}
+  .loadhint b{color:var(--txt);font-weight:800}
+  .loadhint span{color:var(--mut2);font-family:inherit;font-size:11px}
+  .ex.big3 .loadhint{margin-left:5px}
+  .b3box{background:rgba(243,179,74,.06);border:1px solid var(--gold-dim);border-radius:9px;padding:7px 10px;margin:0 0 9px 5px}
+  .b3row{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}
+  .b3lab{width:62px;flex:0 0 auto;font-weight:800;color:var(--gold);font-size:11.5px}
+  .b3sr{flex:1;color:var(--txt);font-family:ui-monospace,monospace;font-weight:700}
+  .b3kg{flex:0 0 auto;color:var(--gold);font-weight:800;font-family:ui-monospace,monospace}
+  .b3note{font-size:10.5px;color:var(--mut2);margin-top:3px}
+  .b3phase{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--mut2);text-transform:uppercase;margin-bottom:4px}
+  .bcard .b1rm{margin-top:8px;padding-top:8px;border-top:1px solid var(--gold-dim);font-size:11px;color:var(--mut);font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px}
+  .bcard .ormin{width:48px;background:var(--bg2);border:1px solid var(--line);color:var(--gold);border-radius:7px;padding:5px 4px;font-size:14px;text-align:center;font-family:ui-monospace,monospace;font-weight:800}
+  .bcard .ormin:focus{outline:none;border-color:var(--gold)}
+  .reftab{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .refrow{display:flex;align-items:center;padding:9px 11px;font-size:12.5px;border-top:1px solid var(--line)}
+  .refrow:first-child{border-top:none}
+  .refrow .rn{font-weight:800;width:64px;color:var(--txt)}
+  .refrow .rv{flex:1;text-align:right;color:var(--mut);font-family:ui-monospace,monospace}
+  .refrow.on{background:rgba(243,179,74,.08)}
+  .refrow.on .rn{color:var(--gold)}
+  .dlab{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:0 0 5px}
+  .plan{border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-top:12px}
+  .prow{display:flex;align-items:center;gap:8px;padding:9px 11px;border-top:1px solid var(--line);font-size:13px}
+  .prow:first-child{border-top:none}
+  .prow .pp{font-weight:800;width:74px;flex:0 0 auto}
+  .prow .pp em{font-style:normal;font-size:10px;background:var(--cyan);color:#04181a;border-radius:5px;padding:1px 5px;margin-left:3px;font-weight:800}
+  .prow .pr2{flex:1;color:var(--mut);font-family:ui-monospace,monospace;font-size:12px}
+  .prow .pw{display:flex;align-items:center;gap:4px;color:var(--mut);font-size:12px;flex:0 0 auto}
+  .prow .planw{width:44px;background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 4px;font-size:14px;text-align:center;font-family:ui-monospace,monospace;font-weight:800}
+  .prow .planw:focus{outline:none;border-color:var(--cyan)}
+  .prow.on{background:rgba(41,211,224,.07)}
+  .prow.on .pp{color:var(--cyan)}
+  .ptot{margin-top:11px;font-size:12px;color:var(--mut);font-family:ui-monospace,monospace;line-height:1.7}
+  .voltbl{display:flex;flex-direction:column;gap:9px}
+  .vrow{display:flex;align-items:center;gap:10px}
+  .vrow .vm{width:58px;flex:0 0 auto;font-size:12.5px;font-weight:700;color:var(--txt)}
+  .vrow .vbar{flex:1;height:9px;background:var(--bg2);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .vrow .vfill{height:100%;background:var(--cyan);opacity:.55;border-radius:999px;transition:width .25s}
+  .vrow .vfill.done{opacity:1}
+  .vrow .vn{width:46px;flex:0 0 auto;text-align:right;font-size:13px;font-weight:800;color:var(--mut);font-family:ui-monospace,monospace}
+  .vrow .vn.done{color:var(--cyan)}
+  .vrow .vn i{color:var(--mut2);font-style:normal;font-weight:600;font-size:11px}
+  .volnote{font-size:11px;color:var(--mut2);margin-top:9px;line-height:1.5}
+  .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .calhead button{background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:9px;width:42px;height:38px;font-size:20px;cursor:pointer;line-height:1}
+  .calhead button:active{border-color:var(--cyan);color:var(--cyan)}
+  .calhead .cm{font-weight:800;font-size:16px;letter-spacing:.02em}
+  .calleg{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+  .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cwd{text-align:center;font-size:10px;color:var(--mut2);font-weight:700;padding-bottom:2px}
+  .cell{min-height:50px;border:1px solid var(--line);border-radius:8px;padding:3px;display:flex;flex-direction:column;gap:2px;background:var(--card);cursor:pointer;overflow:hidden}
+  .cell.blank{border:none;background:none;cursor:default;min-height:0}
+  .cell.today{border-color:var(--cyan)}
+  .cell.sel{background:var(--card2);border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+  .cell .dn{font-size:10px;color:var(--mut);font-weight:700;font-family:ui-monospace,monospace;line-height:1.2}
+  .cell.today .dn{color:var(--cyan)}
+  .cchip{font-size:8.5px;font-weight:800;border-radius:4px;padding:1px 3px;text-align:center;line-height:1.4;letter-spacing:.02em}
+  .cchip.push{background:rgba(41,211,224,.18);color:var(--cyan)}
+  .cchip.pull{background:rgba(155,140,240,.2);color:#b3a6f5}
+  .cchip.leg{background:rgba(243,179,74,.18);color:var(--gold)}
+  .cchip.other{background:var(--line);color:var(--mut)}
+
+  .save{position:fixed;left:0;right:0;bottom:64px;z-index:20;pointer-events:none}
+  .save .wrap{pointer-events:auto}
+  .save button{width:100%;background:var(--cyan);color:#04181a;border:none;border-radius:12px;padding:15px;
+    font-weight:800;font-size:15px;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 28px rgba(41,211,224,.22)}
+  .save button:active{transform:translateY(1px)}
+
+  .empty{text-align:center;color:var(--mut);padding:50px 20px;font-size:14px}
+  .empty .big{font-size:15px;color:var(--txt);font-weight:700;margin-bottom:6px}
+
+  .hcard{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:0;margin-bottom:10px;overflow:hidden}
+  .htop{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;color:var(--txt);text-align:left;padding:13px;cursor:pointer;font-family:inherit}
+  .htop:active{background:var(--card2)}
+  .htop .htext{flex:1;min-width:0}
+  .hcard .dname{font-weight:800;font-size:15px}
+  .hcard .hdate{font-size:12px;color:var(--mut);font-family:ui-monospace,monospace;flex:0 0 auto}
+  .hcard .hsum{font-size:12px;color:var(--mut);margin-top:5px}
+  .htop .chev{color:var(--mut2);font-size:17px;line-height:1;transition:transform .15s;flex:0 0 auto}
+  .htop.open .chev{transform:rotate(180deg)}
+  .hbody{padding:0 13px;border-top:1px solid var(--line);display:none}
+  .hbody.show{display:block;padding:11px 13px 13px}
+  .hex{margin-bottom:9px}
+  .hex .hn{font-weight:700;font-size:13.5px}
+  .hex .hs{font-size:13px;color:var(--mut);font-family:ui-monospace,monospace;margin-top:2px}
+  .hex .hs .b{color:var(--gold);font-weight:700}
+  .hcond{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12.5px;color:var(--txt);margin-bottom:11px;white-space:pre-wrap;line-height:1.5}
+  .delS{margin-top:8px;background:none;border:1px solid var(--line);color:var(--mut2);border-radius:8px;padding:7px 11px;font-size:11.5px;cursor:pointer}
+  .delS:active{border-color:var(--red);color:var(--red)}
+
+  .best{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+  .bcard{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--gold-dim);border-radius:12px;padding:12px 10px;text-align:center}
+  .bcard .bl{font-size:10px;letter-spacing:.1em;color:var(--mut);font-weight:700;text-transform:uppercase}
+  .bcard .bv{font-size:21px;font-weight:800;color:var(--gold);margin-top:5px}
+  .bcard .bv span{font-size:12px;color:var(--mut)}
+  .bcard .bx{font-size:11px;color:var(--mut2);margin-top:2px}
+
+  .drow{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:11px}
+  .drow h3{margin:0 0 4px;font-size:14px;font-weight:800}
+  .drow p{margin:0 0 11px;font-size:12.5px;color:var(--mut)}
+  .drow input[type=date]{background:var(--bg2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:10px;font-size:15px;width:100%;font-family:inherit}
+  .btn{display:inline-block;width:100%;text-align:center;border:1px solid var(--line);background:var(--card2);color:var(--txt);border-radius:10px;padding:12px;font-weight:700;font-size:14px;cursor:pointer}
+  .btn.cyan{background:var(--cyan);color:#04181a;border-color:var(--cyan)}
+  .btn.danger{color:var(--red);border-color:var(--gold-dim)}
+  .btn:active{transform:translateY(1px)}
+  .notice{background:var(--gold-dim);color:var(--gold);font-size:12px;border-radius:10px;padding:10px 12px;margin:12px 0;text-align:center}
+
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(10,12,14,.92);backdrop-filter:blur(12px);
+    border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  nav .inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+  nav button{background:none;border:none;color:var(--mut2);padding:11px 0 13px;font-size:11px;font-weight:700;letter-spacing:.05em;cursor:pointer}
+  nav button .ic{display:block;font-size:18px;margin-bottom:2px;line-height:1}
+  nav button.on{color:var(--cyan)}
+
+  .toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%) translateY(20px);opacity:0;    background:var(--cyan);color:#04181a;font-weight:800;font-size:13px;padding:11px 20px;border-radius:999px;
+    z-index:50;transition:.25s;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .undobar{position:fixed;left:14px;right:14px;bottom:122px;max-width:532px;margin:0 auto;z-index:45;display:none;align-items:center;gap:12px;
+    background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 12px 34px rgba(0,0,0,.55)}
+  .undobar.show{display:flex}
+  .undobar span{flex:1;font-size:13px;color:var(--txt);font-weight:600}
+  .undobar button{background:var(--cyan);color:#04181a;border:none;border-radius:8px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}
+  .undobar button:active{transform:translateY(1px)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Contest Prep · Men's Physique</div>
+    <div class="title">PHYSIQUE <b>2027</b></div>
+    <div class="countdown">
+      <div><div class="big num" id="cdDays">—</div><div class="lab">大会まで（日）</div></div>
+      <div class="phase"><div class="chip" id="phaseChip" role="button" tabindex="0"><small>Phase</small><span id="phaseName">強さ</span></div></div>
+    </div>
+  </header>
+</div>
+
+<div class="wrap" id="view"></div>
+
+<div class="save" id="saveBar" style="display:none">
+  <div class="wrap"><button id="saveBtn">セッションを保存</button></div>
+</div>
+
+<nav><div class="inner">
+  <button data-tab="log" class="on"><span class="ic">⊕</span>ログ</button>
+  <button data-tab="hist"><span class="ic">≣</span>履歴</button>
+  <button data-tab="cal"><span class="ic">▦</span>暦</button>
+  <button data-tab="data"><span class="ic">⛁</span>データ</button>
+</div></nav>
+
+<div class="undobar" id="undobar"><span id="undomsg"></span><button id="undobtn">元に戻す</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+(function(){
+  /* ---------- storage (namespaced + safe) ---------- */
+  var NS="physique2027_"; var memFallback={};
+  function lsGet(k){ try{return localStorage.getItem(NS+k);}catch(e){return (k in memFallback)?memFallback[k]:null;} }
+  function lsSet(k,v){ try{localStorage.setItem(NS+k,v);}catch(e){memFallback[k]=v;} }
+  var storageOK=(function(){try{var t=NS+"__t";localStorage.setItem(t,"1");localStorage.removeItem(t);return true;}catch(e){return false;}})();
+  function loadLogs(){ try{return JSON.parse(lsGet("logs")||"[]");}catch(e){return [];} }
+  function saveLogs(a){ lsSet("logs",JSON.stringify(a)); }
+  function loadSettings(){ try{return JSON.parse(lsGet("settings")||"{}");}catch(e){return {};} }
+  function saveSettings(o){ lsSet("settings",JSON.stringify(o)); }
+
+  /* ---------- program (each slot has selectable variants) ---------- */
+  var PHASES=["回復","強さ","肥大","特化","プレップ"];
+  var PHASE_PCT={0:{top:0.75,back:0.65},1:{top:0.88,back:0.75},2:{top:0.83,back:0.70},3:{top:0.85,back:0.72},4:{top:0.82,back:0.70}};
+  var ORM_KEY={"バーベルベンチプレス":"bench","デッドリフト":"dead","バックスクワット":"squat"};
+  var VOL_ORDER=["サイド肩","二頭","三頭","背中","胸","リア肩","脚","腹筋"];
+  var VOL_TARGET={
+    0:{"サイド肩":8,"二頭":5,"三頭":5,"背中":6,"胸":6,"リア肩":4,"脚":5,"腹筋":0},
+    1:{"サイド肩":12,"二頭":8,"三頭":8,"背中":12,"胸":10,"リア肩":6,"脚":8,"腹筋":4},
+    2:{"サイド肩":18,"二頭":14,"三頭":14,"背中":16,"胸":14,"リア肩":10,"脚":10,"腹筋":6},
+    3:{"サイド肩":20,"二頭":16,"三頭":16,"背中":10,"胸":9,"リア肩":10,"脚":8,"腹筋":6},
+    4:{"サイド肩":14,"二頭":10,"三頭":10,"背中":12,"胸":10,"リア肩":8,"脚":8,"腹筋":6}
+  };
+  function muscleOf(name){
+    var s=name||""; function has(){for(var i=0;i<arguments.length;i++){if(s.indexOf(arguments[i])>=0)return true;}return false;}
+    if(has("レッグレイズ","ニーレイズ","クランチ","アブ","プランク")) return "腹筋";
+    if(has("サイドレイズ")) return "サイド肩";
+    if(has("リアデルト","リバースペックデック","フェイスプル")) return "リア肩";
+    if(has("スクワット","レッグ","カーフ","RDL","ブルガリアン","ハック")) return "脚";
+    if(has("カール")) return "二頭";
+    if(has("プレスダウン","エクステンション","クローズグリップ","クロスボディ","ケーブルプレス","三頭")) return "三頭";
+    if(has("ベンチ","インクライン","フライ","ペックデック","チェストプレス","ディップス")) return "胸";
+    if(has("ロー","プルダウン","懸垂","プルオーバー","ストレートアーム","デッドリフト")) return "背中";
+    return "未分類";
+  }
+  function volSrc(mode){
+    var logs=loadLogs(), src;
+    if(mode==="days"){ var today=new Date(todayISO()+"T00:00:00"), from=new Date(today); from.setDate(from.getDate()-6);
+      src=logs.filter(function(l){ var d=new Date((l.date||"")+"T00:00:00"); return !isNaN(d.getTime())&&d>=from&&d<=today; }); }
+    else { src=logs.slice(-5); }
+    var vol={};
+    src.forEach(function(l){ (l.entries||[]).forEach(function(e){ var m=e.mg?e.mg:muscleOf(e.n); if(m==="skip")return; vol[m]=(vol[m]||0)+((e.sets||[]).length); }); });
+    return {vol:vol, count:src.length};
+  }
+  var PROGRAM={
+    pushA:{name:"PUSH A",sub:"ベンチ＝強さ",ex:[
+      {tp:["3×6-8","トップ1×4-6 ＋ バックオフ2-3×6-8","トップ1×6-8 ＋ バックオフ3×8-10","3×4-6","3×5-7"],big3:true,b3:[[{l:"",s:"3",r:"6-8",p:0.72}],[{l:"トップ",s:"1",r:"4-6",p:0.88},{l:"バックオフ",s:"2-3",r:"6-8",p:0.75}],[{l:"トップ",s:"1",r:"6-8",p:0.83},{l:"バックオフ",s:"3",r:"8-10",p:0.70}],[{l:"",s:"3",r:"4-6",p:0.85}],[{l:"",s:"3",r:"5-7",p:0.82}]],variants:["バーベルベンチプレス","スミスマシンベンチ","DBベンチプレス"]},
+      {tp:["2×8-10","3×6-8","4×8-12","2×8-10","3×8-10"],variants:["インクラインDBプレス","インクラインマシンプレス","インクラインバーベルプレス"]},
+      {tp:["3×12-15","4×12-15","5×15-20＋部分","5×15-20＋ドロップ","4×12-20"],variants:["ケーブルサイドレイズ","ダンベルサイドレイズ","マシンサイドレイズ","インクラインサイドレイズ"]},
+      {tp:["2×10-12","3×8-12","4×10-15","4×12-15","3×10-12"],variants:["ダンベルライイングエクステンション","EZバーライイングエクステンション","オーバーヘッドケーブル三頭"]},
+      {tp:["2×12-15","2×10-12","3×12-15","4×12-15","2×12-15"],variants:["ロープ プレスダウン","バー プレスダウン"]}
+    ]},
+    pullA:{name:"PULL A",sub:"デッドリフト＝強さ",ex:[
+      {tp:["3×4-6","3-4×3-5","3×5-6","3×3-5","2-3×4-6"],big3:true,b3:[[{l:"",s:"3",r:"4-6",p:0.72}],[{l:"",s:"3-4",r:"3-5",p:0.88}],[{l:"",s:"3",r:"5-6",p:0.80}],[{l:"",s:"3",r:"3-5",p:0.85}],[{l:"",s:"2-3",r:"4-6",p:0.82}]],variants:["デッドリフト","トラップバーデッド"]},
+      {tp:["2×8-10","3×6-8","4×8-12","2×8-10","3×8-10"],variants:["ラットプルダウン","加重懸垂","懸垂"]},
+      {tp:["2×8-10","3×6-8","4×8-12","2×10-12","3×8-10"],variants:["ケーブルロー","チェストサポートロー","マシンロー"]},
+      {tp:["2×12-15","3×12-15","4×15-20","4×15-20","3×12-15"],variants:["リバースペックデック","ケーブルリアデルト","フェイスプル"]},
+      {tp:["2×10-12","3×8-12","4×10-15","4×10-12","3×10-12"],variants:["インクラインDBカール","ダンベルカール"]},
+      {tp:["—","2×12-15","3×15-20","3×15-20","2×15-20"],variants:["ケーブルサイドレイズ","ダンベルサイドレイズ","マシンサイドレイズ","インクラインサイドレイズ"]},
+      {tp:["—","2×12-15","3×12-15","3×12-15","3×12-15"],variants:["ハンギングレッグレイズ","ケーブルクランチ","アブローラー","ハンギングニーレイズ","プランク"]}
+    ]},
+    pushB:{name:"PUSH B",sub:"肩・上部胸",ex:[
+      {tp:["2×8-10","4×5-6","4×8-10","3×6-8","3×6-8"],variants:["バーベルOHP","DBショルダープレス","マシンショルダープレス"]},
+      {tp:["2×8-10","3×6-8","4×8-12","2×8-10","3×8-10"],variants:["ローインクラインDB","ローインクラインバーベル","マシンチェストプレス"]},
+      {tp:["3×12-15","4×12-15","5×15-20＋部分","6×15-20＋強化","4×12-20"],variants:["ケーブルサイドレイズ","ダンベルサイドレイズ","マシンサイドレイズ","インクラインサイドレイズ","リーンアウェイサイドレイズ"]},
+      {tp:["2×12-15","3×10-12","3×12-15","2×12-15","2×12-15"],variants:["ハイ→ローケーブルフライ","ディップス","ペックデック"]},
+      {tp:["2×10-12","3×6-8","4×10-12","4×10-12","3×10-12"],variants:["ケーブルプレス","ディップス"]},
+      {tp:["2×12-15","2×10-12","3×12-15","4×12-15","2×12-15"],variants:["クロスボディ三頭（ケーブル）","ライイングクロスボディ（DB）"]}
+    ]},
+    pullB:{name:"PULL B",sub:"背中肥大＋二頭",ex:[
+      {tp:["2×8-10","3×6-8","4×10-12","3×8-10","3×8-10"],variants:["ラットプルダウン（ワイド）","ラットプルダウン（ニュートラル）","加重懸垂"]},
+      {tp:["2×6-8","4×6-8","4×8-10","3×8-10","3×6-8"],variants:["バーベルロー","Tバーロー","マシンロー","ワンハンドロー"]},
+      {tp:["2×12-15","3×10-12","3×12-15","2×12-15","2×12-15"],variants:["ストレートアームプルダウン","ケーブルプルオーバー","DBプルオーバー"]},
+      {tp:["2×12-15","3×12-15","4×15-20","4×15-20","3×12-15"],variants:["リバースペックデック","ケーブルリアデルト","フェイスプル"]},
+      {tp:["2×10-12","3×8-10","4×10-12","4×10-12","3×10-12"],variants:["ハンマーカール","クロスボディカール","ケーブルカール"]},
+      {tp:["2×10-12","2×8-10","3×10-12","4×10-12","2×10-12"],variants:["スパイダーカール","プリーチャーカール","インクラインカール"]},
+      {tp:["—","2×12-15","3×15-20","3×15-20","2×15-20"],variants:["ケーブルサイドレイズ","ダンベルサイドレイズ","マシンサイドレイズ","インクラインサイドレイズ"]}
+    ]},
+    leg:{name:"LEG",sub:"スクワット＝強さ",ex:[
+      {tp:["3×5-8","トップ1×4-6 ＋ バックオフ2-3×6-8","トップ1×6-8 ＋ バックオフ3×8-10","3×4-6","3×5-7"],big3:true,b3:[[{l:"",s:"3",r:"5-8",p:0.72}],[{l:"トップ",s:"1",r:"4-6",p:0.88},{l:"バックオフ",s:"2-3",r:"6-8",p:0.75}],[{l:"トップ",s:"1",r:"6-8",p:0.83},{l:"バックオフ",s:"3",r:"8-10",p:0.70}],[{l:"",s:"3",r:"4-6",p:0.85}],[{l:"",s:"3",r:"5-7",p:0.82}]],variants:["バックスクワット","ハックスクワット","レッグプレス"]},
+      {tp:["2×8-10","3×6-8","4×10-12","3×10-12","3×8-10"],variants:["シーテッドレッグカール","ライイングレッグカール","RDL"]},
+      {tp:["2×12-15","3×10-12","3×12-15","3×12-15","2×12-15"],variants:["レッグエクステンション","レッグプレス","ブルガリアンスクワット"]},
+      {tp:["2×10-12","3×8-10","4×12-15","3×12-15","3×12-15"],variants:["スタンディングカーフ","シーテッドカーフ","レッグプレスカーフ"]},
+      {tp:["—","2-3×12-15","3×15-20","3×15-20","2×15-20"],variants:["ケーブルサイドレイズ","ダンベルサイドレイズ","マシンサイドレイズ","インクラインサイドレイズ"]},
+      {tp:["—","2×12-15","3×12-15","3×12-15","3×12-15"],variants:["ハンギングレッグレイズ","ケーブルクランチ","アブローラー","ハンギングニーレイズ","プランク"]}
+    ]}
+  };
+  var DAY_META={pushA:{ab:"PsA",c:"push"},pushB:{ab:"PsB",c:"push"},pullA:{ab:"PlA",c:"pull"},pullB:{ab:"PlB",c:"pull"},leg:{ab:"Leg",c:"leg"}};
+  var DAY_ORDER=["pushA","pullA","pushB","pullB","leg"];
+
+  /* full library for the "add exercise" card */
+  var EX_LIBRARY=(function(){
+    var seen={}, out=[];
+    DAY_ORDER.forEach(function(k){ PROGRAM[k].ex.forEach(function(x){ x.variants.forEach(function(v){ if(!seen[v]){seen[v]=1;out.push(v);} }); }); });
+    return out;
+  })();
+
+  /* ---------- state ---------- */
+  var settings=loadSettings();
+  if(!settings.showDate) settings.showDate="2027-08-01";
+  if(typeof settings.phase!=="number") settings.phase=1;
+  if(!settings.orm||typeof settings.orm!=="object") settings.orm={bench:"",dead:"",squat:""};
+  if(!settings.startDate) settings.startDate="2026-09-01";
+  if(!Array.isArray(settings.plan)) settings.plan=[{p:"回復",w:3},{p:"強さ",w:8},{p:"肥大",w:13},{p:"特化",w:6},{p:"プレップ",w:18}];
+  if(!settings.volMode) settings.volMode="cycle";
+  saveSettings(settings);
+  var tab="log", session=null, histFilter="all", calRef=null, calSel=null;
+
+  /* ---------- helpers ---------- */
+  function todayISO(){ var d=new Date(),off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10); }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function round25(x){ return Math.round(x/2.5)*2.5; }
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function ymd(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+  function md(d){ return (d.getMonth()+1)+"/"+d.getDate(); }
+  function planSchedule(){
+    var start=new Date(settings.startDate+"T00:00:00"); if(isNaN(start.getTime())) start=new Date(todayISO()+"T00:00:00");
+    var today=new Date(todayISO()+"T00:00:00");
+    var cur=new Date(start), out=[], curIdx=-1, total=0;
+    settings.plan.forEach(function(ph,i){
+      var w=Math.max(0,parseInt(ph.w,10)||0); total+=w;
+      var s=new Date(cur), e=new Date(cur); e.setDate(e.getDate()+w*7-1);
+      if(today>=s&&today<=e) curIdx=i;
+      out.push({p:ph.p,w:w,s:s,e:e});
+      cur.setDate(cur.getDate()+w*7);
+    });
+    return {rows:out, end:new Date(cur), total:total, curIdx:curIdx, start:start};
+  }
+  function phaseRefTable(){
+    var rows=[[0,"回復"],[1,"強さ"],[2,"肥大"],[3,"特化"],[4,"プレップ"]], h='<div class="reftab">';
+    rows.forEach(function(r){ var pc=PHASE_PCT[r[0]], on=(settings.phase===r[0])?" on":"";
+      h+='<div class="refrow'+on+'"><span class="rn">'+r[1]+'</span><span class="rv">トップ '+Math.round(pc.top*100)+'%</span><span class="rv">バックオフ '+Math.round(pc.back*100)+'%</span></div>'; });
+    return h+'</div>';
+  }
+  function daysToShow(){ var s=new Date(settings.showDate+"T00:00:00"),n=new Date(todayISO()+"T00:00:00"); return Math.round((s-n)/86400000); }
+  function resolveName(e){ return e.sel==="other" ? (e.custom||"").trim() : e.variants[+e.sel]; }
+  function lastTimeFor(name){ if(!name) return null; var logs=loadLogs();
+    for(var i=logs.length-1;i>=0;i--){ var e=(logs[i].entries||[]).find(function(x){return x.n===name;}); if(e&&e.sets&&e.sets.length) return e.sets; } return null; }
+  function bestFor(name){ var logs=loadLogs(),best=null;
+    logs.forEach(function(l){ (l.entries||[]).forEach(function(e){ if(e.n!==name)return;
+      (e.sets||[]).forEach(function(s){ var w=parseFloat(s.w); if(isNaN(w))return;
+        if(!best||w>best.w||(w===best.w&&parseFloat(s.r||0)>parseFloat(best.r||0))) best={w:w,r:s.r}; }); }); });
+    return best; }
+  function fmtSets(sets){ return sets.filter(function(s){return s.w!==""||s.r!=="";}).map(function(s){return (s.w||"–")+"×"+(s.r||"–");}).join("  "); }
+  function toast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t=setTimeout(function(){t.classList.remove("show");},1600); }
+  var undoTimer=null, undoFn=null;
+  function showUndo(msg,fn){ undoFn=fn; document.getElementById("undomsg").textContent=msg;
+    document.getElementById("undobar").classList.add("show");
+    clearTimeout(undoTimer); undoTimer=setTimeout(function(){ document.getElementById("undobar").classList.remove("show"); undoFn=null; },6000); }
+  function hideUndo(){ document.getElementById("undobar").classList.remove("show"); clearTimeout(undoTimer); undoFn=null; }
+  document.getElementById("undobtn").addEventListener("click",function(){ var fn=undoFn; hideUndo(); if(fn) fn(); });
+
+  /* ---------- header ---------- */
+  function paintHeader(){ document.getElementById("cdDays").textContent=daysToShow(); document.getElementById("phaseName").textContent=PHASES[settings.phase]; }
+  document.getElementById("phaseChip").addEventListener("click",function(){ settings.phase=(settings.phase+1)%PHASES.length; saveSettings(settings); paintHeader(); });
+
+  /* ---------- router ---------- */
+  function render(){
+    try{ if(tab==="log") renderLog(); else if(tab==="hist") renderHist(); else if(tab==="cal") renderCal(); else renderData(); }
+    catch(err){ document.getElementById("view").innerHTML='<div class="notice">表示でエラー：'+esc(err.message)+'</div>'; }
+    document.getElementById("saveBar").style.display=(tab==="log"&&session)?"block":"none";
+    var sb=document.getElementById("saveBtn"); if(sb) sb.textContent=(session&&session._editIndex!=null)?"変更を保存":"セッションを保存";
+  }
+
+  function optionsFor(e){
+    var html="";
+    e.variants.forEach(function(v,i){ html+='<option value="'+i+'"'+(e.sel===String(i)?" selected":"")+'>'+esc(v)+'</option>'; });
+    html+='<option value="other"'+(e.sel==="other"?" selected":"")+'>その他（自由入力）</option>';
+    return html;
+  }
+
+  function timeOptions(sel){
+    return ["","朝","午前","昼","夕方","夜","深夜"].map(function(o){
+      return '<option value="'+o+'"'+(sel===o?" selected":"")+'>'+(o===""?"—":o)+'</option>';
+    }).join("");
+  }
+  function mgOptions(sel){
+    var arr=[["","部位：自動判定"]];
+    VOL_ORDER.forEach(function(m){ arr.push([m,"部位："+m]); });
+    arr.push(["skip","部位：カウントしない"]);
+    return arr.map(function(o){ return '<option value="'+o[0]+'"'+(sel===o[0]?" selected":"")+'>'+o[1]+'</option>'; }).join("");
+  }
+  function gymList(){
+    var seen={},out="";
+    loadLogs().forEach(function(l){ if(l.gym&&!seen[l.gym]){ seen[l.gym]=1; out+='<option value="'+esc(l.gym)+'"></option>'; } });
+    return out;
+  }
+
+  function renderLog(){
+    var v=document.getElementById("view"), html="";
+    html+='<div class="eyebrow-row"><span class="eyebrow">今日のトレーニング</span><span class="ln"></span></div><div class="days">';
+    DAY_ORDER.forEach(function(k){
+      var on=(session&&session.day===k)?" on":""; var leg=(k==="leg")?" leg":"";
+      html+='<button class="day'+leg+on+'" data-day="'+k+'">'+PROGRAM[k].name.replace(" ","<br>")+'<small>'+(k==="leg"?"脚":(k.indexOf("push")===0?"押":"引"))+'</small></button>';
+    });
+    html+='</div>';
+
+    if(!session){ html+='<div class="empty"><div class="big">曜日を選んで開始</div>種目はプルダウンで変更可。<br>合トレ・別メニューの日は「その他」や「＋種目を追加」で対応。</div>'; v.innerHTML=html; return; }
+
+    var P=PROGRAM[session.day];
+    html+='<div class="sessbar"><h2>'+esc(P.name)+' <span style="color:var(--mut);font-weight:600;font-size:12px">'+esc(P.sub)+'</span></h2></div>';
+    if(session._editIndex!=null) html+='<div class="editban">編集中 — 保存すると上書きされます<button id="cancelEdit">破棄</button></div>';
+    html+='<div class="metacard">'
+        +'<div class="mrow">'
+          +'<div class="fld"><label>日付</label><input type="date" id="sessDate" value="'+session.date+'"></div>'
+          +'<div class="fld"><label>時間帯</label><select id="sessTime">'+timeOptions(session.timeOfDay)+'</select></div>'
+        +'</div>'
+        +'<div class="fld"><label>ジム</label><input id="sessGym" list="gymList" value="'+esc(session.gym)+'" placeholder="ジム名（合トレ先など）"><datalist id="gymList">'+gymList()+'</datalist></div>'
+        +'<div class="fld"><label>体調・コンディション</label><textarea id="sessCond" placeholder="睡眠・エネルギー・パンプ・関節の張り・気づき等">'+esc(session.condition)+'</textarea></div>'
+        +'</div>';
+
+    session.entries.forEach(function(e,ei){
+      var name=resolveName(e), prev=lastTimeFor(name);
+      html+='<div class="ex'+(e.big3?' big3':'')+'">';
+      html+='<div class="selrow"><span class="ordno">'+(ei+1)+'</span>'
+          + '<select class="exsel" data-sel="'+ei+'">'+optionsFor(e)+'</select>'
+          + '<div class="exbtns">'
+            + '<button data-up="'+ei+'"'+(ei===0?' disabled':'')+' title="上へ">↑</button>'
+            + '<button data-down="'+ei+'"'+(ei===session.entries.length-1?' disabled':'')+' title="下へ">↓</button>'
+            + '<button class="del" data-rmcard="'+ei+'" title="種目を削除">✕</button>'
+          + '</div></div>';
+      if(e.sel==="other"){ html+='<input class="excustom" data-custom="'+ei+'" value="'+esc(e.custom)+'" placeholder="種目名を入力（合トレ等）">';
+        html+='<select class="mgsel" data-mg="'+ei+'">'+mgOptions(e.mg||"")+'</select>'; }
+      var tcur=e.tp?(e.tp[settings.phase]||""):(e.t||"");
+      html+='<div class="meta">'+(e.big3?'<span class="tag t-str">Big3</span>':'')+((!e.big3&&tcur)?'<span class="tag t-target">'+esc(tcur)+'</span>':'');
+      if(prev) html+='<span class="prev">前回 <span class="num">'+esc(fmtSets(prev))+'</span></span>';
+      else if(name) html+='<span class="prev" style="color:var(--mut2)">前回なし</span>';
+      if(e.big3&&name){ var b=bestFor(name); if(b) html+='<span class="pr">自己ベスト '+b.w+'kg×'+(b.r||"–")+'</span>'; }
+      html+='</div>';
+      if(e.big3&&e.b3){ var blk=e.b3[settings.phase]||[], ok=ORM_KEY[name], orm=ok?parseFloat(settings.orm[ok]):NaN, has1=(ok&&orm>0);
+        html+='<div class="b3box"><div class="b3phase">'+esc(PHASES[settings.phase])+'フェーズ</div>';
+        blk.forEach(function(bl){ var kg=has1?('≈ '+round25(orm*bl.p)+'kg'):''; html+='<div class="b3row"><span class="b3lab">'+(bl.l||"メイン")+'</span><span class="b3sr">'+bl.s+'セット × '+bl.r+'回</span><span class="b3kg">'+kg+'</span></div>'; });
+        if(!has1&&ok) html+='<div class="b3note">履歴タブで1RMを入れると各セットの重量(kg)が出ます</div>';
+        html+='</div>';
+      } else if(e.big3&&tcur){ html+='<div class="b3box"><div class="b3row"><span class="b3sr">'+esc(tcur)+'</span></div></div>'; }
+      html+='<table class="sets"><tr><th>SET</th><th>WEIGHT</th><th></th><th>REPS</th><th></th></tr>';
+      e.sets.forEach(function(s,si){
+        html+='<tr><td class="setno">'+(si+1)+'</td>'
+          +'<td><input inputmode="decimal" data-e="'+ei+'" data-s="'+si+'" data-f="w" value="'+esc(s.w)+'" placeholder="kg"></td>'
+          +'<td class="xcell">×</td>'
+          +'<td><input inputmode="numeric" data-e="'+ei+'" data-s="'+si+'" data-f="r" value="'+esc(s.r)+'" placeholder="reps"></td>'
+          +'<td class="rm">'+(e.sets.length>1?'<button data-rm-e="'+ei+'" data-rm-s="'+si+'">×</button>':'')+'</td></tr>';
+      });
+      html+='</table><button class="addset" data-add="'+ei+'">＋ セット追加</button></div>';
+    });
+
+    html+='<button class="addex" id="addEx">＋ 種目を追加（合トレ・別メニュー）</button>';
+    if(!storageOK) html+='<div class="notice">⚠ この環境では保存が無効（プライベートモード等）。GitHub Pages や通常のSafariで開けば自動保存されます。</div>';
+    v.innerHTML=html;
+  }
+
+  function renderHist(){
+    var v=document.getElementById("view"), logs=loadLogs(), html="";
+    html+='<div class="eyebrow-row"><span class="eyebrow">ビッグ3 自己ベスト</span><span class="ln"></span></div><div class="best">';
+    [["バーベルベンチプレス","BENCH","bench"],["デッドリフト","DEAD","dead"],["バックスクワット","SQUAT","squat"]].forEach(function(p){
+      var b=bestFor(p[0]);
+      html+='<div class="bcard"><div class="bl">'+p[1]+'</div><div class="bv">'+(b?b.w+'<span>kg</span>':'<span>–</span>')+'</div><div class="bx">'+(b?'× '+(b.r||"–")+' reps':'記録待ち')+'</div>'
+          +'<div class="b1rm">1RM <input class="ormin" data-orm="'+p[2]+'" inputmode="decimal" value="'+esc(settings.orm[p[2]]||"")+'" placeholder="–">kg</div></div>';
+    });
+    html+='</div>';
+    var vt=VOL_TARGET[settings.phase]||VOL_TARGET[1], vmode=settings.volMode||"cycle";
+    var vsrc=volSrc(vmode), vv=vsrc.vol;
+    html+='<div class="eyebrow-row"><span class="eyebrow">週ボリューム・'+esc(PHASES[settings.phase])+'</span><span class="ln"></span></div>';
+    html+='<div class="chips"><button class="fchip'+(vmode==="cycle"?" on":"")+'" data-volmode="cycle">1サイクル</button><button class="fchip'+(vmode==="days"?" on":"")+'" data-volmode="days">直近7日</button></div>';
+    html+='<div class="voltbl">';
+    VOL_ORDER.forEach(function(mg){
+      var t=vt[mg]||0, a=vv[mg]||0, pct=t>0?Math.min(100,Math.round(a/t*100)):0, done=(t>0&&a>=t);
+      html+='<div class="vrow"><span class="vm">'+mg+'</span>'
+          +'<div class="vbar"><div class="vfill'+(done?" done":"")+'" style="width:'+pct+'%"></div></div>'
+          +'<span class="vn'+(done?" done":"")+'">'+a+'<i>/'+t+'</i></span></div>';
+    });
+    if(vv["未分類"]) html+='<div class="vrow"><span class="vm" style="color:var(--mut2)">未分類</span><div class="vbar"></div><span class="vn" style="color:var(--mut2)">'+vv["未分類"]+'<i></i></span></div>';
+    html+='</div><div class="volnote">'+(vmode==="cycle"?('直近'+vsrc.count+'セッション（P/P/P/P/Lの1巡ぶん）で集計。オフが続いて週をまたいでも1巡で判定。'):'直近7日で集計。')+' 主働筋で1セット=1カウント、目標はフェーズ連動。</div>';
+    html+='<div class="eyebrow-row"><span class="eyebrow">トレ履歴 '+(logs.length?'('+logs.length+')':'')+'</span><span class="ln"></span></div>';
+
+    html+='<div class="chips">';
+    [["all","すべて"],["push","Push"],["pull","Pull"],["leg","Leg"]].forEach(function(c){
+      html+='<button class="fchip'+(histFilter===c[0]?' on':'')+'" data-fil="'+c[0]+'">'+c[1]+'</button>';
+    });
+    html+='</div>';
+
+    if(!logs.length){ html+='<div class="empty"><div class="big">まだ記録なし</div>ログから保存すると、ここに残ります。</div>'; v.innerHTML=html; return; }
+
+    var CAT={pushA:"push",pushB:"push",pullA:"pull",pullB:"pull",leg:"leg"};
+    var rows=[], counts={};
+    for(var i=logs.length-1;i>=0;i--){
+      var c=CAT[logs[i].day]||"other";
+      if(histFilter==="all"||histFilter===c){ rows.push(i); var m=(logs[i].date||"").slice(0,7); counts[m]=(counts[m]||0)+1; }
+    }
+    if(!rows.length){ html+='<div class="empty">該当する記録がありません</div>'; v.innerHTML=html; return; }
+
+    var curMonth="";
+    rows.forEach(function(i){
+      var l=logs[i], P=PROGRAM[l.day], nm=P?P.name:l.day;
+      var mon=(l.date||"").slice(0,7);
+      if(mon!==curMonth){ curMonth=mon;
+        var lbl=mon?(mon.slice(0,4)+"年"+mon.slice(5,7)+"月"):"日付なし";
+        html+='<div class="mhdr">'+esc(lbl)+'<span class="ct">'+counts[mon]+'回</span><span class="ln"></span></div>';
+      }
+      var nset=(l.entries||[]).reduce(function(a,e){return a+(e.sets?e.sets.length:0);},0);
+      var bits=[(l.entries?l.entries.length:0)+'種目 ・ '+nset+'セット'];
+      if(l.timeOfDay) bits.push(esc(l.timeOfDay));
+      if(l.gym) bits.push(esc(l.gym));
+      html+='<div class="hcard">'
+          +'<button class="htop" data-h="'+i+'"><div class="htext"><div class="dname">'+esc(nm)+'</div><div class="hsum">'+bits.join(' ・ ')+'</div></div>'
+          +'<span class="hdate num">'+esc(l.date)+'</span><span class="chev">⌄</span></button>'
+          +'<div class="hbody" id="hb'+i+'">';
+      if(l.condition) html+='<div class="hcond">'+esc(l.condition)+'</div>';
+      (l.entries||[]).forEach(function(e,xi){
+        html+='<div class="hex"><div class="hn">'+(xi+1)+'. '+esc(e.n)+'</div><div class="hs">'+(e.big3?'<span class="b">':'')+esc(fmtSets(e.sets||[]))+(e.big3?'</span>':'')+'</div></div>';
+      });
+      html+='<div class="hactions"><button class="hbtn" data-edit="'+i+'">編集</button><button class="hbtn del" data-del="'+i+'">削除</button></div>';
+      html+='</div></div>';
+    });
+    v.innerHTML=html;
+  }
+
+  function renderCal(){
+    var v=document.getElementById("view");
+    if(!calRef){ var t0=todayISO(); calRef=new Date(+t0.slice(0,4), +t0.slice(5,7)-1, 1); }
+    var y=calRef.getFullYear(), mo=calRef.getMonth();
+    var lead=new Date(y,mo,1).getDay(), ndays=new Date(y,mo+1,0).getDate(), todayStr=todayISO();
+    var byDate={}; loadLogs().forEach(function(l){ if(!l.date)return; (byDate[l.date]=byDate[l.date]||[]).push(l); });
+    var html='<div class="eyebrow-row"><span class="eyebrow">トレーニングカレンダー</span><span class="ln"></span></div>';
+    html+='<div class="calhead"><button data-cal="prev">‹</button><span class="cm">'+y+'年'+(mo+1)+'月</span><button data-cal="next">›</button></div>';
+    html+='<div class="calleg"><span class="cchip push">Push</span><span class="cchip pull">Pull</span><span class="cchip leg">Leg</span><span class="cchip other">他</span></div>';
+    html+='<div class="calgrid">';
+    ["日","月","火","水","木","金","土"].forEach(function(d){ html+='<div class="cwd">'+d+'</div>'; });
+    for(var b=0;b<lead;b++) html+='<div class="cell blank"></div>';
+    for(var d=1;d<=ndays;d++){
+      var iso=y+"-"+pad2(mo+1)+"-"+pad2(d), ss=byDate[iso]||[];
+      var cls="cell"+(iso===todayStr?" today":"")+(iso===calSel?" sel":"");
+      html+='<div class="'+cls+'"'+(ss.length?(' data-calday="'+iso+'"'):'')+'><span class="dn">'+d+'</span>';
+      ss.slice(0,3).forEach(function(l){ var m=DAY_META[l.day]||{ab:"他",c:"other"}; html+='<span class="cchip '+m.c+'">'+m.ab+'</span>'; });
+      if(ss.length>3) html+='<span class="cchip other">+'+(ss.length-3)+'</span>';
+      html+='</div>';
+    }
+    html+='</div>';
+    if(calSel&&byDate[calSel]){
+      html+='<div class="eyebrow-row" style="margin-top:18px"><span class="eyebrow">'+esc(calSel)+'</span><span class="ln"></span></div>';
+      byDate[calSel].forEach(function(l){
+        var nm=PROGRAM[l.day]?PROGRAM[l.day].name:l.day;
+        html+='<div class="hcard" style="padding:13px"><div class="dname">'+esc(nm)+(l.timeOfDay?' <span style="color:var(--mut);font-weight:600;font-size:12px">'+esc(l.timeOfDay)+'</span>':'')+(l.gym?' <span style="color:var(--mut);font-weight:600;font-size:12px">・'+esc(l.gym)+'</span>':'')+'</div>';
+        (l.entries||[]).forEach(function(e,xi){ html+='<div class="hex"><div class="hn">'+(xi+1)+'. '+esc(e.n)+'</div><div class="hs">'+esc(fmtSets(e.sets||[]))+'</div></div>'; });
+        html+='</div>';
+      });
+    } else {
+      html+='<div class="volnote" style="text-align:center;margin-top:16px">トレした日（色付き）をタップすると内容が見られます。</div>';
+    }
+    v.innerHTML=html;
+  }
+
+  function renderData(){
+    var v=document.getElementById("view"), logs=loadLogs(), html="";
+    html+='<div class="eyebrow-row"><span class="eyebrow">設定とバックアップ</span><span class="ln"></span></div>';
+    html+='<div class="drow"><h3>大会の日付</h3><p>ヘッダーのカウントダウンに使います。</p><input type="date" id="showDate" value="'+settings.showDate+'"></div>';
+    var sc=planSchedule(), showD=new Date(settings.showDate+"T00:00:00");
+    var diffW=Math.round((showD-sc.end)/(7*86400000));
+    var diffTxt=diffW>0?("大会の約"+diffW+"週前に終了"):(diffW<0?("⚠ 大会を約"+(-diffW)+"週超過"):"大会ちょうどで終了");
+    html+='<div class="drow"><h3>フェーズ計画（逆算）</h3><p>各フェーズの週数を編集できます。日付は自動計算され、ヘッダーのフェーズと連動できます。</p>'
+        +'<label class="dlab">オフ開始日</label><input type="date" id="startDate" value="'+settings.startDate+'">'
+        +'<div class="plan">';
+    sc.rows.forEach(function(r,i){
+      html+='<div class="prow'+(sc.curIdx===i?' on':'')+'"><span class="pp">'+esc(r.p)+(sc.curIdx===i?' <em>今</em>':'')+'</span>'
+          +'<span class="pr2">'+md(r.s)+'–'+md(r.e)+'</span>'
+          +'<span class="pw"><input class="planw" data-i="'+i+'" inputmode="numeric" value="'+r.w+'">週</span></div>';
+    });
+    html+='</div>'
+        +'<div class="ptot">合計 '+sc.total+'週 ・ 終了予定 '+ymd(sc.end)+'<br>大会 '+settings.showDate+'（'+diffTxt+'）</div>'
+        +'<button class="btn" id="syncPhase" style="margin-top:11px">今日のフェーズをヘッダーに反映'+(sc.curIdx>=0?'（'+esc(sc.rows[sc.curIdx].p)+'）':'')+'</button></div>';
+    html+='<div class="drow"><h3>負荷の目安（ビッグ3）</h3><p>トップ＝高重量1セット、バックオフ＝その後の数セット。履歴タブで1RMを入れると、ログのビッグ3に各フェーズの重量が自動表示されます。</p>'+phaseRefTable()+'<p style="margin-top:10px;font-size:11.5px">※トップはRIR1〜2で止める前提。%はベンチ基準で、スクワット/デッドは同%でもレップが伸びやすい。最終はRIRで微調整。</p></div>';
+    html+='<div class="drow"><h3>バックアップを書き出す</h3><p>記録（'+logs.length+'件）をJSONで保存。localStorageは消える可能性があるので、たまに書き出しておくのが安全です。</p><button class="btn cyan" id="exp">JSONを書き出す</button></div>';
+    html+='<div class="drow"><h3>バックアップを読み込む</h3><p>書き出したJSONを選ぶと、今の記録を置き換えます。</p><input type="file" id="imp" accept="application/json,.json" style="display:none"><button class="btn" id="impBtn">JSONを選んで読み込む</button></div>';
+    html+='<div class="drow"><h3>全データ削除</h3><p>この端末の記録をすべて消します。元に戻せません。</p><button class="btn danger" id="clr">すべて削除</button></div>';
+    html+='<div style="text-align:center;color:var(--mut2);font-size:11px;margin:18px 0 6px">保存名前空間: <span class="num">physique2027_</span> ／ お客さん用とは分離</div>';
+    v.innerHTML=html;
+  }
+
+  /* ---------- events ---------- */
+  var view=document.getElementById("view");
+
+  view.addEventListener("input",function(ev){
+    var t=ev.target;
+    if(t.matches(".sets input")){ session.entries[+t.dataset.e].sets[+t.dataset.s][t.dataset.f]=t.value; }
+    else if(t.classList&&t.classList.contains("ormin")){ settings.orm[t.dataset.orm]=t.value; saveSettings(settings); }
+    else if(t.dataset.custom!==undefined){ session.entries[+t.dataset.custom].custom=t.value; }
+    else if(t.id==="sessDate"){ session.date=t.value; }
+    else if(t.id==="sessGym"){ session.gym=t.value; }
+    else if(t.id==="sessCond"){ session.condition=t.value; }
+    else if(t.id==="showDate"){ settings.showDate=t.value; saveSettings(settings); paintHeader(); }
+  });
+
+  view.addEventListener("change",function(ev){
+    var t=ev.target;
+    if(t.matches(".exsel")){ session.entries[+t.dataset.sel].sel=t.value; render(); return; }
+    if(t.classList&&t.classList.contains("mgsel")){ session.entries[+t.dataset.mg].mg=t.value; return; }
+    if(t.id==="sessTime"){ session.timeOfDay=t.value; return; }
+    if(t.id==="startDate"){ settings.startDate=t.value; saveSettings(settings); render(); return; }
+    if(t.id==="showDate"){ render(); return; }
+    if(t.classList&&t.classList.contains("planw")){ var pi=+t.dataset.i, w=parseInt(t.value,10); if(isNaN(w)||w<0)w=0; if(w>52)w=52; settings.plan[pi].w=w; saveSettings(settings); render(); return; }
+    if(t.id==="imp"){
+      var f=t.files[0]; if(!f) return; var r=new FileReader();
+      r.onload=function(){ try{ var data=JSON.parse(r.result); var arr=Array.isArray(data)?data:(data.logs||null);
+          if(!arr) throw new Error("形式が違います");
+          if(confirm("今の記録を置き換えます。よろしいですか？")){ saveLogs(arr); toast("読み込みました"); render(); }
+        }catch(err){ alert("読み込めませんでした："+err.message); } t.value=""; };
+      r.readAsText(f);
+    }
+  });
+
+  view.addEventListener("click",function(ev){
+    var t=ev.target.closest("button"); if(!t) return;
+    if(t.dataset.day!==undefined){
+      var k=t.dataset.day;
+      if(session&&session.day!==k&&hasInput()&&!confirm("入力中の内容を破棄して切り替えますか？")) return;
+      if(session&&session.day===k){ if((session._editIndex!=null||hasInput())&&!confirm("入力中の内容を破棄しますか？")) return; session=null; render(); return; }
+      startSession(k); render(); return;
+    }
+    if(t.dataset.add!==undefined){ session.entries[+t.dataset.add].sets.push({w:"",r:""}); render(); return; }
+    if(t.dataset.rmE!==undefined){ session.entries[+t.dataset.rmE].sets.splice(+t.dataset.rmS,1); render(); return; }
+    if(t.dataset.rmcard!==undefined){
+      var ix=+t.dataset.rmcard, sess=session, removed=session.entries.splice(ix,1)[0]; render();
+      showUndo("種目を削除しました", function(){ if(session===sess){ sess.entries.splice(ix,0,removed); render(); } });
+      return;
+    }
+    if(t.dataset.up!==undefined){ var u=+t.dataset.up; if(u>0){ var a=session.entries,tmp=a[u]; a[u]=a[u-1]; a[u-1]=tmp; render(); } return; }
+    if(t.dataset.down!==undefined){ var d=+t.dataset.down,a2=session.entries; if(d<a2.length-1){ var tmp2=a2[d]; a2[d]=a2[d+1]; a2[d+1]=tmp2; render(); } return; }
+    if(t.id==="cancelEdit"){ session=null; gotoTab("hist"); return; }
+    if(t.id==="addEx"){ session.entries.push({t:"",big3:false,variants:EX_LIBRARY,sel:"other",custom:"",mg:"",sets:[{w:"",r:""}]}); render();
+      window.scrollTo(0,document.body.scrollHeight); return; }
+    if(t.dataset.cal!==undefined){ if(!calRef){var t0=todayISO();calRef=new Date(+t0.slice(0,4),+t0.slice(5,7)-1,1);} calRef.setMonth(calRef.getMonth()+(t.dataset.cal==="next"?1:-1)); calSel=null; render(); return; }
+    if(t.dataset.calday!==undefined){ calSel=(calSel===t.dataset.calday)?null:t.dataset.calday; render(); return; }
+    if(t.dataset.fil!==undefined){ histFilter=t.dataset.fil; render(); return; }
+    if(t.dataset.volmode!==undefined){ settings.volMode=t.dataset.volmode; saveSettings(settings); render(); return; }
+    if(t.dataset.edit!==undefined){ startEdit(+t.dataset.edit); return; }
+    if(t.dataset.h!==undefined){ document.getElementById("hb"+t.dataset.h).classList.toggle("show"); t.classList.toggle("open"); return; }
+    if(t.dataset.del!==undefined){ var di=+t.dataset.del, a=loadLogs(), removedLog=a.splice(di,1)[0]; saveLogs(a); render();
+      showUndo("記録を削除しました", function(){ var b=loadLogs(); b.splice(di,0,removedLog); saveLogs(b); render(); }); return; }
+    if(t.id==="syncPhase"){ var s=planSchedule(); if(s.curIdx>=0){ var pidx=PHASES.indexOf(settings.plan[s.curIdx].p); if(pidx>=0){ settings.phase=pidx; saveSettings(settings); paintHeader(); toast("フェーズを"+settings.plan[s.curIdx].p+"に設定"); } } else { toast("今日は計画期間外です"); } return; }
+    if(t.id==="exp"){ exportJSON(); return; }
+    if(t.id==="impBtn"){ document.getElementById("imp").click(); return; }
+    if(t.id==="clr"){ if(confirm("本当にすべて削除しますか？")){ var prev=loadLogs(); saveLogs([]); render();
+      showUndo("全データを削除しました", function(){ saveLogs(prev); render(); }); } return; }
+  });
+
+  function hasInput(){ return session&&session.entries.some(function(e){return e.sets.some(function(s){return s.w!==""||s.r!=="";});}); }
+  function startSession(k){ session={day:k,date:todayISO(),gym:"",timeOfDay:"",condition:"",entries:PROGRAM[k].ex.map(function(x){return {tp:x.tp,b3:x.b3,big3:!!x.big3,variants:x.variants.slice(),sel:"0",custom:"",mg:"",sets:[{w:"",r:""}]};})}; }
+  function startEdit(i){
+    var l=loadLogs()[i]; if(!l) return;
+    session={ day:l.day, date:l.date||todayISO(), gym:l.gym||"", timeOfDay:l.timeOfDay||"", condition:l.condition||"", _editIndex:i,
+      entries:(l.entries||[]).map(function(e){
+        var idx=EX_LIBRARY.indexOf(e.n);
+        return { t:"", big3:!!e.big3, variants:EX_LIBRARY, sel:(idx>=0?String(idx):"other"), custom:(idx>=0?"":e.n), mg:(e.mg||""),
+          sets:(e.sets||[]).map(function(s){return {w:s.w,r:s.r};}) };
+      }) };
+    if(!session.entries.length) session.entries.push({t:"",big3:false,variants:EX_LIBRARY,sel:"other",custom:"",mg:"",sets:[{w:"",r:""}]});
+    gotoTab("log");
+  }
+
+  function exportJSON(){
+    var blob=new Blob([JSON.stringify(loadLogs(),null,2)],{type:"application/json"});
+    var url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url; a.download="physique2027_backup_"+todayISO().replace(/-/g,"")+".json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},500); toast("書き出しました");
+  }
+
+  document.getElementById("saveBtn").addEventListener("click",function(){
+    if(!session) return;
+    var clean={day:session.day,date:session.date,gym:session.gym,timeOfDay:session.timeOfDay,condition:session.condition,entries:[]};
+    session.entries.forEach(function(e){
+      var name=resolveName(e); if(!name) return;
+      var sets=e.sets.filter(function(s){return s.w!==""||s.r!=="";});
+      if(sets.length){ var ent={n:name,big3:!!e.big3,sets:sets}; if(e.mg) ent.mg=e.mg; clean.entries.push(ent); }
+    });
+    if(!clean.entries.length){ toast("数字を入力してね"); return; }
+    var logs=loadLogs();
+    if(session._editIndex!=null && logs[session._editIndex]){ logs[session._editIndex]=clean; saveLogs(logs); session=null; toast("更新しました ✓"); gotoTab("hist"); return; }
+    logs.push(clean); saveLogs(logs); session=null; toast("保存しました ✓"); render();
+  });
+
+  function gotoTab(name){ tab=name;
+    Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(x){x.classList.toggle("on",x.dataset.tab===name);});
+    window.scrollTo(0,0); render(); }
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(b){
+    b.addEventListener("click",function(){ gotoTab(b.dataset.tab); });
+  });
+
+  paintHeader(); render();
+})();
+</script>
+</body>
+</html>
