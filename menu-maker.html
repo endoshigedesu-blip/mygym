@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>トレーニングメニュー作成</title>
+<style>
+:root{
+  --bg:#EDF0ED;
+  --card:#FFFFFF;
+  --ink:#1B241F;
+  --sub:#6B756F;
+  --line:#DCE2DD;
+  --strength:#14614A;
+  --strength-bg:#E7F1ED;
+  --cardio:#D9532B;
+  --cardio-bg:#FBEDE7;
+  --stretch:#2E6BB0;
+  --stretch-bg:#E9F0F8;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  font-family:'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.6;
+  padding-bottom:96px;
+}
+.wrap{max-width:640px;margin:0 auto;padding:16px;}
+
+.app-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding:8px 2px 16px;
+}
+.app-head h1{font-size:19px;font-weight:800;letter-spacing:.02em;}
+.app-head h1 span{color:var(--strength);}
+.app-head .sub{font-size:11px;color:var(--sub);}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:14px;
+}
+.panel h2{
+  font-size:12px;font-weight:700;color:var(--sub);
+  letter-spacing:.08em;margin-bottom:10px;
+}
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:3px;}
+input[type=text],input[type=date],input[type=url],textarea,select{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:9px 11px;
+  font-size:15px;
+  font-family:inherit;
+  background:#FBFCFB;
+  color:var(--ink);
+}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--strength);outline-offset:0;border-color:transparent;}
+textarea{resize:vertical;min-height:52px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.ex-card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-left:5px solid var(--sub);
+  border-radius:var(--radius);
+  padding:12px 14px;
+  margin-bottom:10px;
+}
+.ex-card[data-type=strength]{border-left-color:var(--strength);}
+.ex-card[data-type=cardio]{border-left-color:var(--cardio);}
+.ex-card[data-type=stretch]{border-left-color:var(--stretch);}
+.ex-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.type-badge{
+  font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:99px;white-space:nowrap;
+}
+.ex-card[data-type=strength] .type-badge{background:var(--strength-bg);color:var(--strength);}
+.ex-card[data-type=cardio] .type-badge{background:var(--cardio-bg);color:var(--cardio);}
+.ex-card[data-type=stretch] .type-badge{background:var(--stretch-bg);color:var(--stretch);}
+.ex-top .spacer{flex:1;}
+.icon-btn{
+  border:1px solid var(--line);background:#FBFCFB;color:var(--sub);
+  width:34px;height:34px;border-radius:8px;font-size:15px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.icon-btn:active{background:var(--line);}
+.icon-btn.del{color:#C0442A;border-color:#EAD2CB;}
+
+/* 写真 */
+.photo-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.photo-thumb{
+  position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);flex:none;
+}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-thumb button{
+  position:absolute;top:3px;right:3px;
+  width:22px;height:22px;border-radius:99px;border:none;
+  background:rgba(20,26,22,.75);color:#fff;font-size:12px;line-height:1;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.photo-add{
+  width:72px;height:72px;border-radius:10px;flex:none;
+  border:1.5px dashed var(--line);background:#F7F9F7;color:var(--sub);
+  font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.photo-add input{display:none;}
+
+.add-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:4px 0 2px;}
+.add-btn{
+  border:none;border-radius:12px;
+  padding:12px 4px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:inherit;color:#fff;
+}
+.add-btn.strength{background:var(--strength);}
+.add-btn.cardio{background:var(--cardio);}
+.add-btn.stretch{background:var(--stretch);}
+.add-btn:active{opacity:.85;}
+
+.empty-hint{
+  text-align:center;color:var(--sub);font-size:13px;
+  padding:24px 12px;border:1.5px dashed var(--line);border-radius:var(--radius);
+  margin-bottom:14px;background:#F7F9F7;
+}
+
+.action-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:rgba(255,255,255,.96);
+  border-top:1px solid var(--line);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  backdrop-filter:blur(8px);
+}
+.action-bar .inner{max-width:640px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.act-btn{
+  border:none;border-radius:12px;padding:13px 6px;
+  font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+}
+.act-btn.primary{background:var(--ink);color:#fff;}
+.act-btn.secondary{background:#fff;color:var(--ink);border:1.5px solid var(--ink);}
+.act-btn:active{opacity:.85;}
+
+.draft-list{display:flex;flex-direction:column;gap:8px;}
+.draft-item{
+  display:flex;align-items:center;gap:8px;
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#FBFCFB;
+}
+.draft-item .info{flex:1;min-width:0;}
+.draft-item .name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.draft-item .meta{font-size:11px;color:var(--sub);}
+.mini-btn{
+  border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:8px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;color:var(--ink);
+}
+.mini-btn.del{color:#C0442A;}
+.mini-btn.confirm{background:#C0442A;color:#fff;border-color:#C0442A;}
+.draft-save-row{display:flex;gap:8px;margin-top:10px;}
+.draft-save-row .mini-btn{padding:10px 16px;}
+
+.modal{
+  position:fixed;inset:0;z-index:100;display:none;
+  background:rgba(20,26,22,.55);
+  align-items:flex-end;justify-content:center;
+}
+.modal.open{display:flex;}
+.modal-sheet{
+  background:var(--card);width:100%;max-width:640px;
+  border-radius:18px 18px 0 0;
+  max-height:88vh;overflow-y:auto;
+  padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.modal-head h3{font-size:16px;font-weight:800;}
+.close-btn{border:none;background:var(--bg);width:32px;height:32px;border-radius:99px;font-size:15px;cursor:pointer;color:var(--sub);}
+#previewImg{width:100%;border-radius:10px;border:1px solid var(--line);display:block;}
+.img-hint{font-size:12px;color:var(--sub);margin-top:8px;text-align:center;}
+.modal-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px;}
+.modal-actions.two{grid-template-columns:1fr 1fr;}
+#lineText{
+  width:100%;min-height:280px;font-size:13px;line-height:1.7;
+  border:1px solid var(--line);border-radius:10px;padding:12px;
+  font-family:inherit;background:#FBFCFB;white-space:pre-wrap;
+}
+.toast{
+  position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:#fff;font-size:13px;font-weight:700;
+  padding:10px 18px;border-radius:99px;opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;z-index:200;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="app-head">
+    <h1>MENU <span>MAKER</span></h1>
+    <div class="sub">パーソナルメニュー作成</div>
+  </div>
+
+  <!-- 基本情報 -->
+  <div class="panel">
+    <h2>基本情報</h2>
+    <div class="row2">
+      <div class="field">
+        <label>お客様名</label>
+        <input type="text" id="clientName" placeholder="例：山田様">
+      </div>
+      <div class="field">
+        <label>作成日（自動で今日になります）</label>
+        <input type="date" id="menuDate">
+      </div>
+    </div>
+    <div class="field">
+      <label>メニュータイトル</label>
+      <input type="text" id="menuTitle" placeholder="例：本日のトレーニングメニュー">
+    </div>
+    <div class="field">
+      <label>トレーナーからのひとこと（任意）</label>
+      <textarea id="trainerNote" placeholder="例：今日もお疲れさまでした！水分補給を忘れずに。"></textarea>
+    </div>
+  </div>
+
+  <!-- 種目リスト -->
+  <div class="panel" style="padding-bottom:12px;">
+    <h2>種目</h2>
+    <div id="exList"></div>
+    <div class="empty-hint" id="emptyHint">下のボタンから種目を追加してください</div>
+    <div class="add-row">
+      <button type="button" class="add-btn strength" onclick="addExercise('strength')">＋ 筋トレ</button>
+      <button type="button" class="add-btn cardio" onclick="addExercise('cardio')">＋ 有酸素</button>
+      <button type="button" class="add-btn stretch" onclick="addExercise('stretch')">＋ ストレッチ</button>
+    </div>
+  </div>
+
+  <!-- 下書き -->
+  <div class="panel">
+    <h2>保存メニュー（この端末のみ）</h2>
+    <div class="draft-list" id="draftList"></div>
+    <div class="draft-save-row">
+      <button type="button" class="mini-btn" style="flex:1;background:var(--strength);color:#fff;border-color:var(--strength);" onclick="saveDraft()">現在の内容を保存</button>
+      <button type="button" class="mini-btn" id="clearBtn" onclick="clearForm()">フォームをクリア</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- アクションバー -->
+<div class="action-bar">
+  <div class="inner">
+    <button type="button" class="act-btn primary" onclick="openImagePreview()">🖼 画像で作成</button>
+    <button type="button" class="act-btn secondary" onclick="openTextPreview()">💬 LINE用テキスト</button>
+  </div>
+</div>
+
+<!-- 画像プレビューモーダル -->
+<div class="modal" id="imgModal">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h3>画像プレビュー</h3>
+      <button type="button" class="close-btn" onclick="closeModal('imgModal')">✕</button>
+    </div>
+    <img id="previewImg" alt="メニュー画像プレビュー">
+    <div class="img-hint">保存できない場合は、画像を長押しして「写真に保存」してください</div>
+    <div class="modal-actions two">
+      <button type="button" class="act-btn primary" onclick="shareImage()">共有する</button>
+      <button type="button" class="act-btn secondary" onclick="downloadImage()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- テキストプレビューモーダル -->
+<div class="modal" id="textModal">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h3>LINE用テキスト</h3>
+      <button type="button" class="close-btn" onclick="closeModal('textModal')">✕</button>
+    </div>
+    <textarea id="lineText"></textarea>
+    <div class="modal-actions">
+      <button type="button" class="act-btn primary" onclick="copyLineText()">テキストをコピー</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ========== 状態 ========== */
+var exercises = []; // {id, type, name, reps, sets, time, hr, note, url, photos:[dataURL]}
+var nextId = 1;
+var LS_KEY = "trainermenu_drafts";
+var LS_CURRENT = "trainermenu_current";
+var MAX_PHOTOS = 3;
+
+var TYPE_LABEL = {strength:"筋トレ", cardio:"有酸素", stretch:"ストレッチ"};
+var TYPE_COLOR = {strength:"#14614A", cardio:"#D9532B", stretch:"#2E6BB0"};
+var TYPE_BG    = {strength:"#E7F1ED", cardio:"#FBEDE7", stretch:"#E9F0F8"};
+
+/* ========== localStorage(安全ラッパー) ========== */
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }
+
+/* ========== ユーティリティ ========== */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+function showToast(msg){
+  var t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(function(){ t.classList.remove("show"); }, 2200);
+}
+function todayStr(){
+  var d = new Date();
+  return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);
+}
+function fmtDateJa(iso){
+  if(!iso) return "";
+  var p = iso.split("-");
+  if(p.length!==3) return iso;
+  var d = new Date(+p[0], +p[1]-1, +p[2]);
+  var w = ["日","月","火","水","木","金","土"][d.getDay()];
+  return +p[0]+"年"+(+p[1])+"月"+(+p[2])+"日（"+w+"）";
+}
+function findEx(id){
+  for(var i=0;i<exercises.length;i++){ if(exercises[i].id===id) return exercises[i]; }
+  return null;
+}
+
+/* ========== 種目の追加・編集 ========== */
+window.addExercise = function(type){
+  exercises.push({id:nextId++, type:type, name:"", reps:"", sets:"", time:"", hr:"", note:"", url:"", photos:[]});
+  renderList();
+  persistCurrent();
+  setTimeout(function(){
+    var cards = document.querySelectorAll('.ex-card');
+    var last = cards[cards.length-1];
+    if(last){
+      var inp = last.querySelector('input[data-f="name"]');
+      if(inp) inp.focus();
+    }
+  }, 50);
+};
+
+function photoRowHtml(ex){
+  var h = '<div class="field"><label>写真（最大'+MAX_PHOTOS+'枚・画像メニューに載ります）</label><div class="photo-row">';
+  (ex.photos||[]).forEach(function(p, pi){
+    h += '<div class="photo-thumb"><img src="'+p+'" alt="添付写真'+(pi+1)+'">'+
+         '<button type="button" data-act="delphoto" data-pi="'+pi+'" aria-label="写真を削除">✕</button></div>';
+  });
+  if((ex.photos||[]).length < MAX_PHOTOS){
+    h += '<label class="photo-add" aria-label="写真を追加">＋<input type="file" accept="image/*" data-f="photo-add"></label>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+function fieldHtml(ex){
+  var f = "";
+  f += '<div class="field"><label>メニュー名</label><input type="text" data-f="name" value="'+esc(ex.name)+'" placeholder="'+
+       (ex.type==="strength"?"例：ラットプルダウン":ex.type==="cardio"?"例：トレッドミル":"例：ハムストリングスストレッチ")+'"></div>';
+  if(ex.type==="strength"){
+    f += '<div class="row2">'+
+         '<div class="field"><label>回数（幅もOK）</label><input type="text" data-f="reps" value="'+esc(ex.reps)+'" placeholder="例：8〜12"></div>'+
+         '<div class="field"><label>セット数（幅もOK）</label><input type="text" data-f="sets" value="'+esc(ex.sets)+'" placeholder="例：1〜3"></div>'+
+         '</div>';
+  } else if(ex.type==="cardio"){
+    f += '<div class="row2">'+
+         '<div class="field"><label>時間</label><input type="text" data-f="time" value="'+esc(ex.time)+'" placeholder="例：20〜30分"></div>'+
+         '<div class="field"><label>目標心拍数</label><input type="text" data-f="hr" value="'+esc(ex.hr)+'" placeholder="例：120〜130"></div>'+
+         '</div>';
+  } else {
+    f += '<div class="row2">'+
+         '<div class="field"><label>時間・回数</label><input type="text" data-f="time" value="'+esc(ex.time)+'" placeholder="例：左右30秒ずつ"></div>'+
+         '<div class="field"><label>セット数（任意）</label><input type="text" data-f="sets" value="'+esc(ex.sets)+'" placeholder="例：1〜2"></div>'+
+         '</div>';
+  }
+  f += '<div class="field"><label>備考（任意）</label><input type="text" data-f="note" value="'+esc(ex.note)+'" placeholder="例：フォーム重視でゆっくり"></div>';
+  f += '<div class="field"><label>参考動画URL（任意・YouTubeなど）</label><input type="url" data-f="url" value="'+esc(ex.url||"")+'" placeholder="例：https://youtu.be/..." inputmode="url"></div>';
+  f += photoRowHtml(ex);
+  return f;
+}
+
+function renderList(){
+  var list = $("exList");
+  $("emptyHint").style.display = exercises.length ? "none" : "block";
+  list.innerHTML = exercises.map(function(ex, i){
+    return '<div class="ex-card" data-type="'+ex.type+'" data-id="'+ex.id+'">'+
+      '<div class="ex-top">'+
+        '<span class="type-badge">'+TYPE_LABEL[ex.type]+'</span>'+
+        '<span style="font-size:12px;color:var(--sub);">'+(i+1)+'</span>'+
+        '<span class="spacer"></span>'+
+        '<button type="button" class="icon-btn" data-act="up" aria-label="上へ移動">↑</button>'+
+        '<button type="button" class="icon-btn" data-act="down" aria-label="下へ移動">↓</button>'+
+        '<button type="button" class="icon-btn" data-act="dup" aria-label="複製">⧉</button>'+
+        '<button type="button" class="icon-btn del" data-act="del" aria-label="削除">🗑</button>'+
+      '</div>'+
+      fieldHtml(ex)+
+    '</div>';
+  }).join("");
+}
+
+/* イベント委譲：テキスト入力 */
+$("exList").addEventListener("input", function(e){
+  var f = e.target.getAttribute("data-f");
+  if(!f || f==="photo-add") return;
+  var card = e.target.closest(".ex-card");
+  if(!card) return;
+  var ex = findEx(+card.getAttribute("data-id"));
+  if(ex){ ex[f] = e.target.value; persistCurrentDebounced(); }
+});
+
+/* イベント委譲：写真の追加（changeイベント） */
+$("exList").addEventListener("change", function(e){
+  if(e.target.getAttribute("data-f")!=="photo-add") return;
+  var card = e.target.closest(".ex-card");
+  if(!card) return;
+  var ex = findEx(+card.getAttribute("data-id"));
+  var file = e.target.files && e.target.files[0];
+  if(!ex || !file) return;
+  if(file.type.indexOf("image/")!==0){
+    showToast("画像ファイルを選択してください（動画はURL欄をご利用ください）");
+    return;
+  }
+  compressImage(file, function(dataUrl){
+    if(!dataUrl){ showToast("写真の読み込みに失敗しました"); return; }
+    ex.photos = ex.photos || [];
+    if(ex.photos.length >= MAX_PHOTOS){ showToast("写真は最大"+MAX_PHOTOS+"枚までです"); return; }
+    ex.photos.push(dataUrl);
+    renderList();
+    persistCurrent();
+    showToast("写真を追加しました");
+  });
+});
+
+/* 写真の縮小圧縮（保存容量と画像生成の負荷を抑える） */
+function compressImage(file, cb){
+  var reader = new FileReader();
+  reader.onerror = function(){ cb(null); };
+  reader.onload = function(){
+    var img = new Image();
+    img.onerror = function(){ cb(null); };
+    img.onload = function(){
+      try{
+        var MAX = 900;
+        var w = img.width, h = img.height;
+        if(w>h && w>MAX){ h = Math.round(h*MAX/w); w = MAX; }
+        else if(h>=w && h>MAX){ w = Math.round(w*MAX/h); h = MAX; }
+        var cv = document.createElement("canvas");
+        cv.width = w; cv.height = h;
+        cv.getContext("2d").drawImage(img, 0, 0, w, h);
+        cb(cv.toDataURL("image/jpeg", 0.82));
+      }catch(err){ cb(null); }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* イベント委譲：ボタン（削除・並べ替え・複製・写真削除） */
+$("exList").addEventListener("click", function(e){
+  var btn = e.target.closest ? e.target.closest("[data-act]") : null;
+  if(!btn) return;
+  e.preventDefault();
+  var card = btn.closest(".ex-card");
+  if(!card) return;
+  var id = +card.getAttribute("data-id");
+  var idx = -1;
+  for(var i=0;i<exercises.length;i++){ if(exercises[i].id===id){ idx=i; break; } }
+  if(idx<0) return;
+  var act = btn.getAttribute("data-act");
+  if(act==="del"){
+    exercises.splice(idx,1);
+    showToast("種目を削除しました");
+  } else if(act==="delphoto"){
+    var pi = +btn.getAttribute("data-pi");
+    exercises[idx].photos.splice(pi,1);
+  } else if(act==="up" && idx>0){
+    var t = exercises[idx-1]; exercises[idx-1]=exercises[idx]; exercises[idx]=t;
+  } else if(act==="down" && idx<exercises.length-1){
+    var t2 = exercises[idx+1]; exercises[idx+1]=exercises[idx]; exercises[idx]=t2;
+  } else if(act==="dup"){
+    var c = JSON.parse(JSON.stringify(exercises[idx]));
+    c.id = nextId++;
+    exercises.splice(idx+1,0,c);
+  }
+  renderList();
+  persistCurrent();
+});
+
+/* 基本情報の自動保存 */
+["clientName","menuDate","menuTitle","trainerNote"].forEach(function(id){
+  $(id).addEventListener("input", persistCurrentDebounced);
+});
+
+/* ========== 現在の内容の自動保存・復元 ========== */
+function collectState(){
+  return {
+    clientName:$("clientName").value, menuDate:$("menuDate").value,
+    menuTitle:$("menuTitle").value, trainerNote:$("trainerNote").value,
+    exercises:exercises
+  };
+}
+function applyState(s, resetDate){
+  $("clientName").value = s.clientName||"";
+  $("menuDate").value = resetDate ? todayStr() : (s.menuDate||todayStr());
+  $("menuTitle").value = s.menuTitle||"";
+  $("trainerNote").value = s.trainerNote||"";
+  exercises = (s.exercises||[]).map(function(e){
+    e.id = nextId++;
+    if(e.url==null) e.url = "";
+    if(!e.photos) e.photos = [];
+    return e;
+  });
+  renderList();
+}
+function persistCurrent(){
+  if(!lsSet(LS_CURRENT, JSON.stringify(collectState()))){
+    /* 容量オーバー時は写真を除いた内容だけ自動保存 */
+    var s = collectState();
+    var slim = JSON.parse(JSON.stringify(s));
+    slim.exercises.forEach(function(e){ e.photos = []; });
+    lsSet(LS_CURRENT, JSON.stringify(slim));
+  }
+}
+var _deb;
+function persistCurrentDebounced(){ clearTimeout(_deb); _deb=setTimeout(persistCurrent, 400); }
+
+/* フォームクリア：2タップ方式 */
+window.clearForm = function(){
+  var btn = $("clearBtn");
+  if(!btn.classList.contains("confirm")){
+    btn.classList.add("confirm");
+    btn.textContent = "もう一度タップで消去";
+    clearTimeout(btn._tm);
+    btn._tm = setTimeout(function(){
+      btn.classList.remove("confirm");
+      btn.textContent = "フォームをクリア";
+    }, 3000);
+    return;
+  }
+  clearTimeout(btn._tm);
+  btn.classList.remove("confirm");
+  btn.textContent = "フォームをクリア";
+  exercises = [];
+  applyState({}, true);
+  persistCurrent();
+  showToast("クリアしました");
+};
+
+/* ========== 下書き ========== */
+function getDrafts(){
+  try{ return JSON.parse(lsGet(LS_KEY)||"[]"); }catch(e){ return []; }
+}
+window.saveDraft = function(){
+  var s = collectState();
+  var name = (s.clientName||"名称未設定") + "／" + (s.menuTitle||"メニュー");
+  var drafts = getDrafts();
+  drafts.unshift({name:name, savedAt:new Date().toLocaleString("ja-JP"), state:s});
+  if(drafts.length>10) drafts = drafts.slice(0,10);
+  if(lsSet(LS_KEY, JSON.stringify(drafts))){ showToast("保存しました"); renderDrafts(); return; }
+  /* 容量オーバー時：写真を除いて再試行 */
+  var slim = JSON.parse(JSON.stringify(drafts));
+  slim.forEach(function(d){ (d.state.exercises||[]).forEach(function(e){ e.photos=[]; }); });
+  if(lsSet(LS_KEY, JSON.stringify(slim))){
+    showToast("容量の関係で写真を除いて保存しました");
+    renderDrafts();
+  } else {
+    showToast("この環境では保存できません（公開後は利用可）");
+  }
+};
+window.loadDraft = function(i){
+  var d = getDrafts()[i]; if(!d) return;
+  applyState(d.state, true);
+  persistCurrent();
+  showToast("読み込みました（日付は今日に設定）");
+  window.scrollTo({top:0, behavior:"smooth"});
+};
+window.deleteDraft = function(i, btn){
+  if(!btn.classList.contains("confirm")){
+    btn.classList.add("confirm");
+    btn.textContent = "確認";
+    clearTimeout(btn._tm);
+    btn._tm = setTimeout(function(){
+      btn.classList.remove("confirm");
+      btn.textContent = "削除";
+    }, 3000);
+    return;
+  }
+  var drafts = getDrafts(); drafts.splice(i,1);
+  lsSet(LS_KEY, JSON.stringify(drafts));
+  renderDrafts();
+  showToast("削除しました");
+};
+function renderDrafts(){
+  var drafts = getDrafts();
+  $("draftList").innerHTML = drafts.length
+    ? drafts.map(function(d,i){
+        return '<div class="draft-item">'+
+          '<div class="info"><div class="name">'+esc(d.name)+'</div><div class="meta">'+esc(d.savedAt)+'</div></div>'+
+          '<button type="button" class="mini-btn" onclick="loadDraft('+i+')">開く</button>'+
+          '<button type="button" class="mini-btn del" onclick="deleteDraft('+i+', this)">削除</button>'+
+        '</div>';
+      }).join("")
+    : '<div style="font-size:12px;color:var(--sub);">保存されたメニューはありません</div>';
+}
+
+/* ========== LINE用テキスト生成 ========== */
+function withUnit(v, unit){
+  v = String(v).trim();
+  if(!v || !unit) return v;
+  return /^[0-9０-９〜～~\-−ー\.]+$/.test(v) ? v + unit : v;
+}
+
+function detailText(type, e, forImage){
+  if(type==="strength"){
+    var p=[]; if((e.reps||"").trim())p.push(withUnit(e.reps,"回")); if((e.sets||"").trim())p.push(withUnit(e.sets,"セット"));
+    return p.join(" × ");
+  }
+  if(type==="cardio"){
+    var p2=[]; if((e.time||"").trim())p2.push(withUnit(e.time,"分"));
+    if((e.hr||"").trim())p2.push((forImage?"♥ ":"心拍数 ")+withUnit(e.hr,""));
+    return p2.join("／");
+  }
+  var p3=[]; if((e.time||"").trim())p3.push(e.time.trim()); if((e.sets||"").trim())p3.push(withUnit(e.sets,"セット"));
+  return p3.join(" × ");
+}
+
+function buildLineText(){
+  var s = collectState();
+  var L = [];
+  var bar = "━━━━━━━━━━━━";
+  L.push(bar);
+  L.push("📋 " + (s.menuTitle||"トレーニングメニュー"));
+  var sub = [];
+  if(s.clientName) sub.push(s.clientName);
+  if(s.menuDate) sub.push(fmtDateJa(s.menuDate));
+  if(sub.length) L.push(sub.join("　"));
+  L.push(bar);
+
+  var groups = [
+    {type:"strength", icon:"💪", label:"筋トレ"},
+    {type:"cardio",   icon:"🏃", label:"有酸素運動"},
+    {type:"stretch",  icon:"🧘", label:"ストレッチ"}
+  ];
+  var circled = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+  var hasPhotos = false;
+
+  groups.forEach(function(g){
+    var items = s.exercises.filter(function(e){return e.type===g.type && (e.name||"").trim();});
+    if(!items.length) return;
+    L.push("");
+    L.push(g.icon + "【" + g.label + "】");
+    items.forEach(function(e,i){
+      var no = i<20 ? circled[i] : (i+1)+".";
+      var detail = detailText(g.type, e, false);
+      L.push(no + " " + e.name.trim() + (detail ? "　" + detail : ""));
+      if((e.note||"").trim()) L.push("　└ " + e.note.trim());
+      if((e.url||"").trim())  L.push("　▶ 参考動画 " + e.url.trim());
+      if((e.photos||[]).length){ L.push("　📷 写真は画像メニューをご覧ください"); hasPhotos = true; }
+    });
+  });
+
+  if((s.trainerNote||"").trim()){
+    L.push("");
+    L.push(bar);
+    L.push("✍️ " + s.trainerNote.trim());
+  }
+  L.push(bar);
+  return L.join("\n");
+}
+
+window.openTextPreview = function(){
+  if(!hasContent()) return;
+  $("lineText").value = buildLineText();
+  $("textModal").classList.add("open");
+};
+window.copyLineText = function(){
+  var txt = $("lineText").value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(function(){ showToast("コピーしました！LINEに貼り付けてください"); },
+      function(){ fallbackCopy(); });
+  } else { fallbackCopy(); }
+};
+function fallbackCopy(){
+  var ta = $("lineText");
+  ta.focus(); ta.select();
+  ta.setSelectionRange(0, ta.value.length);
+  try{
+    if(document.execCommand("copy")){ showToast("コピーしました！"); return; }
+  }catch(e){}
+  showToast("長押しで全選択してコピーしてください");
+}
+
+/* ========== 画像生成（Canvas） ========== */
+var lastDataUrl = null;
+var FONT = "'Hiragino Kaku Gothic ProN','Hiragino Sans','Noto Sans JP',sans-serif";
+var PHOTO_H = 170;
+
+function hasContent(){
+  var ok = false;
+  for(var i=0;i<exercises.length;i++){ if((exercises[i].name||"").trim()){ ok=true; break; } }
+  if(!ok) showToast("種目名を1つ以上入力してください");
+  return ok;
+}
+
+function wrapText(ctx, text, maxWidth){
+  var lines = [];
+  var raw = String(text||"").split("\n");
+  raw.forEach(function(para){
+    var line = "";
+    for(var i=0;i<para.length;i++){
+      var test = line + para[i];
+      if(ctx.measureText(test).width > maxWidth && line){
+        lines.push(line); line = para[i];
+      } else { line = test; }
+    }
+    lines.push(line);
+  });
+  return lines;
+}
+
+/* 添付写真をすべて読み込む */
+function loadPhotoImages(state){
+  var srcs = [];
+  (state.exercises||[]).forEach(function(e){
+    (e.photos||[]).forEach(function(p){ if(srcs.indexOf(p)<0) srcs.push(p); });
+  });
+  return Promise.all(srcs.map(function(src){
+    return new Promise(function(resolve){
+      var img = new Image();
+      img.onload = function(){ resolve({src:src, img:img}); };
+      img.onerror = function(){ resolve({src:src, img:null}); };
+      img.src = src;
+    });
+  })).then(function(list){
+    var map = {};
+    list.forEach(function(o){ if(o.img) map[o.src] = o.img; });
+    return map;
+  });
+}
+
+/* レイアウトを1回だけ計算して、計測と描画のズレをなくす */
+function buildLayout(){
+  var s = collectState();
+  var W = 860, PAD = 52;
+  var m = document.createElement("canvas").getContext("2d");
+
+  var layout = {W:W, PAD:PAD, s:s, sections:[], sub:[], message:null};
+  if(s.clientName) layout.sub.push(s.clientName);
+  if(s.menuDate) layout.sub.push(fmtDateJa(s.menuDate));
+
+  layout.headerH = 46 + 38 + (layout.sub.length?34:0) + 30;
+
+  var y = layout.headerH + 28;
+
+  var groups = [
+    {type:"strength", label:"筋トレ"},
+    {type:"cardio",   label:"有酸素運動"},
+    {type:"stretch",  label:"ストレッチ"}
+  ];
+
+  groups.forEach(function(g){
+    var items = s.exercises.filter(function(e){return e.type===g.type && (e.name||"").trim();});
+    if(!items.length) return;
+    var sec = {label:g.label, color:TYPE_COLOR[g.type], bg:TYPE_BG[g.type], y:y, items:[]};
+    y += 56;
+    items.forEach(function(e, i){
+      y += 8;
+      var it = {y:y, no:i+1, photos:(e.photos||[]).slice(0,MAX_PHOTOS)};
+
+      m.font = "700 25px "+FONT;
+      it.nameLines = wrapText(m, e.name.trim(), W-PAD*2-270);
+      it.detail = detailText(g.type, e, true);
+
+      var h = Math.max(it.nameLines.length*34, 34) + 14;
+
+      it.noteLines = [];
+      if((e.note||"").trim()){
+        m.font = "400 20px "+FONT;
+        it.noteLines = wrapText(m, "※ "+e.note.trim(), W-PAD*2-70);
+        h += it.noteLines.length*28 + 2;
+      }
+      it.urlLines = [];
+      if((e.url||"").trim()){
+        m.font = "400 18px "+FONT;
+        it.urlLines = wrapText(m, "▶ 参考動画 "+e.url.trim(), W-PAD*2-70);
+        h += it.urlLines.length*26 + 4;
+      }
+      if(it.photos.length){
+        h += PHOTO_H + 14;
+      }
+      h += 10;
+      it.h = h;
+      it.divider = (i < items.length-1);
+      sec.items.push(it);
+      y += h;
+    });
+    y += 14;
+    sec.endY = y;
+    layout.sections.push(sec);
+  });
+
+  if((s.trainerNote||"").trim()){
+    m.font = "400 21px "+FONT;
+    var tn = wrapText(m, s.trainerNote.trim(), W-PAD*2-56);
+    layout.message = {y:y+24, lines:tn, boxH:tn.length*30+56};
+    y += 24 + layout.message.boxH + 12;
+  }
+
+  layout.H = y + 40;
+  return layout;
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* 写真をカバー（中央トリミング）で角丸描画 */
+function drawCover(ctx, img, x, y, w, h, r){
+  ctx.save();
+  roundRect(ctx, x, y, w, h, r);
+  ctx.clip();
+  var ir = img.width/img.height, tr = w/h;
+  var sx, sy, sw, sh;
+  if(ir > tr){ sh = img.height; sw = sh*tr; sx = (img.width-sw)/2; sy = 0; }
+  else{ sw = img.width; sh = sw/tr; sx = 0; sy = (img.height-sh)/2; }
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  ctx.restore();
+  ctx.strokeStyle = "rgba(27,36,31,.12)";
+  ctx.lineWidth = 1;
+  roundRect(ctx, x+.5, y+.5, w-1, h-1, r);
+  ctx.stroke();
+}
+
+function renderCanvas(imgMap){
+  var lay = buildLayout();
+  var W = lay.W, PAD = lay.PAD, H = lay.H, s = lay.s;
+  var scale = 2;
+
+  var cv = document.createElement("canvas");
+  cv.width = W*scale; cv.height = H*scale;
+  var ctx = cv.getContext("2d");
+  ctx.scale(scale, scale);
+
+  ctx.fillStyle = "#F4F6F4";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = "#1B241F";
+  ctx.fillRect(0,0,W,lay.headerH);
+  ctx.fillStyle = "#14614A";
+  ctx.fillRect(0,lay.headerH-6,W,6);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "800 32px "+FONT;
+  ctx.fillText(s.menuTitle || "トレーニングメニュー", PAD, 46+32);
+  if(lay.sub.length){
+    ctx.font = "400 21px "+FONT;
+    ctx.fillStyle = "rgba(255,255,255,.85)";
+    ctx.fillText(lay.sub.join("　　"), PAD, 46+38+28);
+  }
+
+  lay.sections.forEach(function(sec){
+    var y = sec.y;
+    ctx.fillStyle = sec.color;
+    roundRect(ctx, PAD, y+12, 10, 30, 3); ctx.fill();
+    ctx.font = "800 26px "+FONT;
+    ctx.fillStyle = "#1B241F";
+    ctx.fillText(sec.label, PAD+24, y+38);
+    var lw = ctx.measureText(sec.label).width;
+    ctx.strokeStyle = "#DCE2DD";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(PAD+24+lw+18, y+30);
+    ctx.lineTo(W-PAD, y+30);
+    ctx.stroke();
+
+    sec.items.forEach(function(it){
+      var iy = it.y;
+
+      ctx.fillStyle = sec.bg;
+      roundRect(ctx, PAD, iy+4, 36, 36, 10); ctx.fill();
+      ctx.fillStyle = sec.color;
+      ctx.font = "800 20px "+FONT;
+      ctx.textAlign = "center";
+      ctx.fillText(String(it.no), PAD+18, iy+30);
+      ctx.textAlign = "left";
+
+      ctx.font = "700 25px "+FONT;
+      ctx.fillStyle = "#1B241F";
+      it.nameLines.forEach(function(ln, li){
+        ctx.fillText(ln, PAD+52, iy+30+li*34);
+      });
+
+      if(it.detail){
+        ctx.font = "700 23px "+FONT;
+        ctx.fillStyle = sec.color;
+        ctx.textAlign = "right";
+        ctx.fillText(it.detail, W-PAD, iy+30);
+        ctx.textAlign = "left";
+      }
+
+      var cy = iy + Math.max(it.nameLines.length*34, 34) + 14;
+
+      if(it.noteLines.length){
+        ctx.font = "400 20px "+FONT;
+        ctx.fillStyle = "#6B756F";
+        it.noteLines.forEach(function(ln){
+          ctx.fillText(ln, PAD+52, cy+16);
+          cy += 28;
+        });
+        cy += 2;
+      }
+      if(it.urlLines.length){
+        ctx.font = "400 18px "+FONT;
+        ctx.fillStyle = "#2E6BB0";
+        it.urlLines.forEach(function(ln){
+          ctx.fillText(ln, PAD+52, cy+14);
+          cy += 26;
+        });
+        cy += 4;
+      }
+
+      /* 添付写真 */
+      if(it.photos.length){
+        var availW = W - PAD - (PAD+52);
+        var gap = 12;
+        var n = it.photos.length;
+        var pw = Math.floor((availW - gap*(n-1)) / n);
+        var px = PAD+52;
+        it.photos.forEach(function(src){
+          var img = imgMap[src];
+          if(img){
+            drawCover(ctx, img, px, cy+4, pw, PHOTO_H, 12);
+          } else {
+            ctx.fillStyle = "#E7ECE8";
+            roundRect(ctx, px, cy+4, pw, PHOTO_H, 12); ctx.fill();
+          }
+          px += pw + gap;
+        });
+        cy += PHOTO_H + 14;
+      }
+      cy += 10;
+
+      if(it.divider){
+        ctx.strokeStyle = "#E7ECE8";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD+52, cy-6);
+        ctx.lineTo(W-PAD, cy-6);
+        ctx.stroke();
+      }
+    });
+  });
+
+  if(lay.message){
+    var my = lay.message.y;
+    ctx.fillStyle = "#E7F1ED";
+    roundRect(ctx, PAD, my-8, W-PAD*2, lay.message.boxH, 12); ctx.fill();
+    ctx.fillStyle = "#14614A";
+    ctx.font = "800 18px "+FONT;
+    ctx.fillText("MESSAGE", PAD+26, my+18);
+    ctx.font = "400 21px "+FONT;
+    ctx.fillStyle = "#1B241F";
+    lay.message.lines.forEach(function(ln, li){
+      ctx.fillText(ln, PAD+26, my+48+li*30);
+    });
+  }
+
+  return cv;
+}
+
+window.openImagePreview = function(){
+  if(!hasContent()) return;
+  var s = collectState();
+  loadPhotoImages(s).then(function(imgMap){
+    try{
+      var cv = renderCanvas(imgMap);
+      lastDataUrl = cv.toDataURL("image/png");
+      $("previewImg").src = lastDataUrl;
+      $("imgModal").classList.add("open");
+    }catch(err){
+      showToast("画像の作成に失敗しました：" + (err && err.message ? err.message : err));
+    }
+  });
+};
+
+function fileName(){
+  var s = collectState();
+  var n = (s.clientName||"menu").replace(/[\\\/:*?"<>|様\s　]/g,"");
+  return "menu_" + (n||"client") + "_" + (s.menuDate||todayStr()) + ".png";
+}
+
+function dataUrlToBlob(dataUrl){
+  var parts = dataUrl.split(",");
+  var bin = atob(parts[1]);
+  var arr = new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type:"image/png"});
+}
+
+window.downloadImage = function(){
+  if(!lastDataUrl) return;
+  try{
+    var a = document.createElement("a");
+    a.href = lastDataUrl;
+    a.download = fileName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast("保存しました（できない場合は画像を長押し）");
+  }catch(e){
+    showToast("画像を長押しして保存してください");
+  }
+};
+
+window.shareImage = function(){
+  if(!lastDataUrl) return;
+  try{
+    var file = new File([dataUrlToBlob(lastDataUrl)], fileName(), {type:"image/png"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      navigator.share({files:[file], title:"トレーニングメニュー"}).catch(function(){});
+      return;
+    }
+  }catch(e){}
+  showToast("共有非対応のため、保存するか画像を長押ししてください");
+};
+
+/* ========== モーダル ========== */
+window.closeModal = function(id){ $(id).classList.remove("open"); };
+document.querySelectorAll(".modal").forEach(function(mo){
+  mo.addEventListener("click", function(e){ if(e.target===mo) mo.classList.remove("open"); });
+});
+
+/* ========== 初期化 ========== */
+(function init(){
+  var saved = null;
+  try{ saved = JSON.parse(lsGet(LS_CURRENT)||"null"); }catch(e){}
+  if(saved){
+    applyState(saved, true);
+  } else {
+    $("menuDate").value = todayStr();
+    renderList();
+  }
+  renderDrafts();
+})();
+
+})();
+</script>
+</body>
+</html>
