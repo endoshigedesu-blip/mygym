@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="MyGym">
-  <meta name="theme-color" content="#0f0f13">
+  <meta name="theme-color" content="#f4f5f8">
   <title>MyGym</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { background: #0f0f13; color: #f0f0f0; font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif; overscroll-behavior: none; }
+    body { background: #f4f5f8; color: #1d2029; font-family: 'Hiragino Sans', 'Noto Sans JP', sans-serif; overscroll-behavior: none; }
     #root { height: 100dvh; } body { padding-top: env(safe-area-inset-top, 0); }
   </style>
 </head>
@@ -23,14 +23,14 @@
 const { useState, useEffect } = React;
 
 const CLIENT_COLORS = [
-  { id: "yellow", label: "イエロー", hex: "#e8ff5a" },
-  { id: "blue",   label: "ブルー",   hex: "#5aafff" },
-  { id: "green",  label: "グリーン", hex: "#5affb0" },
-  { id: "orange", label: "オレンジ", hex: "#ffaa5a" },
-  { id: "pink",   label: "ピンク",   hex: "#ff7eb3" },
-  { id: "purple", label: "パープル", hex: "#c07aff" },
-  { id: "red",    label: "レッド",   hex: "#ff6b6b" },
-  { id: "teal",   label: "ティール", hex: "#5affee" },
+  { id: "yellow", label: "イエロー", hex: "#ca8a04" },
+  { id: "blue",   label: "ブルー",   hex: "#2563eb" },
+  { id: "green",  label: "グリーン", hex: "#0e9f5a" },
+  { id: "orange", label: "オレンジ", hex: "#ea580c" },
+  { id: "pink",   label: "ピンク",   hex: "#db2777" },
+  { id: "purple", label: "パープル", hex: "#9333ea" },
+  { id: "red",    label: "レッド",   hex: "#dc2626" },
+  { id: "teal",   label: "ティール", hex: "#0d9488" },
 ];
 const getColor = (colorId) => CLIENT_COLORS.find(c => c.id === colorId) || CLIENT_COLORS[0];
 const TODAY = new Date().toISOString().split("T")[0];
@@ -68,6 +68,10 @@ function App() {
   const [tickets, setTickets] = useState(saved?.tickets ?? initialTickets);
   const [records, setRecords] = useState(saved?.records ?? initialRecords);
   const [profiles, setProfiles] = useState(saved?.profiles ?? initialProfiles);
+  const [bodyComps, setBodyComps] = useState(saved?.bodyComps ?? {});
+  const [clientNotes, setClientNotes] = useState(saved?.clientNotes ?? {});
+  const [newNoteText, setNewNoteText] = useState("");
+  const [confirmDeleteNote, setConfirmDeleteNote] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [tab, setTab] = useState("record");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -81,15 +85,19 @@ function App() {
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [showAddTicket, setShowAddTicket] = useState(false);
+  const [showAddBodyComp, setShowAddBodyComp] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [editingBodyComp, setEditingBodyComp] = useState(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [confirmDeleteRecord, setConfirmDeleteRecord] = useState(null);
   const [confirmDeleteClient, setConfirmDeleteClient] = useState(null);
   const [confirmDeleteTicket, setConfirmDeleteTicket] = useState(null);
+  const [confirmDeleteBodyComp, setConfirmDeleteBodyComp] = useState(null);
 
   const [newClient, setNewClient] = useState({ name:"", age:"", goal:"", birthday:"", job:"", colorId:"yellow" });
   const [newRecord, setNewRecord] = useState({ date: TODAY, ticketId: null, exercises:[{name:"",weight:"",reps:"",sets:"",memo:""}] });
   const [newTicket, setNewTicket] = useState({ price:"", total:"", expiry:"" });
+  const [newBodyComp, setNewBodyComp] = useState({ date: TODAY, bodyWeight:"", bodyFat:"", muscleMass:"", waist:"" });
   const [profileForm, setProfileForm] = useState({ rom:"", injuries:"", condition:"", supplements:"", medications:"" });
   const [basicForm, setBasicForm] = useState({ name:"", age:"", birthday:"", job:"", goal:"", colorId:"yellow" });
 
@@ -102,17 +110,17 @@ function App() {
   // 自動保存：データが変わるたびに自動保存
   useEffect(() => {
     try {
-      persistSave({ clients, tickets, records, profiles });
+      persistSave({ clients, tickets, records, profiles, bodyComps, clientNotes });
       setSaveStatus("saved");
       const t = setTimeout(() => setSaveStatus(""), 1500);
       return () => clearTimeout(t);
     } catch {
       setSaveStatus("error");
     }
-  }, [clients, tickets, records, profiles]);
+  }, [clients, tickets, records, profiles, bodyComps, clientNotes]);
 
   const backupData = () => {
-    const data = JSON.stringify({ clients, tickets, records, profiles }, null, 2);
+    const data = JSON.stringify({ clients, tickets, records, profiles, bodyComps, clientNotes }, null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -130,6 +138,8 @@ function App() {
       try {
         const data = JSON.parse(ev.target.result);
         if (data.clients) setClients(data.clients);
+        if (data.bodyComps) setBodyComps(data.bodyComps);
+        if (data.clientNotes) setClientNotes(data.clientNotes);
         if (data.tickets) setTickets(data.tickets);
         if (data.records) setRecords(data.records);
         if (data.profiles) setProfiles(data.profiles);
@@ -142,7 +152,7 @@ function App() {
 
   const saveData = () => {
     try {
-      persistSave({ clients, tickets, records, profiles });
+      persistSave({ clients, tickets, records, profiles, bodyComps, clientNotes });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus(""), 2000);
     } catch {
@@ -151,11 +161,12 @@ function App() {
     }
   };
 
-  const accentColor = selectedClient ? getColor(selectedClient.colorId).hex : "#e8ff5a";
+  const accentColor = selectedClient ? getColor(selectedClient.colorId).hex : "#ca8a04";
   const selectClient = (c) => { setSelectedClient(c); setTab("record"); if (!isWide) setSidebarOpen(false); };
+  const colorOrder = CLIENT_COLORS.map(c=>c.id);
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(clientSearch.toLowerCase()) || (c.goal||"").includes(clientSearch)
-  );
+  ).slice().sort((a,b)=>colorOrder.indexOf(a.colorId||"yellow")-colorOrder.indexOf(b.colorId||"yellow"));
 
   const addClient = () => {
     if (!newClient.name) return;
@@ -215,7 +226,8 @@ function App() {
     setEditingRecord(null);
     setShowAddRecord(false);
   };
-  const openEditRecord = (r) => { setEditingRecord(r); setNewRecord({ date: r.date, ticketId: r.ticketId||null, memo: r.memo||"", exercises: r.exercises.map(e=>({...e})) }); setShowAddRecord(true); };
+  const openEditRecord = (r) => { setEditingRecord(r); setNewRecord({ date: r.date, ticketId: r.ticketId||null, memo: r.memo||"",
+    exercises: r.exercises.map(e=>({...e})) }); setShowAddRecord(true); };
   const doDeleteRecord = () => {
     if (confirmDeleteRecord === null) return;
     const cid = selectedClient.id;
@@ -231,6 +243,39 @@ function App() {
     }
     setRecords({ ...records, [cid]: records[cid].filter(r => r.id !== confirmDeleteRecord) });
     setConfirmDeleteRecord(null);
+  };
+  const saveBodyComp = () => {
+    if (!selectedClient) return;
+    const cid = selectedClient.id;
+    const list = bodyComps[cid] || [];
+    const entry = { date: newBodyComp.date, bodyWeight: newBodyComp.bodyWeight||"", bodyFat: newBodyComp.bodyFat||"", muscleMass: newBodyComp.muscleMass||"", waist: newBodyComp.waist||"" };
+    if (editingBodyComp) {
+      setBodyComps({ ...bodyComps, [cid]: list.map(b => b.id === editingBodyComp.id ? { ...b, ...entry } : b) });
+    } else {
+      setBodyComps({ ...bodyComps, [cid]: [{ id: Date.now(), ...entry }, ...list] });
+    }
+    setNewBodyComp({ date: TODAY, bodyWeight:"", bodyFat:"", muscleMass:"", waist:"" });
+    setEditingBodyComp(null);
+    setShowAddBodyComp(false);
+  };
+  const openEditBodyComp = (b) => { setEditingBodyComp(b); setNewBodyComp({ date: b.date, bodyWeight: b.bodyWeight||"", bodyFat: b.bodyFat||"", muscleMass: b.muscleMass||"", waist: b.waist||"" }); setShowAddBodyComp(true); };
+  const doDeleteBodyComp = () => {
+    if (confirmDeleteBodyComp === null) return;
+    const cid = selectedClient.id;
+    setBodyComps({ ...bodyComps, [cid]: (bodyComps[cid]||[]).filter(b => b.id !== confirmDeleteBodyComp) });
+    setConfirmDeleteBodyComp(null);
+  };
+  const addNote = () => {
+    if (!newNoteText.trim() || !selectedClient) return;
+    const cid = selectedClient.id;
+    setClientNotes({ ...clientNotes, [cid]: [{ id: Date.now(), date: TODAY, text: newNoteText.trim() }, ...(clientNotes[cid]||[])] });
+    setNewNoteText("");
+  };
+  const doDeleteNote = () => {
+    if (confirmDeleteNote === null) return;
+    const cid = selectedClient.id;
+    setClientNotes({ ...clientNotes, [cid]: (clientNotes[cid]||[]).filter(n => n.id !== confirmDeleteNote) });
+    setConfirmDeleteNote(null);
   };
   const addExerciseRow = () => setNewRecord({ ...newRecord, exercises: [...newRecord.exercises, {name:"",weight:"",reps:"",sets:"",memo:""}] });
   const removeExerciseRow = (i) => { if (newRecord.exercises.length === 1) return; setNewRecord({ ...newRecord, exercises: newRecord.exercises.filter((_,idx)=>idx!==i) }); };
@@ -256,7 +301,15 @@ function App() {
   };
   const useTicket = (t) => {
     if (t.total - t.usedLog.length <= 0 || isExpired(t.expiry)) return;
-    setTickets({ ...tickets, [selectedClient.id]: tickets[selectedClient.id].map(tk => tk.id===t.id ? { ...tk, usedLog: [...tk.usedLog, TODAY] } : tk) });
+    // このチケットを使ったトレーニング記録の日付でまだ未消化のものがあればその日付を使う
+    const recDates = (records[selectedClient.id]||[]).filter(r=>r.ticketId===t.id).map(r=>r.date).sort();
+    const logCopy = [...t.usedLog];
+    let dateToUse = TODAY;
+    for (const d of recDates) {
+      const di = logCopy.indexOf(d);
+      if (di >= 0) { logCopy.splice(di,1); } else { dateToUse = d; break; }
+    }
+    setTickets({ ...tickets, [selectedClient.id]: tickets[selectedClient.id].map(tk => tk.id===t.id ? { ...tk, usedLog: [...tk.usedLog, dateToUse].sort() } : tk) });
   };
   const undoTicket = (t) => {
     if (t.usedLog.length === 0) return;
@@ -279,34 +332,36 @@ function App() {
   const clientTickets = selectedClient ? (tickets[selectedClient.id]||[]) : [];
   const clientProfile = selectedClient ? (profiles[selectedClient.id]||{}) : {};
   const monthGroups = groupByMonth(clientRecords);
-  const tabs = [{key:"record",label:"トレーニング"},{key:"ticket",label:"チケット"},{key:"profile",label:"基本情報"}];
+  const clientBodyComps = selectedClient ? (bodyComps[selectedClient.id]||[]) : [];
+  const bodyCompData = [...clientBodyComps].sort((a,b)=>a.date.localeCompare(b.date));
+  const tabs = [{key:"record",label:"トレーニング"},{key:"ticket",label:"チケット"},{key:"body",label:"体組成"},{key:"profile",label:"基本情報"},{key:"notes",label:"メモ"}];
 
   return (
-    <div style={{fontFamily:"'Hiragino Sans','Noto Sans JP',sans-serif",display:"flex",height:"100dvh",background:"#0f0f13",color:"#f0f0f0",position:"relative",overflow:"hidden"}}>
+    <div style={{fontFamily:"'Hiragino Sans','Noto Sans JP',sans-serif",display:"flex",height:"100dvh",background:"#f4f5f8",color:"#1d2029",position:"relative",overflow:"hidden"}}>
       {!isWide && sidebarOpen && <div onClick={()=>setSidebarOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:40}}/>}
 
       {sidebarOpen && (
-        <div style={{width:isWide?240:280,background:"#17171f",borderRight:"1px solid #2a2a3a",display:"flex",flexDirection:"column",position:isWide?"relative":"fixed",top:0,left:0,height:"100%",zIndex:isWide?"auto":50}}>
-          <div style={{padding:"20px 16px 14px",borderBottom:"1px solid #2a2a3a",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><div style={{fontSize:10,letterSpacing:3,color:"#888",textTransform:"uppercase",marginBottom:3}}>Trainer</div><div style={{fontSize:20,fontWeight:700,color:"#e8ff5a"}}>MyGym</div></div>
-            {!isWide && <button onClick={()=>setSidebarOpen(false)} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>✕</button>}
+        <div style={{width:isWide?240:280,background:"#ffffff",borderRight:"1px solid #d9dce5",display:"flex",flexDirection:"column",position:isWide?"relative":"fixed",top:0,left:0,height:"100%",zIndex:isWide?"auto":50}}>
+          <div style={{padding:"20px 16px 14px",borderBottom:"1px solid #d9dce5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:10,letterSpacing:3,color:"#6b7080",textTransform:"uppercase",marginBottom:3}}>Trainer</div><div style={{fontSize:20,fontWeight:700,color:"#ca8a04"}}>MyGym</div></div>
+            {!isWide && <button onClick={()=>setSidebarOpen(false)} style={{background:"none",border:"none",color:"#6b7080",fontSize:22,cursor:"pointer"}}>✕</button>}
           </div>
-          <div style={{padding:"10px 12px",borderBottom:"1px solid #2a2a3a",display:"flex",flexDirection:"column",gap:8}}>
-            <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 クライアント検索" style={{width:"100%",padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:16,outline:"none"}}/>
-            <button onClick={()=>{setShowAddClient(true);if(!isWide)setSidebarOpen(false);}} style={{padding:"9px 0",background:"#e8ff5a",color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ クライアント追加</button>
+          <div style={{padding:"10px 12px",borderBottom:"1px solid #d9dce5",display:"flex",flexDirection:"column",gap:8}}>
+            <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 クライアント検索" style={{width:"100%",padding:"7px 10px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,outline:"none"}}/>
+            <button onClick={()=>{setShowAddClient(true);if(!isWide)setSidebarOpen(false);}} style={{padding:"9px 0",background:"#ca8a04",color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ クライアント追加</button>
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"8px 0"}}>
-            {filteredClients.length===0 && <div style={{padding:"20px",color:"#555",fontSize:13,textAlign:"center"}}>見つかりません</div>}
+            {filteredClients.length===0 && <div style={{padding:"20px",color:"#9aa0ac",fontSize:13,textAlign:"center"}}>見つかりません</div>}
             {filteredClients.map(c=>{
               const col=getColor(c.colorId); const isSel=selectedClient?.id===c.id;
               return (
-                <div key={c.id} style={{display:"flex",alignItems:"center",borderLeft:isSel?`3px solid ${col.hex}`:"3px solid transparent",background:isSel?"#1f1f2e":"transparent"}}>
+                <div key={c.id} style={{display:"flex",alignItems:"center",borderLeft:isSel?`3px solid ${col.hex}`:"3px solid transparent",background:isSel?"#eef0f5":"transparent"}}>
                   <div style={{width:8,height:8,borderRadius:"50%",background:col.hex,marginLeft:12,flexShrink:0}}/>
                   <div onClick={()=>selectClient(c)} style={{flex:1,padding:"10px 12px",cursor:"pointer"}}>
                     <div style={{fontWeight:600,fontSize:14}}>{c.name}</div>
-                    <div style={{fontSize:11,color:"#666",marginTop:2}}>{c.goal} · {c.age}歳</div>
+                    <div style={{fontSize:11,color:"#8a8f9c",marginTop:2}}>{c.goal} · {c.age}歳</div>
                   </div>
-                  <button onClick={()=>setConfirmDeleteClient(c)} style={{background:"none",border:"none",color:"#444",fontSize:15,cursor:"pointer",padding:"8px 12px"}}>🗑</button>
+                  <button onClick={()=>setConfirmDeleteClient(c)} style={{background:"none",border:"none",color:"#aab0bc",fontSize:15,cursor:"pointer",padding:"8px 12px"}}>🗑</button>
                 </div>
               );
             })}
@@ -315,42 +370,43 @@ function App() {
       )}
 
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
-        <div style={{padding:"0 16px",paddingTop:"env(safe-area-inset-top, 0px)",minHeight:52,borderBottom:"1px solid #2a2a3a",display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#17171f"}}>
-          <button onClick={()=>setSidebarOpen(v=>!v)} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:4}}>☰</button>
-          <div style={{fontWeight:700,color:"#e8ff5a",fontSize:16}}>MyGym</div>
-          {selectedClient&&<><div style={{color:"#444"}}>›</div><div style={{fontWeight:600,fontSize:15}}>{selectedClient.name}</div></>}
+        <div style={{padding:"0 16px",paddingTop:"env(safe-area-inset-top, 0px)",minHeight:52,borderBottom:"1px solid #d9dce5",display:"flex",alignItems:"center",gap:12,flexShrink:0,background:"#ffffff"}}>
+          <button onClick={()=>setSidebarOpen(v=>!v)} style={{background:"none",border:"none",color:"#565b68",fontSize:20,cursor:"pointer",padding:4}}>☰</button>
+          <div style={{fontWeight:700,color:"#ca8a04",fontSize:16}}>MyGym</div>
+          {selectedClient&&<><div style={{color:"#aab0bc"}}>›</div><div style={{fontWeight:600,fontSize:15}}>{selectedClient.name}</div></>}
 
         </div>
 
         {!selectedClient ? (
-          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,color:"#444"}}>
+          <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,color:"#aab0bc"}}>
             <div style={{fontSize:52}}>🏋️</div>
             <div style={{fontSize:16}}>クライアントを選択してください</div>
-            {!isWide&&<button onClick={()=>setSidebarOpen(true)} style={{marginTop:8,padding:"10px 24px",background:"#e8ff5a",color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,cursor:"pointer"}}>クライアント一覧を開く</button>}
+            {!isWide&&<button onClick={()=>setSidebarOpen(true)} style={{marginTop:8,padding:"10px 24px",background:"#ca8a04",color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,cursor:"pointer"}}>クライアント一覧を開く</button>}
           </div>
         ) : (
           <>
-            <div style={{padding:isWide?"14px 28px 0":"10px 16px 0",borderBottom:"1px solid #2a2a3a",flexShrink:0}}>
+            <div style={{padding:isWide?"14px 28px 0":"10px 16px 0",borderBottom:"1px solid #d9dce5",flexShrink:0}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <div style={{width:10,height:10,borderRadius:"50%",background:accentColor,flexShrink:0}}/>
                   <div>
                     <div style={{fontSize:isWide?20:17,fontWeight:700}}>{selectedClient.name}</div>
-                    <div style={{fontSize:11,color:"#888",marginTop:2}}>{selectedClient.age}歳 · {selectedClient.job||"－"} · {selectedClient.goal}</div>
+                    <div style={{fontSize:11,color:"#6b7080",marginTop:2}}>{selectedClient.age}歳 · {selectedClient.job||"－"} · {selectedClient.goal}</div>
                   </div>
                 </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
-                  {tab==="record"&&<button onClick={()=>setShowAddRecord(true)} style={{padding:"8px 14px",background:accentColor,color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ 記録追加</button>}
-                  {tab==="ticket"&&<button onClick={()=>setShowAddTicket(true)} style={{padding:"8px 14px",background:accentColor,color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ チケット追加</button>}
+                  {tab==="record"&&<button onClick={()=>setShowAddRecord(true)} style={{padding:"8px 14px",background:accentColor,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ 記録追加</button>}
+                  {tab==="ticket"&&<button onClick={()=>setShowAddTicket(true)} style={{padding:"8px 14px",background:accentColor,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ チケット追加</button>}
+                  {tab==="body"&&<button onClick={()=>setShowAddBodyComp(true)} style={{padding:"8px 14px",background:accentColor,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ 体組成記録</button>}
                   {tab==="profile"&&<>
-                    <button onClick={openEditBasic} style={{padding:"8px 14px",background:accentColor,color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>プロフィール編集</button>
-                    <button onClick={openEditHealth} style={{padding:"8px 14px",background:accentColor,color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>健康情報編集</button>
+                    <button onClick={openEditBasic} style={{padding:"8px 14px",background:accentColor,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>プロフィール編集</button>
+                    <button onClick={openEditHealth} style={{padding:"8px 14px",background:accentColor,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>健康情報編集</button>
                   </>}
                 </div>
               </div>
               <div style={{display:"flex"}}>
                 {tabs.map(t=>(
-                  <button key={t.key} onClick={()=>setTab(t.key)} style={{padding:"8px 18px",border:"none",background:"transparent",cursor:"pointer",color:tab===t.key?accentColor:"#666",borderBottom:tab===t.key?`2px solid ${accentColor}`:"2px solid transparent",fontWeight:tab===t.key?700:400,fontSize:14,whiteSpace:"nowrap"}}>
+                  <button key={t.key} onClick={()=>setTab(t.key)} style={{padding:"8px 18px",border:"none",background:"transparent",cursor:"pointer",color:tab===t.key?accentColor:"#8a8f9c",borderBottom:tab===t.key?`2px solid ${accentColor}`:"2px solid transparent",fontWeight:tab===t.key?700:400,fontSize:14,whiteSpace:"nowrap"}}>
                     {t.label}
                   </button>
                 ))}
@@ -360,66 +416,75 @@ function App() {
             <div style={{flex:1,overflowY:"auto",padding:isWide?"20px 28px":"14px 16px"}}>
               {tab==="record"&&(
                 <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:800,margin:"0 auto"}}>
-                  {monthGroups.length===0&&<div style={{color:"#555",textAlign:"center",marginTop:40}}>記録がありません</div>}
+                  {monthGroups.length===0&&<div style={{color:"#9aa0ac",textAlign:"center",marginTop:40}}>記録がありません</div>}
                   {monthGroups.map(([mk,recs])=>{
                     const collapsed=collapsedMonths[mk];
                     return (
-                      <div key={mk} style={{border:"1px solid #2a2a3a",borderRadius:12,overflow:"hidden"}}>
-                        <button onClick={()=>toggleMonth(mk)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"#1a1a26",border:"none",color:"#f0f0f0",cursor:"pointer"}}>
+                      <div key={mk} style={{border:"1px solid #d9dce5",borderRadius:12,overflow:"hidden"}}>
+                        <button onClick={()=>toggleMonth(mk)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"#ffffff",border:"none",color:"#1d2029",cursor:"pointer"}}>
                           <div style={{display:"flex",alignItems:"center",gap:10}}>
                             <span style={{fontSize:13,fontWeight:700,color:accentColor}}>{fmtMonth(mk)}</span>
-                            <span style={{fontSize:11,color:"#666",background:"#2a2a3a",padding:"2px 8px",borderRadius:10}}>{recs.length}件</span>
+                            <span style={{fontSize:11,color:"#8a8f9c",background:"#d9dce5",padding:"2px 8px",borderRadius:10}}>{recs.length}件</span>
                           </div>
-                          <span style={{color:"#666",fontSize:16,transform:collapsed?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▾</span>
+                          <span style={{color:"#8a8f9c",fontSize:16,transform:collapsed?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.2s"}}>▾</span>
                         </button>
                         {!collapsed&&(
-                          <div style={{display:"flex",flexDirection:"column",gap:1,background:"#0f0f13"}}>
+                          <div style={{display:"flex",flexDirection:"column",gap:1,background:"#f4f5f8"}}>
                             {recs.map(r=>(
-                              <div key={r.id} style={{background:"#17171f",borderTop:"1px solid #2a2a3a",padding:"12px 16px"}}>
-                                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:collapsedRecords[r.id]?0:8}}>
-                                  <div onClick={()=>toggleRecord(r.id)} style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",cursor:"pointer",flex:1}}>
-                                    <span style={{color:"#555",fontSize:14,transform:collapsedRecords[r.id]?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.2s",display:"inline-block"}}>▾</span>
-                                    <div style={{fontSize:12,color:"#888"}}>{r.date}</div>
-                                    {r.ticketId!=null
-                                      ? <span style={{fontSize:11,background:"#1a2a1a",color:"#5affb0",border:"1px solid #2a4a2a",borderRadius:6,padding:"2px 8px"}}>🎟 チケット利用</span>
-                                      : <span style={{fontSize:11,background:"#1a1a2a",color:"#888",border:"1px solid #2a2a3a",borderRadius:6,padding:"2px 8px"}}>チケットなし</span>
-                                    }
-                                  </div>
-                                  {r.memo&&<div style={{fontSize:12,color:"#aaa",background:"#1a1a2e",borderRadius:6,padding:"4px 10px",marginTop:4,borderLeft:"2px solid #3a3a5a"}}>📋 {r.memo}</div>}
-                                  <div style={{display:"flex",gap:6}}>
-                                    <button onClick={()=>{
-                                      const text=[`【${r.date} トレーニング】`,...r.exercises.map(ex=>`・${ex.name}　${ex.weight}kg × ${ex.reps}回 × ${ex.sets}セット`)].join("\n");
-                                      window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`,"_blank");
-                                    }} style={{background:"#06C755",border:"none",color:"#fff",padding:"3px 10px",borderRadius:6,fontSize:12,cursor:"pointer",fontWeight:700}}>LINE</button>
-                                    <button onClick={()=>openEditRecord(r)} style={{background:"none",border:"1px solid #3a3a4a",color:"#aaa",padding:"3px 10px",borderRadius:6,fontSize:12,cursor:"pointer"}}>修正</button>
-                                    <button onClick={()=>setConfirmDeleteRecord(r.id)} style={{background:"none",border:"1px solid #5a2a2a",color:"#c66",padding:"3px 10px",borderRadius:6,fontSize:12,cursor:"pointer"}}>削除</button>
+                              <div key={r.id} style={{background:"#ffffff",borderTop:"1px solid #d9dce5",padding:"12px 16px"}}>
+                                <div style={{marginBottom:collapsedRecords[r.id]?0:8}}>
+                                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:6}}>
+                                    <div onClick={()=>toggleRecord(r.id)} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer",flexShrink:0}}>
+                                      <span style={{color:"#9aa0ac",fontSize:13,transform:collapsedRecords[r.id]?"rotate(-90deg)":"rotate(0deg)",transition:"transform 0.2s",display:"inline-block"}}>▾</span>
+                                      <span style={{fontSize:12,color:"#6b7080"}}>{r.date}</span>
+                                    </div>
+                                    <div style={{display:"flex",alignItems:"center",gap:5,flex:1,minWidth:0,flexWrap:"nowrap",overflow:"hidden"}}>
+                                      {r.ticketId!=null
+                                        ? <span style={{fontSize:11,background:"#e3f6e8",color:"#0e9f5a",border:"1px solid #b5e5c3",borderRadius:6,padding:"2px 6px",whiteSpace:"nowrap",flexShrink:0}}>🎟</span>
+                                        : null
+                                      }
+                                      {r.memo&&<span style={{fontSize:11,color:"#6b7080",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>📋 {r.memo}</span>}
+                                    </div>
+                                    <div style={{display:"flex",gap:5,flexShrink:0}}>
+                                      <button onClick={()=>{
+                                        const lines=[`📋 ${r.date}`,""];
+                                        r.exercises.forEach(ex=>{
+                                          lines.push(`${ex.name} ${ex.weight}kg×${ex.reps}回×${ex.sets}set`,"");
+                                        });
+                                        lines.pop();
+                                        const text=lines.join("\n");
+                                        window.open(`https://line.me/R/msg/text/?${encodeURIComponent(text)}`,"_blank");
+                                      }} style={{background:"#06C755",border:"none",color:"#fff",padding:"3px 8px",borderRadius:6,fontSize:12,cursor:"pointer",fontWeight:700}}>LINE</button>
+                                      <button onClick={()=>openEditRecord(r)} style={{background:"none",border:"1px solid #c9cdd9",color:"#565b68",padding:"3px 8px",borderRadius:6,fontSize:12,cursor:"pointer"}}>修正</button>
+                                      <button onClick={()=>setConfirmDeleteRecord(r.id)} style={{background:"none",border:"1px solid #eec7c7",color:"#c23b3b",padding:"3px 8px",borderRadius:6,fontSize:12,cursor:"pointer"}}>削除</button>
+                                    </div>
                                   </div>
                                 </div>
                                 {!collapsedRecords[r.id] && r.exercises.map((ex,i)=>(
-                                  <div key={i} style={{borderTop:i===0?"none":"1px solid #222",paddingTop:i===0?0:8,marginTop:i===0?0:8}}>
+                                  <div key={i} style={{borderTop:i===0?"none":"1px solid #e2e4ec",paddingTop:i===0?0:8,marginTop:i===0?0:8}}>
                                     <div style={{fontWeight:600,fontSize:13,marginBottom:4}}>{ex.name}</div>
                                     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                                       <div style={{display:"flex",alignItems:"center",gap:4}}>
-                                        <span style={{fontSize:11,color:"#666"}}>重</span>
-                                        <button onClick={()=>adjustField(r.id,i,"weight",-2.5)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                        <span style={{fontSize:11,color:"#8a8f9c"}}>重</span>
+                                        <button onClick={()=>adjustField(r.id,i,"weight",-2.5)} style={{width:24,height:24,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
                                         <span style={{minWidth:30,textAlign:"center",fontWeight:700,fontSize:13,color:accentColor}}>{ex.weight}</span>
-                                        <button onClick={()=>adjustField(r.id,i,"weight",2.5)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
-                                        <span style={{fontSize:11,color:"#888"}}>kg</span>
+                                        <button onClick={()=>adjustField(r.id,i,"weight",2.5)} style={{width:24,height:24,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
+                                        <span style={{fontSize:11,color:"#6b7080"}}>kg</span>
                                       </div>
                                       <div style={{display:"flex",alignItems:"center",gap:4}}>
-                                        <span style={{fontSize:11,color:"#666"}}>回</span>
-                                        <button onClick={()=>adjustField(r.id,i,"reps",-1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                        <span style={{fontSize:11,color:"#8a8f9c"}}>回</span>
+                                        <button onClick={()=>adjustField(r.id,i,"reps",-1)} style={{width:24,height:24,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
                                         <span style={{minWidth:30,textAlign:"center",fontWeight:700,fontSize:13,color:accentColor}}>{ex.reps}</span>
-                                        <button onClick={()=>adjustField(r.id,i,"reps",1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
+                                        <button onClick={()=>adjustField(r.id,i,"reps",1)} style={{width:24,height:24,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
                                       </div>
                                       <div style={{display:"flex",alignItems:"center",gap:4}}>
-                                        <span style={{fontSize:11,color:"#666"}}>set</span>
-                                        <button onClick={()=>adjustField(r.id,i,"sets",-1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+                                        <span style={{fontSize:11,color:"#8a8f9c"}}>set</span>
+                                        <button onClick={()=>adjustField(r.id,i,"sets",-1)} style={{width:24,height:24,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
                                         <span style={{minWidth:30,textAlign:"center",fontWeight:700,fontSize:13,color:accentColor}}>{ex.sets}</span>
-                                        <button onClick={()=>adjustField(r.id,i,"sets",1)} style={{width:24,height:24,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
+                                        <button onClick={()=>adjustField(r.id,i,"sets",1)} style={{width:24,height:24,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>＋</button>
                                       </div>
                                     </div>
-                                    {ex.memo&&<div style={{marginTop:4,padding:"3px 8px",background:"#1a1a2e",borderRadius:6,fontSize:11,color:"#888",borderLeft:"2px solid #3a3a5a"}}>📝 {ex.memo}</div>}
+                                    {ex.memo&&<div style={{marginTop:4,padding:"3px 8px",background:"#eef0f5",borderRadius:6,fontSize:11,color:"#6b7080",borderLeft:"2px solid #b9bfd4"}}>📝 {ex.memo}</div>}
                                   </div>
                                 ))}
                               </div>
@@ -434,36 +499,36 @@ function App() {
 
               {tab==="ticket"&&(
                 <div style={{display:"flex",flexDirection:"column",gap:12,maxWidth:800,margin:"0 auto"}}>
-                  {clientTickets.length===0&&<div style={{color:"#555",textAlign:"center",marginTop:40}}>チケットがありません</div>}
+                  {clientTickets.length===0&&<div style={{color:"#9aa0ac",textAlign:"center",marginTop:40}}>チケットがありません</div>}
                   {clientTickets.map(t=>{
                     const used=t.usedLog.length,remaining=t.total-used,expired=isExpired(t.expiry),canUse=remaining>0&&!expired;
                     return (
-                      <div key={t.id} style={{background:"#17171f",border:`1px solid ${expired?"#5a2a2a":"#2a2a3a"}`,borderRadius:12,padding:"14px 16px"}}>
+                      <div key={t.id} style={{background:"#ffffff",border:`1px solid ${expired?"#eec7c7":"#d9dce5"}`,borderRadius:12,padding:"14px 16px"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8,marginBottom:12}}>
                           <div>
-                            <div style={{fontSize:20,fontWeight:700,color:expired?"#666":"#f0f0f0"}}>¥{t.price.toLocaleString()} <span style={{fontSize:13,fontWeight:400,color:"#888"}}>/ {t.total}回</span></div>
-                            <div style={{fontSize:12,color:expired?"#c44":"#888",marginTop:4}}>有効期限: {t.expiry||"なし"}{expired?"（期限切れ）":""}</div>
+                            <div style={{fontSize:20,fontWeight:700,color:expired?"#8a8f9c":"#1d2029"}}>¥{t.price.toLocaleString()} <span style={{fontSize:13,fontWeight:400,color:"#6b7080"}}>/ {t.total}回</span></div>
+                            <div style={{fontSize:12,color:expired?"#b02a2a":"#6b7080",marginTop:4}}>有効期限: {t.expiry||"なし"}{expired?"（期限切れ）":""}</div>
                           </div>
                           <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-                            <button onClick={()=>undoTicket(t)} style={{padding:"7px 12px",background:used>0?"#2a2a3a":"#1a1a24",color:used>0?"#aaa":"#444",border:"1px solid #3a3a4a",borderRadius:8,fontWeight:700,fontSize:13,cursor:used>0?"pointer":"default",opacity:used>0?1:0.4}}>↩ 戻す</button>
-                            <button onClick={()=>useTicket(t)} style={{padding:"7px 14px",background:canUse?accentColor:"#2a2a3a",color:canUse?"#0f0f13":"#555",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:canUse?"pointer":"default",opacity:canUse?1:0.4}}>使用する</button>
-                            <button onClick={()=>setConfirmDeleteTicket(t.id)} style={{padding:"7px 10px",background:"none",border:"1px solid #5a2a2a",color:"#c66",borderRadius:8,fontSize:12,cursor:"pointer"}}>削除</button>
+                            <button onClick={()=>undoTicket(t)} style={{padding:"7px 12px",background:used>0?"#d9dce5":"#ffffff",color:used>0?"#565b68":"#aab0bc",border:"1px solid #c9cdd9",borderRadius:8,fontWeight:700,fontSize:13,cursor:used>0?"pointer":"default",opacity:used>0?1:0.4}}>↩ 戻す</button>
+                            <button onClick={()=>useTicket(t)} style={{padding:"7px 14px",background:canUse?accentColor:"#d9dce5",color:canUse?"#f4f5f8":"#9aa0ac",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:canUse?"pointer":"default",opacity:canUse?1:0.4}}>使用する</button>
+                            <button onClick={()=>setConfirmDeleteTicket(t.id)} style={{padding:"7px 10px",background:"none",border:"1px solid #eec7c7",color:"#c23b3b",borderRadius:8,fontSize:12,cursor:"pointer"}}>削除</button>
                           </div>
                         </div>
                         <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:8}}>
                           {Array.from({length:t.total}).map((_,i)=>(
-                            <div key={i} style={{width:26,height:26,borderRadius:5,background:i<used?"#2a2a1a":accentColor,border:i<used?"1px solid #3a3a20":`1px solid ${accentColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
-                              {i<used?<span style={{color:"#555"}}>✓</span>:""}
+                            <div key={i} style={{width:26,height:26,borderRadius:5,background:i<used?"#f5f0d8":accentColor,border:i<used?"1px solid #e3ddad":`1px solid ${accentColor}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12}}>
+                              {i<used?<span style={{color:"#9aa0ac"}}>✓</span>:""}
                             </div>
                           ))}
                         </div>
-                        <div style={{fontSize:13,color:"#888",marginBottom:10}}>残り <span style={{color:expired?"#c44":accentColor,fontWeight:700}}>{remaining}</span> / {t.total} 回</div>
+                        <div style={{fontSize:13,color:"#6b7080",marginBottom:10}}>残り <span style={{color:expired?"#b02a2a":accentColor,fontWeight:700}}>{remaining}</span> / {t.total} 回</div>
                         {used>0&&(
-                          <div style={{borderTop:"1px solid #2a2a3a",paddingTop:10}}>
-                            <div style={{fontSize:11,color:"#666",marginBottom:6}}>使用履歴</div>
+                          <div style={{borderTop:"1px solid #d9dce5",paddingTop:10}}>
+                            <div style={{fontSize:11,color:"#8a8f9c",marginBottom:6}}>使用履歴</div>
                             <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                               {t.usedLog.map((d,i)=>(
-                                <span key={i} style={{fontSize:11,background:"#1e1e2e",border:"1px solid #2a2a3a",borderRadius:6,padding:"3px 8px",color:"#aaa"}}>{i+1}回目: {d}</span>
+                                <span key={i} style={{fontSize:11,background:"#e6e8ef",border:"1px solid #d9dce5",borderRadius:6,padding:"3px 8px",color:"#565b68"}}>{i+1}回目: {d}</span>
                               ))}
                             </div>
                           </div>
@@ -471,6 +536,72 @@ function App() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {tab==="body"&&(
+                <div style={{maxWidth:700,margin:"0 auto",display:"flex",flexDirection:"column",gap:14,paddingBottom:80}}>
+                  {bodyCompData.length===0 ? (
+                    <div style={{color:"#9aa0ac",textAlign:"center",marginTop:40}}>体組成データがありません<br/><span style={{fontSize:12}}>右上の「＋ 体組成記録」から追加してください</span></div>
+                  ) : (
+                    <>
+                      {bodyCompData.filter(d=>d.bodyWeight).length>=2 && (
+                        <Section title="体重の推移 (kg)" accent={accentColor}>
+                          <div style={{padding:"12px 16px"}}>
+                            <BodyLineChart data={bodyCompData.filter(d=>d.bodyWeight).map(d=>({x:d.date,y:Number(d.bodyWeight)}))} color={accentColor}/>
+                          </div>
+                        </Section>
+                      )}
+                      {bodyCompData.filter(d=>d.bodyFat).length>=2 && (
+                        <Section title="体脂肪率の推移 (%)" accent={accentColor}>
+                          <div style={{padding:"12px 16px"}}>
+                            <BodyLineChart data={bodyCompData.filter(d=>d.bodyFat).map(d=>({x:d.date,y:Number(d.bodyFat)}))} color="#2563eb"/>
+                          </div>
+                        </Section>
+                      )}
+
+                      <Section title="記録一覧" accent={accentColor}>
+                        {bodyCompData.slice().reverse().map((d)=>(
+                          <div key={d.id} style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8,padding:"8px 12px",borderBottom:"1px solid #e6e8ef",fontSize:12}}>
+                            <span style={{color:"#6b7080",flexShrink:0}}>{d.date}</span>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:10,flex:1,minWidth:0}}>
+                              {d.bodyWeight&&<span style={{color:"#565b68",whiteSpace:"nowrap"}}>体重<b style={{color:accentColor}}> {d.bodyWeight}</b>kg</span>}
+                              {d.bodyFat&&<span style={{color:"#565b68",whiteSpace:"nowrap"}}>体脂肪<b style={{color:accentColor}}> {d.bodyFat}</b>%</span>}
+                              {d.muscleMass&&<span style={{color:"#565b68",whiteSpace:"nowrap"}}>筋肉量<b style={{color:accentColor}}> {d.muscleMass}</b>kg</span>}
+                              {d.waist&&<span style={{color:"#565b68",whiteSpace:"nowrap"}}>ウエスト<b style={{color:accentColor}}> {d.waist}</b>cm</span>}
+                            </div>
+                            <div style={{display:"flex",gap:4,flexShrink:0}}>
+                              <button onClick={()=>openEditBodyComp(d)} style={{background:"none",border:"1px solid #c9cdd9",color:"#565b68",padding:"2px 6px",borderRadius:5,fontSize:11,cursor:"pointer"}}>修正</button>
+                              <button onClick={()=>setConfirmDeleteBodyComp(d.id)} style={{background:"none",border:"1px solid #eec7c7",color:"#c23b3b",padding:"2px 6px",borderRadius:5,fontSize:11,cursor:"pointer"}}>削除</button>
+                            </div>
+                          </div>
+                        ))}
+                      </Section>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {tab==="notes"&&(
+                <div style={{maxWidth:700,margin:"0 auto",display:"flex",flexDirection:"column",gap:12,paddingBottom:80}}>
+                  <Section title="メモを追加" accent={accentColor}>
+                    <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:8}}>
+                      <textarea value={newNoteText} onChange={e=>setNewNoteText(e.target.value)} rows={3} placeholder="お客様との会話、気づいたこと、プライベートな話題など何でも" style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,boxSizing:"border-box",outline:"none",resize:"vertical",fontFamily:"inherit"}}/>
+                      <button onClick={addNote} style={{alignSelf:"flex-end",padding:"8px 20px",background:accentColor,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>追加</button>
+                    </div>
+                  </Section>
+                  <Section title="メモ一覧" accent={accentColor}>
+                    {(clientNotes[selectedClient.id]||[]).length===0 && <div style={{padding:"20px 16px",color:"#9aa0ac",fontSize:13,textAlign:"center"}}>メモがありません</div>}
+                    {(clientNotes[selectedClient.id]||[]).map(n=>(
+                      <div key={n.id} style={{padding:"10px 16px",borderBottom:"1px solid #e6e8ef"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                          <span style={{fontSize:11,color:"#6b7080"}}>{n.date}</span>
+                          <button onClick={()=>setConfirmDeleteNote(n.id)} style={{background:"none",border:"1px solid #eec7c7",color:"#c23b3b",padding:"2px 8px",borderRadius:5,fontSize:11,cursor:"pointer"}}>削除</button>
+                        </div>
+                        <div style={{fontSize:14,whiteSpace:"pre-wrap",lineHeight:1.6}}>{n.text}</div>
+                      </div>
+                    ))}
+                  </Section>
                 </div>
               )}
 
@@ -501,6 +632,8 @@ function App() {
       {confirmDeleteRecord!==null&&<ConfirmModal emoji="🗑️" title="記録を削除しますか？" sub="この操作は元に戻せません" onCancel={()=>setConfirmDeleteRecord(null)} onConfirm={doDeleteRecord} confirmLabel="削除する" danger/>}
       {confirmDeleteClient!==null&&<ConfirmModal emoji="⚠️" title={`「${confirmDeleteClient.name}」を削除しますか？`} sub="記録・チケットすべて消えます" onCancel={()=>setConfirmDeleteClient(null)} onConfirm={doDeleteClient} confirmLabel="削除する" danger/>}
       {confirmDeleteTicket!==null&&<ConfirmModal emoji="🎟" title="チケットを削除しますか？" sub="使用履歴も消えます" onCancel={()=>setConfirmDeleteTicket(null)} onConfirm={doDeleteTicket} confirmLabel="削除する" danger/>}
+      {confirmDeleteBodyComp!==null&&<ConfirmModal emoji="📋" title="体組成記録を削除しますか？" sub="" onCancel={()=>setConfirmDeleteBodyComp(null)} onConfirm={doDeleteBodyComp} confirmLabel="削除する" danger/>}
+      {confirmDeleteNote!==null&&<ConfirmModal emoji="📝" title="メモを削除しますか？" sub="" onCancel={()=>setConfirmDeleteNote(null)} onConfirm={doDeleteNote} confirmLabel="削除する" danger/>}
 
       {showAddClient&&(
         <Modal title="クライアント追加" onClose={()=>setShowAddClient(false)}>
@@ -521,28 +654,29 @@ function App() {
           <Textarea value={newRecord.memo||""} onChange={e=>setNewRecord({...newRecord,memo:e.target.value})} placeholder="例：体調良好、全体的に強度高め" rows={2}/>
           <Label>チケット</Label>
           <div style={{display:"flex",gap:8,marginBottom:14,flexWrap:"wrap"}}>
-            <button onClick={()=>setNewRecord({...newRecord,ticketId:null})} style={{padding:"7px 14px",background:newRecord.ticketId==null?accentColor:"#2a2a3a",color:newRecord.ticketId==null?"#0f0f13":"#888",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>なし</button>
+            <button onClick={()=>setNewRecord({...newRecord,ticketId:null})} style={{padding:"7px 14px",background:newRecord.ticketId==null?accentColor:"#d9dce5",color:newRecord.ticketId==null?"#f4f5f8":"#6b7080",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>なし</button>
             {clientTickets.filter(t=>(!isExpired(t.expiry)&&t.usedLog.length<t.total)||(editingRecord&&t.id===newRecord.ticketId)).map(t=>{
               const isSel=newRecord.ticketId===t.id;
-              return <button key={t.id} onClick={()=>setNewRecord({...newRecord,ticketId:t.id})} style={{padding:"7px 14px",background:isSel?accentColor:"#2a2a3a",color:isSel?"#0f0f13":"#aaa",border:isSel?"none":"1px solid #3a3a4a",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>🎟 ¥{t.price.toLocaleString()} (残{t.total-t.usedLog.length}回)</button>;
+              return <button key={t.id} onClick={()=>setNewRecord({...newRecord,ticketId:t.id})} style={{padding:"7px 14px",background:isSel?accentColor:"#d9dce5",color:isSel?"#f4f5f8":"#565b68",border:isSel?"none":"1px solid #c9cdd9",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>🎟 ¥{t.price.toLocaleString()} (残{t.total-t.usedLog.length}回)</button>;
             })}
-            {clientTickets.filter(t=>!isExpired(t.expiry)&&t.usedLog.length<t.total).length===0&&newRecord.ticketId==null&&<span style={{fontSize:12,color:"#555",alignSelf:"center"}}>有効なチケットがありません</span>}
+            {clientTickets.filter(t=>!isExpired(t.expiry)&&t.usedLog.length<t.total).length===0&&newRecord.ticketId==null&&<span style={{fontSize:12,color:"#9aa0ac",alignSelf:"center"}}>有効なチケットがありません</span>}
           </div>
           <Label>種目 · 重量(kg) · 回数 · セット</Label>
           {newRecord.exercises.map((ex,i)=>(
             <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr auto",gap:6,marginBottom:8,alignItems:"center"}}>
+              <div style={{gridColumn:"1 / -1",fontSize:11,fontWeight:700,color:accentColor,marginBottom:-2}}>種目 {i+1}</div>
               <Input value={ex.name} onChange={e=>updateExercise(i,"name",e.target.value)} placeholder="種目名"/>
               <Input type="number" value={ex.weight} onChange={e=>updateExercise(i,"weight",e.target.value)} placeholder="kg"/>
               <Input type="number" value={ex.reps} onChange={e=>updateExercise(i,"reps",e.target.value)} placeholder="回"/>
               <Input type="number" value={ex.sets} onChange={e=>updateExercise(i,"sets",e.target.value)} placeholder="set"/>
-              <button onClick={()=>removeExerciseRow(i)} style={{background:"none",border:"none",color:"#666",fontSize:18,cursor:"pointer",marginBottom:14,padding:"0 4px"}}>✕</button>
+              <button onClick={()=>removeExerciseRow(i)} style={{background:"none",border:"none",color:"#8a8f9c",fontSize:18,cursor:"pointer",marginBottom:14,padding:"0 4px"}}>✕</button>
               <div style={{gridColumn:"1 / -1",marginTop:-8,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}>
-                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{flex:1,padding:"7px 10px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#aaa",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
-                <button onClick={()=>duplicateExercise(i)} title="この種目を複製" style={{padding:"7px 10px",background:"#2a2a3a",border:"1px solid #3a3a4a",color:"#aaa",borderRadius:8,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>複製</button>
+                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{flex:1,padding:"7px 10px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#565b68",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
+                <button onClick={()=>duplicateExercise(i)} title="この種目を複製" style={{padding:"7px 10px",background:"#d9dce5",border:"1px solid #c9cdd9",color:"#565b68",borderRadius:8,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>複製</button>
               </div>
             </div>
           ))}
-          <button onClick={addExerciseRow} style={{background:"none",border:"1px dashed #444",color:"#888",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:13,marginBottom:14,width:"100%"}}>＋ 種目を追加</button>
+          <button onClick={addExerciseRow} style={{background:"none",border:"1px dashed #aab0bc",color:"#6b7080",padding:"6px 12px",borderRadius:6,cursor:"pointer",fontSize:13,marginBottom:14,width:"100%"}}>＋ 種目を追加</button>
           <SubmitBtn onClick={saveRecord} accent={accentColor}>{editingRecord?"保存する":"追加する"}</SubmitBtn>
         </Modal>
       )}
@@ -553,6 +687,31 @@ function App() {
           <Label>枚数（回数）</Label><Input type="number" value={newTicket.total} onChange={e=>setNewTicket({...newTicket,total:e.target.value})} placeholder="10"/>
           <Label>有効期限</Label><Input type="date" value={newTicket.expiry} onChange={e=>setNewTicket({...newTicket,expiry:e.target.value})}/>
           <SubmitBtn onClick={addTicket} accent={accentColor}>追加する</SubmitBtn>
+        </Modal>
+      )}
+
+      {showAddBodyComp&&(
+        <Modal title={editingBodyComp?"体組成を修正":"体組成記録"} onClose={()=>{setShowAddBodyComp(false);setEditingBodyComp(null);setNewBodyComp({date:TODAY,bodyWeight:"",bodyFat:"",muscleMass:"",waist:""});}}>
+          <Label>日付</Label><Input type="date" value={newBodyComp.date} onChange={e=>setNewBodyComp({...newBodyComp,date:e.target.value})}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+            <div>
+              <div style={{fontSize:11,color:"#8a8f9c",marginBottom:4}}>体重 (kg)</div>
+              <input type="number" value={newBodyComp.bodyWeight} onChange={e=>setNewBodyComp({...newBodyComp,bodyWeight:e.target.value})} placeholder="例：65.5" style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,boxSizing:"border-box",outline:"none"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"#8a8f9c",marginBottom:4}}>体脂肪率 (%)</div>
+              <input type="number" value={newBodyComp.bodyFat} onChange={e=>setNewBodyComp({...newBodyComp,bodyFat:e.target.value})} placeholder="例：18.5" style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,boxSizing:"border-box",outline:"none"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"#8a8f9c",marginBottom:4}}>筋肉量 (kg)</div>
+              <input type="number" value={newBodyComp.muscleMass} onChange={e=>setNewBodyComp({...newBodyComp,muscleMass:e.target.value})} placeholder="例：52.0" style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,boxSizing:"border-box",outline:"none"}}/>
+            </div>
+            <div>
+              <div style={{fontSize:11,color:"#8a8f9c",marginBottom:4}}>ウエスト (cm)</div>
+              <input type="number" value={newBodyComp.waist} onChange={e=>setNewBodyComp({...newBodyComp,waist:e.target.value})} placeholder="例：78.0" style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,boxSizing:"border-box",outline:"none"}}/>
+            </div>
+          </div>
+          <SubmitBtn onClick={saveBodyComp} accent={accentColor}>{editingBodyComp?"保存する":"追加する"}</SubmitBtn>
         </Modal>
       )}
 
@@ -580,27 +739,54 @@ function App() {
       )}
       {/* 右下固定の保存ボタン */}
       <div style={{position:"fixed",bottom:24,right:16,zIndex:300,display:"flex",gap:8}}>
-        <button onClick={()=>setShowBackup(true)} style={{padding:"10px 14px",background:"#1a1a2e",color:"#aaa",border:"1px solid #3a3a4a",borderRadius:24,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.5)"}}>📦</button>
-        <button onClick={saveData} style={{padding:"10px 18px",background:saveStatus==="saved"?"#5affb0":saveStatus==="error"?"#ff6b6b":"#1a1a2e",color:saveStatus==="saved"?"#0f0f13":saveStatus==="error"?"#fff":"#e8ff5a",border:"1px solid #3a3a4a",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.3s",boxShadow:"0 4px 16px rgba(0,0,0,0.5)"}}>
+        <button onClick={()=>setShowBackup(true)} style={{padding:"10px 14px",background:"#eef0f5",color:"#565b68",border:"1px solid #c9cdd9",borderRadius:24,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>📦</button>
+        <button onClick={saveData} style={{padding:"10px 18px",background:saveStatus==="saved"?"#0e9f5a":saveStatus==="error"?"#dc2626":"#eef0f5",color:saveStatus==="saved"?"#f4f5f8":saveStatus==="error"?"#fff":"#ca8a04",border:"1px solid #c9cdd9",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.3s",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>
           {saveStatus==="saved"?"✓ 保存済み":saveStatus==="error"?"⚠ 失敗":"💾 保存"}
         </button>
       </div>
 
       {showBackup&&(
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
-          <div style={{background:"#1a1a24",border:"1px solid #2a2a3a",borderRadius:16,padding:28,width:"100%",maxWidth:340,textAlign:"center"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
+          <div style={{background:"#ffffff",border:"1px solid #d9dce5",borderRadius:16,padding:28,width:"100%",maxWidth:340,textAlign:"center"}}>
             <div style={{fontSize:28,marginBottom:12}}>📦</div>
             <div style={{fontWeight:700,fontSize:16,marginBottom:6}}>バックアップ</div>
-            <div style={{fontSize:12,color:"#888",marginBottom:20}}>データをファイルに保存・復元できます</div>
-            <button onClick={backupData} style={{width:"100%",padding:"11px 0",background:"#e8ff5a",color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>📥 バックアップを保存</button>
-            <label style={{display:"block",width:"100%",padding:"11px 0",background:"#2a2a3a",color:"#aaa",border:"1px solid #3a3a4a",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:16,boxSizing:"border-box"}}>
+            <div style={{fontSize:12,color:"#6b7080",marginBottom:20}}>データをファイルに保存・復元できます</div>
+            <button onClick={backupData} style={{width:"100%",padding:"11px 0",background:"#ca8a04",color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:10}}>📥 バックアップを保存</button>
+            <label style={{display:"block",width:"100%",padding:"11px 0",background:"#d9dce5",color:"#565b68",border:"1px solid #c9cdd9",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginBottom:16,boxSizing:"border-box"}}>
               📤 バックアップから復元
               <input type="file" accept=".json" onChange={restoreData} style={{display:"none"}}/>
             </label>
-            <button onClick={()=>setShowBackup(false)} style={{background:"none",border:"none",color:"#666",fontSize:14,cursor:"pointer"}}>キャンセル</button>
+            <button onClick={()=>setShowBackup(false)} style={{background:"none",border:"none",color:"#8a8f9c",fontSize:14,cursor:"pointer"}}>キャンセル</button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function BodyLineChart({data, color}){
+  if (!data || data.length < 2) return null;
+  const w = 600, h = 160, pad = 30;
+  const values = data.map(d=>d.y);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = (max - min) || 1;
+  const yTo = (v) => h - pad - ((v - min) / range) * (h - pad*2);
+  const xTo = (i) => pad + (i / (data.length - 1)) * (w - pad*2);
+  const points = data.map((d,i)=>`${xTo(i)},${yTo(d.y)}`).join(" ");
+  return (
+    <div style={{overflowX:"auto"}}>
+      <svg viewBox={`0 0 ${w} ${h}`} style={{width:"100%",minWidth:300,height:"auto"}} preserveAspectRatio="xMidYMid meet">
+        <line x1={pad} y1={h-pad} x2={w-pad} y2={h-pad} stroke="#d9dce5" strokeWidth="1"/>
+        <line x1={pad} y1={pad/2} x2={pad} y2={h-pad} stroke="#d9dce5" strokeWidth="1"/>
+        <text x={pad-4} y={yTo(max)+4} fill="#8a8f9c" fontSize="10" textAnchor="end">{max}</text>
+        <text x={pad-4} y={yTo(min)+4} fill="#8a8f9c" fontSize="10" textAnchor="end">{min}</text>
+        <polyline points={points} fill="none" stroke={color} strokeWidth="2"/>
+        {data.map((d,i)=>(
+          <circle key={i} cx={xTo(i)} cy={yTo(d.y)} r="3" fill={color}/>
+        ))}
+        <text x={pad} y={h-6} fill="#8a8f9c" fontSize="10" textAnchor="start">{data[0].x.slice(5)}</text>
+        <text x={w-pad} y={h-6} fill="#8a8f9c" fontSize="10" textAnchor="end">{data[data.length-1].x.slice(5)}</text>
+      </svg>
     </div>
   );
 }
@@ -609,31 +795,31 @@ function ColorPicker({selected,onChange}){
   return <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>{CLIENT_COLORS.map(c=><button key={c.id} onClick={()=>onChange(c.id)} title={c.label} style={{width:32,height:32,borderRadius:"50%",background:c.hex,border:selected===c.id?"3px solid #fff":"3px solid transparent",cursor:"pointer",outline:selected===c.id?`2px solid ${c.hex}`:"none"}}/>)}</div>;
 }
 function AdjustField({label,value,unit,onAdj,step,accent}){
-  const ac=accent||"#e8ff5a";
+  const ac=accent||"#ca8a04";
   return <div style={{display:"flex",alignItems:"center",gap:4}}>
-    <span style={{fontSize:11,color:"#666",minWidth:24}}>{label}</span>
-    <button onClick={()=>onAdj(-step)} style={{width:22,height:22,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</button>
+    <span style={{fontSize:11,color:"#8a8f9c",minWidth:24}}>{label}</span>
+    <button onClick={()=>onAdj(-step)} style={{width:22,height:22,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>−</button>
     <span style={{minWidth:28,textAlign:"center",fontWeight:700,fontSize:13,color:ac}}>{value}</span>
-    <button onClick={()=>onAdj(step)} style={{width:22,height:22,background:"#2a2a3a",border:"none",color:"#f0f0f0",borderRadius:5,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>＋</button>
-    <span style={{fontSize:11,color:"#888"}}>{unit}</span>
+    <button onClick={()=>onAdj(step)} style={{width:22,height:22,background:"#d9dce5",border:"none",color:"#1d2029",borderRadius:5,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>＋</button>
+    <span style={{fontSize:11,color:"#6b7080"}}>{unit}</span>
   </div>;
 }
 function ConfirmModal({emoji,title,sub,onCancel,onConfirm,confirmLabel,danger}){
-  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}><div style={{background:"#1a1a24",border:`1px solid ${danger?"#5a2a2a":"#2a2a3a"}`,borderRadius:16,padding:28,width:"100%",maxWidth:340,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>{emoji}</div><div style={{fontWeight:700,fontSize:15,marginBottom:6}}>{title}</div>{sub&&<div style={{fontSize:12,color:"#888",marginBottom:24}}>{sub}</div>}<div style={{display:"flex",gap:10}}><button onClick={onCancel} style={{flex:1,padding:"10px 0",background:"#2a2a3a",color:"#aaa",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer"}}>キャンセル</button><button onClick={onConfirm} style={{flex:1,padding:"10px 0",background:danger?"#c44":"#e8ff5a",color:danger?"#fff":"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer"}}>{confirmLabel}</button></div></div></div>;
+  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:16}}><div style={{background:"#ffffff",border:`1px solid ${danger?"#eec7c7":"#d9dce5"}`,borderRadius:16,padding:28,width:"100%",maxWidth:340,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>{emoji}</div><div style={{fontWeight:700,fontSize:15,marginBottom:6}}>{title}</div>{sub&&<div style={{fontSize:12,color:"#6b7080",marginBottom:24}}>{sub}</div>}<div style={{display:"flex",gap:10}}><button onClick={onCancel} style={{flex:1,padding:"10px 0",background:"#d9dce5",color:"#565b68",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer"}}>キャンセル</button><button onClick={onConfirm} style={{flex:1,padding:"10px 0",background:danger?"#b02a2a":"#ca8a04",color:danger?"#fff":"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer"}}>{confirmLabel}</button></div></div></div>;
 }
 function Section({title,accent,children}){
-  return <div style={{background:"#17171f",border:"1px solid #2a2a3a",borderRadius:12,overflow:"hidden"}}><div style={{padding:"10px 16px",background:"#1f1f2e",borderBottom:"1px solid #2a2a3a",fontSize:12,fontWeight:700,color:accent||"#e8ff5a",letterSpacing:1}}>{title}</div><div style={{padding:"4px 0"}}>{children}</div></div>;
+  return <div style={{background:"#ffffff",border:"1px solid #d9dce5",borderRadius:12,overflow:"hidden"}}><div style={{padding:"10px 16px",background:"#eef0f5",borderBottom:"1px solid #d9dce5",fontSize:12,fontWeight:700,color:accent||"#ca8a04",letterSpacing:1}}>{title}</div><div style={{padding:"4px 0"}}>{children}</div></div>;
 }
 function InfoRow({label,value,dot}){
-  return <div style={{display:"flex",padding:"10px 16px",borderBottom:"1px solid #1e1e2a",gap:12,alignItems:"center"}}><div style={{fontSize:12,color:"#888",minWidth:100,flexShrink:0}}>{label}</div><div style={{fontSize:14,color:"#f0f0f0",whiteSpace:"pre-wrap",wordBreak:"break-all",display:"flex",alignItems:"center",gap:8}}>{dot&&<span style={{width:10,height:10,borderRadius:"50%",background:dot,display:"inline-block",flexShrink:0}}/>}{value}</div></div>;
+  return <div style={{display:"flex",padding:"10px 16px",borderBottom:"1px solid #e6e8ef",gap:12,alignItems:"center"}}><div style={{fontSize:12,color:"#6b7080",minWidth:100,flexShrink:0}}>{label}</div><div style={{fontSize:14,color:"#1d2029",whiteSpace:"pre-wrap",wordBreak:"break-all",display:"flex",alignItems:"center",gap:8}}>{dot&&<span style={{width:10,height:10,borderRadius:"50%",background:dot,display:"inline-block",flexShrink:0}}/>}{value}</div></div>;
 }
 function Modal({title,onClose,children}){
-  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}><div style={{background:"#1a1a24",border:"1px solid #2a2a3a",borderRadius:16,padding:24,width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><div style={{fontWeight:700,fontSize:16}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>✕</button></div>{children}</div></div>;
+  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}><div style={{background:"#ffffff",border:"1px solid #d9dce5",borderRadius:16,padding:24,width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><div style={{fontWeight:700,fontSize:16}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",color:"#6b7080",fontSize:22,cursor:"pointer"}}>✕</button></div>{children}</div></div>;
 }
-function Label({children}){return <div style={{fontSize:12,color:"#888",marginBottom:6}}>{children}</div>;}
-function Input(props){return <input {...props} style={{width:"100%",padding:"9px 12px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none"}}/>;}
-function Textarea(props){return <textarea {...props} rows={3} style={{width:"100%",padding:"9px 12px",background:"#0f0f13",border:"1px solid #2a2a3a",borderRadius:8,color:"#f0f0f0",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none",resize:"vertical",fontFamily:"inherit"}}/>;}
-function SubmitBtn({onClick,children,accent}){const ac=accent||"#e8ff5a";return <button onClick={onClick} style={{width:"100%",padding:"11px 0",background:ac,color:"#0f0f13",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginTop:4}}>{children}</button>;}
+function Label({children}){return <div style={{fontSize:12,color:"#6b7080",marginBottom:6}}>{children}</div>;}
+function Input(props){return <input {...props} style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none"}}/>;}
+function Textarea(props){return <textarea {...props} rows={3} style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none",resize:"vertical",fontFamily:"inherit"}}/>;}
+function SubmitBtn({onClick,children,accent}){const ac=accent||"#ca8a04";return <button onClick={onClick} style={{width:"100%",padding:"11px 0",background:ac,color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:14,cursor:"pointer",marginTop:4}}>{children}</button>;}
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   </script>
