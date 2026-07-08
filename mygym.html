@@ -33,6 +33,29 @@ const CLIENT_COLORS = [
   { id: "teal",   label: "ティール", hex: "#0d9488" },
 ];
 const getColor = (colorId) => CLIENT_COLORS.find(c => c.id === colorId) || CLIENT_COLORS[0];
+const GYM_OPTIONS = [
+  { id: "fit-easy", label: "フィットイージー", colorId: "yellow" },
+  { id: "anytime",  label: "エニタイム",       colorId: "purple" },
+  { id: "other",    label: "その他 / 指定なし", colorId: null },
+];
+const parseCSV = (text) => {
+  const rows = []; let row = [], cur = "", inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += ch;
+    } else {
+      if (ch === '"') inQ = true;
+      else if (ch === ',') { row.push(cur); cur = ""; }
+      else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ""; }
+      else if (ch === '\r') {}
+      else cur += ch;
+    }
+  }
+  if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ""));
+};
 const TODAY = new Date().toISOString().split("T")[0];
 const isExpired = (expiry) => expiry && new Date(expiry) < new Date();
 const groupByMonth = (recs) => {
@@ -71,6 +94,12 @@ function App() {
   const [bodyComps, setBodyComps] = useState(saved?.bodyComps ?? {});
   const [clientNotes, setClientNotes] = useState(saved?.clientNotes ?? {});
   const [newNoteText, setNewNoteText] = useState("");
+  const [colorFilter, setColorFilter] = useState(null);
+  const [formConfig, setFormConfig] = useState(saved?.formConfig ?? { csvUrl:"", mapping:{name:"",age:"",birthday:"",job:"",goal:""}, importedKeys:[] });
+  const [showFormSync, setShowFormSync] = useState(false);
+  const [formHeaders, setFormHeaders] = useState(null);
+  const [formRows, setFormRows] = useState([]);
+  const [formLoading, setFormLoading] = useState(false);
   const [confirmDeleteNote, setConfirmDeleteNote] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [tab, setTab] = useState("record");
@@ -94,12 +123,12 @@ function App() {
   const [confirmDeleteTicket, setConfirmDeleteTicket] = useState(null);
   const [confirmDeleteBodyComp, setConfirmDeleteBodyComp] = useState(null);
 
-  const [newClient, setNewClient] = useState({ name:"", age:"", goal:"", birthday:"", job:"", colorId:"yellow" });
+  const [newClient, setNewClient] = useState({ name:"", age:"", goal:"", birthday:"", job:"", gym:"fit-easy", colorId:"yellow" });
   const [newRecord, setNewRecord] = useState({ date: TODAY, ticketId: null, exercises:[{name:"",weight:"",reps:"",sets:"",memo:""}] });
   const [newTicket, setNewTicket] = useState({ price:"", total:"", expiry:"" });
   const [newBodyComp, setNewBodyComp] = useState({ date: TODAY, bodyWeight:"", bodyFat:"", muscleMass:"", waist:"" });
   const [profileForm, setProfileForm] = useState({ rom:"", injuries:"", condition:"", supplements:"", medications:"" });
-  const [basicForm, setBasicForm] = useState({ name:"", age:"", birthday:"", job:"", goal:"", colorId:"yellow" });
+  const [basicForm, setBasicForm] = useState({ name:"", age:"", birthday:"", job:"", goal:"", gym:"other", colorId:"yellow" });
 
   useEffect(() => {
     const h = () => setIsWide(window.innerWidth >= 768);
@@ -110,17 +139,17 @@ function App() {
   // 自動保存：データが変わるたびに自動保存
   useEffect(() => {
     try {
-      persistSave({ clients, tickets, records, profiles, bodyComps, clientNotes });
+      persistSave({ clients, tickets, records, profiles, bodyComps, clientNotes, formConfig });
       setSaveStatus("saved");
       const t = setTimeout(() => setSaveStatus(""), 1500);
       return () => clearTimeout(t);
     } catch {
       setSaveStatus("error");
     }
-  }, [clients, tickets, records, profiles, bodyComps, clientNotes]);
+  }, [clients, tickets, records, profiles, bodyComps, clientNotes, formConfig]);
 
   const backupData = () => {
-    const data = JSON.stringify({ clients, tickets, records, profiles, bodyComps, clientNotes }, null, 2);
+    const data = JSON.stringify({ clients, tickets, records, profiles, bodyComps, clientNotes, formConfig }, null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -140,6 +169,7 @@ function App() {
         if (data.clients) setClients(data.clients);
         if (data.bodyComps) setBodyComps(data.bodyComps);
         if (data.clientNotes) setClientNotes(data.clientNotes);
+        if (data.formConfig) setFormConfig(data.formConfig);
         if (data.tickets) setTickets(data.tickets);
         if (data.records) setRecords(data.records);
         if (data.profiles) setProfiles(data.profiles);
@@ -152,7 +182,7 @@ function App() {
 
   const saveData = () => {
     try {
-      persistSave({ clients, tickets, records, profiles, bodyComps, clientNotes });
+      persistSave({ clients, tickets, records, profiles, bodyComps, clientNotes, formConfig });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus(""), 2000);
     } catch {
@@ -165,7 +195,8 @@ function App() {
   const selectClient = (c) => { setSelectedClient(c); setTab("record"); if (!isWide) setSidebarOpen(false); };
   const colorOrder = CLIENT_COLORS.map(c=>c.id);
   const filteredClients = clients.filter(c =>
-    c.name.toLowerCase().includes(clientSearch.toLowerCase()) || (c.goal||"").includes(clientSearch)
+    (c.name.toLowerCase().includes(clientSearch.toLowerCase()) || (c.goal||"").includes(clientSearch))
+    && (!colorFilter || (c.colorId||"yellow")===colorFilter)
   ).slice().sort((a,b)=>colorOrder.indexOf(a.colorId||"yellow")-colorOrder.indexOf(b.colorId||"yellow"));
 
   const addClient = () => {
@@ -175,7 +206,7 @@ function App() {
     setTickets({ ...tickets, [id]: [] });
     setRecords({ ...records, [id]: [] });
     setProfiles({ ...profiles, [id]: { rom:"", injuries:"", condition:"", supplements:"", medications:"" } });
-    setNewClient({ name:"", age:"", goal:"", birthday:"", job:"", colorId:"yellow" });
+    setNewClient({ name:"", age:"", goal:"", birthday:"", job:"", gym:"fit-easy", colorId:"yellow" });
     setShowAddClient(false);
   };
   const doDeleteClient = () => {
@@ -277,6 +308,55 @@ function App() {
     setClientNotes({ ...clientNotes, [cid]: (clientNotes[cid]||[]).filter(n => n.id !== confirmDeleteNote) });
     setConfirmDeleteNote(null);
   };
+  const loadFormCSV = async () => {
+    if (!formConfig.csvUrl.trim()) { alert("URLを入力してください"); return; }
+    setFormLoading(true);
+    try {
+      const res = await fetch(formConfig.csvUrl.trim());
+      if (!res.ok) throw new Error("fetch failed");
+      const text = await res.text();
+      const rows = parseCSV(text);
+      if (rows.length < 1) { alert("データが見つかりません"); setFormLoading(false); return; }
+      setFormHeaders(rows[0]);
+      setFormRows(rows.slice(1));
+    } catch (e) {
+      alert("読み込みに失敗しました。URLが「ウェブに公開」したCSVのURLか確認してください。");
+    }
+    setFormLoading(false);
+  };
+  const importFormClients = () => {
+    const m = formConfig.mapping;
+    if (!m.name) { alert("氏名の列を選択してください"); return; }
+    const hIdx = (h) => formHeaders.indexOf(h);
+    const nameI = hIdx(m.name), ageI = m.age?hIdx(m.age):-1, bdI = m.birthday?hIdx(m.birthday):-1, jobI = m.job?hIdx(m.job):-1, goalI = m.goal?hIdx(m.goal):-1;
+    const existingKeys = new Set(formConfig.importedKeys||[]);
+    const newClients = [];
+    const newKeys = [];
+    formRows.forEach((row,ri)=>{
+      const name = (row[nameI]||"").trim();
+      if (!name) return;
+      const key = `${row[0]||ri}|${name}`;
+      if (existingKeys.has(key)) return;
+      newClients.push({
+        id: Date.now()+ri,
+        name,
+        age: ageI>=0 ? Number(row[ageI])||0 : 0,
+        birthday: bdI>=0 ? (row[bdI]||"").trim() : "",
+        job: jobI>=0 ? (row[jobI]||"").trim() : "",
+        goal: goalI>=0 ? (row[goalI]||"").trim() : "",
+        colorId: "yellow",
+      });
+      newKeys.push(key);
+    });
+    if (newClients.length===0) { alert("新しい回答はありません（取り込み済み）"); return; }
+    setClients([...clients, ...newClients]);
+    const tk = {...tickets}, rc = {...records}, pf = {...profiles};
+    newClients.forEach(c=>{ tk[c.id]=[]; rc[c.id]=[]; pf[c.id]={ rom:"", injuries:"", condition:"", supplements:"", medications:"" }; });
+    setTickets(tk); setRecords(rc); setProfiles(pf);
+    setFormConfig({ ...formConfig, importedKeys: [...(formConfig.importedKeys||[]), ...newKeys] });
+    alert(`${newClients.length}名のクライアントを追加しました！`);
+    setShowFormSync(false);
+  };
   const addExerciseRow = () => setNewRecord({ ...newRecord, exercises: [...newRecord.exercises, {name:"",weight:"",reps:"",sets:"",memo:""}] });
   const removeExerciseRow = (i) => { if (newRecord.exercises.length === 1) return; setNewRecord({ ...newRecord, exercises: newRecord.exercises.filter((_,idx)=>idx!==i) }); };
   const duplicateExercise = (i) => {
@@ -322,7 +402,7 @@ function App() {
   };
 
   const openEditHealth = () => { const p=profiles[selectedClient.id]||{}; setProfileForm({rom:p.rom||"",injuries:p.injuries||"",condition:p.condition||"",supplements:p.supplements||"",medications:p.medications||""}); setEditingProfile("health"); };
-  const openEditBasic = () => { setBasicForm({name:selectedClient.name,age:selectedClient.age,birthday:selectedClient.birthday||"",job:selectedClient.job||"",goal:selectedClient.goal||"",colorId:selectedClient.colorId||"yellow"}); setEditingProfile("basic"); };
+  const openEditBasic = () => { setBasicForm({name:selectedClient.name,age:selectedClient.age,birthday:selectedClient.birthday||"",job:selectedClient.job||"",goal:selectedClient.goal||"",gym:selectedClient.gym||"other",colorId:selectedClient.colorId||"yellow"}); setEditingProfile("basic"); };
   const saveProfile = () => { setProfiles({...profiles,[selectedClient.id]:{...profileForm}}); setEditingProfile(false); };
   const saveBasic = () => { const u={...selectedClient,...basicForm,age:Number(basicForm.age)}; setClients(clients.map(c=>c.id===selectedClient.id?u:c)); setSelectedClient(u); setEditingProfile(false); };
   const toggleMonth = (k) => setCollapsedMonths(prev=>({...prev,[k]:!prev[k]}));
@@ -349,6 +429,12 @@ function App() {
           <div style={{padding:"10px 12px",borderBottom:"1px solid #d9dce5",display:"flex",flexDirection:"column",gap:8}}>
             <input value={clientSearch} onChange={e=>setClientSearch(e.target.value)} placeholder="🔍 クライアント検索" style={{width:"100%",padding:"7px 10px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,outline:"none"}}/>
             <button onClick={()=>{setShowAddClient(true);if(!isWide)setSidebarOpen(false);}} style={{padding:"9px 0",background:"#ca8a04",color:"#f4f5f8",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>＋ クライアント追加</button>
+            <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",paddingTop:2}}>
+              <button onClick={()=>setColorFilter(null)} style={{padding:"3px 10px",borderRadius:12,border:colorFilter===null?"2px solid #1d2029":"1px solid #d9dce5",background:"#ffffff",color:"#1d2029",fontSize:11,fontWeight:700,cursor:"pointer"}}>全</button>
+              {CLIENT_COLORS.map(cc=>(
+                <button key={cc.id} onClick={()=>setColorFilter(colorFilter===cc.id?null:cc.id)} title={cc.label} style={{width:22,height:22,borderRadius:"50%",background:cc.hex,border:colorFilter===cc.id?"3px solid #1d2029":"2px solid #ffffff",boxShadow:"0 0 0 1px #d9dce5",cursor:"pointer",padding:0}}/>
+              ))}
+            </div>
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"8px 0"}}>
             {filteredClients.length===0 && <div style={{padding:"20px",color:"#9aa0ac",fontSize:13,textAlign:"center"}}>見つかりません</div>}
@@ -391,7 +477,7 @@ function App() {
                   <div style={{width:10,height:10,borderRadius:"50%",background:accentColor,flexShrink:0}}/>
                   <div>
                     <div style={{fontSize:isWide?20:17,fontWeight:700}}>{selectedClient.name}</div>
-                    <div style={{fontSize:11,color:"#6b7080",marginTop:2}}>{selectedClient.age}歳 · {selectedClient.job||"－"} · {selectedClient.goal}</div>
+                    <div style={{fontSize:11,color:"#6b7080",marginTop:2}}>{selectedClient.age}歳 · {selectedClient.job||"－"} · {selectedClient.goal}{selectedClient.gym&&GYM_OPTIONS.find(g=>g.id===selectedClient.gym)?.label!=="その他 / 指定なし"&&` · ${GYM_OPTIONS.find(g=>g.id===selectedClient.gym)?.label||""}`}</div>
                   </div>
                 </div>
                 <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"flex-end"}}>
@@ -613,6 +699,7 @@ function App() {
                     <InfoRow label="誕生日" value={selectedClient.birthday||"未登録"}/>
                     <InfoRow label="職業" value={selectedClient.job||"未登録"}/>
                     <InfoRow label="目標" value={selectedClient.goal||"未登録"}/>
+                    <InfoRow label="所属ジム" value={GYM_OPTIONS.find(g=>g.id===selectedClient.gym)?.label||"未登録"}/>
                     <InfoRow label="カラー" value={getColor(selectedClient.colorId).label} dot={accentColor}/>
                   </Section>
                   <Section title="身体・健康情報" accent={accentColor}>
@@ -642,7 +729,15 @@ function App() {
           <Label>誕生日</Label><Input type="date" value={newClient.birthday} onChange={e=>setNewClient({...newClient,birthday:e.target.value})}/>
           <Label>職業</Label><Input value={newClient.job} onChange={e=>setNewClient({...newClient,job:e.target.value})} placeholder="会社員"/>
           <Label>目標</Label><Input value={newClient.goal} onChange={e=>setNewClient({...newClient,goal:e.target.value})} placeholder="筋肉増量"/>
-          <Label>カラー</Label><ColorPicker selected={newClient.colorId} onChange={colorId=>setNewClient({...newClient,colorId})}/>
+          <Label>所属ジム</Label>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+            {GYM_OPTIONS.map(g=>{
+              const isSel = newClient.gym===g.id;
+              const col = g.colorId ? getColor(g.colorId).hex : "#9aa0ac";
+              return <button key={g.id} onClick={()=>setNewClient({...newClient,gym:g.id,colorId:g.colorId||newClient.colorId})} style={{padding:"7px 14px",background:isSel?col:"#f4f5f8",color:isSel?"#ffffff":"#565b68",border:isSel?"none":"1px solid #d9dce5",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{g.label}</button>;
+            })}
+          </div>
+          <Label>カラー（自動設定 / 手動で変更も可）</Label><ColorPicker selected={newClient.colorId} onChange={colorId=>setNewClient({...newClient,colorId})}/>
           <SubmitBtn onClick={addClient} accent={getColor(newClient.colorId).hex}>追加する</SubmitBtn>
         </Modal>
       )}
@@ -663,16 +758,20 @@ function App() {
           </div>
           <Label>種目 · 重量(kg) · 回数 · セット</Label>
           {newRecord.exercises.map((ex,i)=>(
-            <div key={i} style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr auto",gap:6,marginBottom:8,alignItems:"center"}}>
-              <div style={{gridColumn:"1 / -1",fontSize:11,fontWeight:700,color:accentColor,marginBottom:-2}}>種目 {i+1}</div>
-              <Input value={ex.name} onChange={e=>updateExercise(i,"name",e.target.value)} placeholder="種目名"/>
-              <Input type="number" value={ex.weight} onChange={e=>updateExercise(i,"weight",e.target.value)} placeholder="kg"/>
-              <Input type="number" value={ex.reps} onChange={e=>updateExercise(i,"reps",e.target.value)} placeholder="回"/>
-              <Input type="number" value={ex.sets} onChange={e=>updateExercise(i,"sets",e.target.value)} placeholder="set"/>
-              <button onClick={()=>removeExerciseRow(i)} style={{background:"none",border:"none",color:"#8a8f9c",fontSize:18,cursor:"pointer",marginBottom:14,padding:"0 4px"}}>✕</button>
-              <div style={{gridColumn:"1 / -1",marginTop:-8,marginBottom:6,display:"flex",gap:6,alignItems:"center"}}>
-                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{flex:1,padding:"7px 10px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#565b68",fontSize:14,boxSizing:"border-box",outline:"none"}}/>
-                <button onClick={()=>duplicateExercise(i)} title="この種目を複製" style={{padding:"7px 10px",background:"#d9dce5",border:"1px solid #c9cdd9",color:"#565b68",borderRadius:8,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>複製</button>
+            <div key={i} style={{border:"1px solid #e6e8ef",borderRadius:10,padding:"10px 10px 0",marginBottom:10,background:"#fbfbfd"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <span style={{fontSize:12,fontWeight:700,color:accentColor}}>種目 {i+1}</span>
+                <button onClick={()=>removeExerciseRow(i)} style={{background:"none",border:"none",color:"#8a8f9c",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}}>✕</button>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:6}}>
+                <Input value={ex.name} onChange={e=>updateExercise(i,"name",e.target.value)} placeholder="種目名"/>
+                <Input type="number" value={ex.weight} onChange={e=>updateExercise(i,"weight",e.target.value)} placeholder="kg"/>
+                <Input type="number" value={ex.reps} onChange={e=>updateExercise(i,"reps",e.target.value)} placeholder="回"/>
+                <Input type="number" value={ex.sets} onChange={e=>updateExercise(i,"sets",e.target.value)} placeholder="set"/>
+              </div>
+              <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:12}}>
+                <input value={ex.memo||""} onChange={e=>updateExercise(i,"memo",e.target.value)} placeholder="📝 メモ（任意）" style={{flex:1,padding:"8px 10px",background:"#ffffff",border:"1px solid #d9dce5",borderRadius:8,color:"#565b68",fontSize:16,boxSizing:"border-box",outline:"none"}}/>
+                <button onClick={()=>duplicateExercise(i)} title="この種目を複製" style={{padding:"8px 10px",background:"#d9dce5",border:"1px solid #c9cdd9",color:"#565b68",borderRadius:8,fontSize:12,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>複製</button>
               </div>
             </div>
           ))}
@@ -722,7 +821,15 @@ function App() {
           <Label>誕生日</Label><Input type="date" value={basicForm.birthday} onChange={e=>setBasicForm({...basicForm,birthday:e.target.value})}/>
           <Label>職業</Label><Input value={basicForm.job} onChange={e=>setBasicForm({...basicForm,job:e.target.value})} placeholder="会社員"/>
           <Label>目標</Label><Input value={basicForm.goal} onChange={e=>setBasicForm({...basicForm,goal:e.target.value})} placeholder="筋肉増量"/>
-          <Label>カラー</Label><ColorPicker selected={basicForm.colorId} onChange={colorId=>setBasicForm({...basicForm,colorId})}/>
+          <Label>所属ジム</Label>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+            {GYM_OPTIONS.map(g=>{
+              const isSel = basicForm.gym===g.id;
+              const col = g.colorId ? getColor(g.colorId).hex : "#9aa0ac";
+              return <button key={g.id} onClick={()=>setBasicForm({...basicForm,gym:g.id,colorId:g.colorId||basicForm.colorId})} style={{padding:"7px 14px",background:isSel?col:"#f4f5f8",color:isSel?"#ffffff":"#565b68",border:isSel?"none":"1px solid #d9dce5",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer"}}>{g.label}</button>;
+            })}
+          </div>
+          <Label>カラー（自動設定 / 手動で変更も可）</Label><ColorPicker selected={basicForm.colorId} onChange={colorId=>setBasicForm({...basicForm,colorId})}/>
           <SubmitBtn onClick={saveBasic} accent={getColor(basicForm.colorId).hex}>保存する</SubmitBtn>
         </Modal>
       )}
@@ -739,11 +846,42 @@ function App() {
       )}
       {/* 右下固定の保存ボタン */}
       <div style={{position:"fixed",bottom:24,right:16,zIndex:300,display:"flex",gap:8}}>
+        <button onClick={()=>setShowFormSync(true)} style={{padding:"10px 14px",background:"#eef0f5",color:"#565b68",border:"1px solid #c9cdd9",borderRadius:24,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>📮</button>
         <button onClick={()=>setShowBackup(true)} style={{padding:"10px 14px",background:"#eef0f5",color:"#565b68",border:"1px solid #c9cdd9",borderRadius:24,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>📦</button>
         <button onClick={saveData} style={{padding:"10px 18px",background:saveStatus==="saved"?"#0e9f5a":saveStatus==="error"?"#dc2626":"#eef0f5",color:saveStatus==="saved"?"#f4f5f8":saveStatus==="error"?"#fff":"#ca8a04",border:"1px solid #c9cdd9",borderRadius:24,fontWeight:700,fontSize:14,cursor:"pointer",transition:"all 0.3s",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>
           {saveStatus==="saved"?"✓ 保存済み":saveStatus==="error"?"⚠ 失敗":"💾 保存"}
         </button>
       </div>
+
+      {showFormSync&&(
+        <Modal title="📮 Googleフォーム連携" onClose={()=>setShowFormSync(false)}>
+          <div style={{fontSize:12,color:"#6b7080",lineHeight:1.7,marginBottom:14,background:"#f4f5f8",borderRadius:8,padding:"10px 12px"}}>
+            【初回設定】<br/>
+            1. フォームの「回答」→ スプレッドシートを作成<br/>
+            2. シートで ファイル → 共有 → ウェブに公開<br/>
+            3. 形式を「カンマ区切り(.csv)」にして公開<br/>
+            4. 表示されたURLを下に貼り付け
+          </div>
+          <Label>公開CSVのURL</Label>
+          <Input value={formConfig.csvUrl} onChange={e=>setFormConfig({...formConfig,csvUrl:e.target.value})} placeholder="https://docs.google.com/spreadsheets/..../pub?output=csv"/>
+          <button onClick={loadFormCSV} disabled={formLoading} style={{width:"100%",padding:"10px 0",background:"#d9dce5",color:"#1d2029",border:"none",borderRadius:8,fontWeight:700,fontSize:13,cursor:"pointer",marginBottom:14}}>{formLoading?"読み込み中...":"📥 回答を読み込む"}</button>
+          {formHeaders&&(
+            <>
+              <div style={{fontSize:12,color:"#0e9f5a",marginBottom:10}}>✓ {formRows.length}件の回答を読み込みました。各項目に対応する質問を選んでください。</div>
+              {[["name","氏名（必須）"],["age","年齢"],["birthday","誕生日"],["job","職業"],["goal","目標"]].map(([k,label])=>(
+                <div key={k} style={{marginBottom:10}}>
+                  <Label>{label}</Label>
+                  <select value={formConfig.mapping[k]||""} onChange={e=>setFormConfig({...formConfig,mapping:{...formConfig.mapping,[k]:e.target.value}})} style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:14,outline:"none"}}>
+                    <option value="">— 使わない —</option>
+                    {formHeaders.map((h,i)=>(<option key={i} value={h}>{h}</option>))}
+                  </select>
+                </div>
+              ))}
+              <SubmitBtn onClick={importFormClients} accent="#0e9f5a">👥 クライアントを取り込む</SubmitBtn>
+            </>
+          )}
+        </Modal>
+      )}
 
       {showBackup&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.35)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
@@ -814,7 +952,12 @@ function InfoRow({label,value,dot}){
   return <div style={{display:"flex",padding:"10px 16px",borderBottom:"1px solid #e6e8ef",gap:12,alignItems:"center"}}><div style={{fontSize:12,color:"#6b7080",minWidth:100,flexShrink:0}}>{label}</div><div style={{fontSize:14,color:"#1d2029",whiteSpace:"pre-wrap",wordBreak:"break-all",display:"flex",alignItems:"center",gap:8}}>{dot&&<span style={{width:10,height:10,borderRadius:"50%",background:dot,display:"inline-block",flexShrink:0}}/>}{value}</div></div>;
 }
 function Modal({title,onClose,children}){
-  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16}}><div style={{background:"#ffffff",border:"1px solid #d9dce5",borderRadius:16,padding:24,width:"100%",maxWidth:480,maxHeight:"85vh",overflowY:"auto"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><div style={{fontWeight:700,fontSize:16}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",color:"#6b7080",fontSize:22,cursor:"pointer"}}>✕</button></div>{children}</div></div>;
+  useEffect(()=>{
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return ()=>{ document.body.style.overflow = prev; };
+  },[]);
+  return <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:100,padding:16,overflowY:"auto",WebkitOverflowScrolling:"touch"}}><div style={{background:"#ffffff",border:"1px solid #d9dce5",borderRadius:16,padding:24,width:"100%",maxWidth:480,marginTop:12,marginBottom:60}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}><div style={{fontWeight:700,fontSize:16}}>{title}</div><button onClick={onClose} style={{background:"none",border:"none",color:"#6b7080",fontSize:22,cursor:"pointer"}}>✕</button></div>{children}</div></div>;
 }
 function Label({children}){return <div style={{fontSize:12,color:"#6b7080",marginBottom:6}}>{children}</div>;}
 function Input(props){return <input {...props} style={{width:"100%",padding:"9px 12px",background:"#f4f5f8",border:"1px solid #d9dce5",borderRadius:8,color:"#1d2029",fontSize:16,marginBottom:14,boxSizing:"border-box",outline:"none"}}/>;}
