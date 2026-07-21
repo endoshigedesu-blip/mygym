@@ -1,0 +1,2715 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>食事設計カルテ | Meal Design</title>
+<style>
+:root{
+  --paper:#F6F5EF; --card:#FFFFFF; --ink:#22261F; --sub:#6E7268; --line:#E0DCD0;
+  --green:#2E5C41; --green-deep:#1F4130; --green-tint:#EAF0EA;
+  --p:#BF4A3C; --f:#D2951F; --c:#3D6C9E;
+  --warn-bg:#FBF1E8; --warn:#A05A1C;
+  --radius:14px;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic",Meiryo,sans-serif;
+  line-height:1.65; padding-bottom:calc(76px + env(safe-area-inset-bottom));
+}
+.serif{font-family:"Hiragino Mincho ProN","Yu Mincho","YuMincho",serif;}
+.num{font-variant-numeric:tabular-nums;}
+
+header{
+  background:var(--green-deep); color:#F2F1E9; padding:18px 20px 16px;
+}
+header h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.35rem; font-weight:700; letter-spacing:.06em;}
+header .sub{font-size:.72rem; letter-spacing:.22em; opacity:.75; text-transform:uppercase; margin-top:2px;}
+
+main{max-width:720px; margin:0 auto; padding:16px 14px 24px;}
+.tabpane{display:none;}
+.tabpane.on{display:block; animation:fade .18s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+@media (prefers-reduced-motion:reduce){ .tabpane.on{animation:none;} }
+
+/* ---- cards & form ---- */
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:14px;}
+.card h2{font-size:.95rem; letter-spacing:.05em; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+.card h2::before{content:""; width:4px; height:16px; background:var(--green); border-radius:2px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.field{margin-bottom:10px;}
+.field label{display:block; font-size:.75rem; color:var(--sub); margin-bottom:4px; letter-spacing:.03em;}
+input[type=number], input[type=text], select{
+  width:100%; padding:10px 12px; font-size:1rem; border:1px solid var(--line); border-radius:10px;
+  background:#FDFDFB; color:var(--ink); font-family:inherit;
+}
+input:focus, select:focus, button:focus-visible{outline:2px solid var(--green); outline-offset:1px;}
+.seg{display:flex; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+.seg button{flex:1; padding:10px 6px; font-size:.9rem; background:#FDFDFB; border:none; color:var(--sub); font-family:inherit; cursor:pointer;}
+.seg button.on{background:var(--green); color:#fff; font-weight:700;}
+.hint{font-size:.72rem; color:var(--sub); margin-top:4px;}
+.inline-check{display:flex; align-items:center; gap:8px; font-size:.85rem; margin:8px 0;}
+.inline-check input{width:18px; height:18px; accent-color:var(--green);}
+details.adv{border:1px dashed var(--line); border-radius:10px; padding:10px 12px; margin-top:6px;}
+details.adv summary{font-size:.85rem; color:var(--green); cursor:pointer; font-weight:700;}
+details.adv .inner{padding-top:10px;}
+
+/* ---- result chart (signature: nutrition-label style) ---- */
+.chart{border:2.5px solid var(--ink); border-radius:6px; background:#FFFDF7; padding:0; overflow:hidden; margin-bottom:14px;}
+.chart .chead{padding:12px 16px 8px; border-bottom:2.5px solid var(--ink);}
+.chart .chead .tag{font-size:.68rem; letter-spacing:.28em; color:var(--sub);}
+.chart .chead h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.15rem; letter-spacing:.08em;}
+.crow{display:flex; justify-content:space-between; align-items:baseline; padding:10px 16px; border-bottom:1px solid var(--line);}
+.crow .k{font-size:.85rem;}
+.crow .k small{display:block; font-size:.68rem; color:var(--sub);}
+.crow .v{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.3rem; font-weight:700; font-variant-numeric:tabular-nums;}
+.crow .v small{font-size:.7rem; font-family:inherit; color:var(--sub); font-weight:400; margin-left:2px;}
+.crow.big{background:var(--green-tint); border-top:2px solid var(--ink); border-bottom:2px solid var(--ink);}
+.crow.big .v{font-size:2rem; color:var(--green-deep);}
+.pfcbar{display:flex; height:14px; border-radius:7px; overflow:hidden; margin:12px 16px 4px;}
+.pfcbar div{height:100%;}
+.pfclegend{display:flex; gap:14px; padding:4px 16px 12px; font-size:.72rem; color:var(--sub); flex-wrap:wrap;}
+.dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:1px;}
+.macros{display:grid; grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line);}
+.macros .m{padding:12px 8px; text-align:center; border-right:1px solid var(--line);}
+.macros .m:last-child{border-right:none;}
+.macros .m .lbl{font-size:.72rem; font-weight:700; letter-spacing:.1em;}
+.macros .m .g{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.6rem; font-weight:700; font-variant-numeric:tabular-nums;}
+.macros .m .g small{font-size:.75rem;}
+.macros .m .kc{font-size:.7rem; color:var(--sub);}
+table.meals{width:100%; border-collapse:collapse; font-size:.85rem;}
+table.meals th, table.meals td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums;}
+table.meals th{font-size:.72rem; color:var(--sub); font-weight:400;}
+table.meals th:first-child, table.meals td:first-child{text-align:left;}
+table.meals td:first-child{font-weight:700;}
+.note{font-size:.74rem; color:var(--sub); padding:10px 16px 14px;}
+.warnbox{background:var(--warn-bg); color:var(--warn); font-size:.8rem; padding:10px 16px; border-top:1px solid #EAD9C4;}
+
+/* ---- clients ---- */
+.clientrow{display:flex; gap:8px;}
+.clientrow select{flex:1;}
+.btn{padding:10px 14px; border:none; border-radius:10px; background:var(--green); color:#fff; font-size:.85rem; font-weight:700; font-family:inherit; cursor:pointer; white-space:nowrap;}
+.btn.ghost{background:#FDFDFB; color:var(--green); border:1px solid var(--green);}
+.btn.danger{background:#FDFDFB; color:var(--p); border:1px solid var(--p);}
+.btn:active{transform:scale(.97);}
+
+/* ---- search ---- */
+.searchbox{position:relative; margin-bottom:10px;}
+.searchbox input{padding-left:38px;}
+.searchbox::before{content:"🔎"; position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:.9rem; opacity:.5;}
+.chips{display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:6px; -webkit-overflow-scrolling:touch;}
+.chips button{flex:0 0 auto; padding:6px 12px; border-radius:99px; border:1px solid var(--line); background:#FDFDFB; font-size:.78rem; color:var(--sub); font-family:inherit; cursor:pointer;}
+.chips button.on{background:var(--ink); color:#fff; border-color:var(--ink);}
+.foodlist{list-style:none;}
+.foodlist li{background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:8px; overflow:hidden;}
+.foodrow{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; cursor:pointer;}
+.foodrow .fname{font-size:.92rem; font-weight:700;}
+.foodrow .fcat{font-size:.68rem; color:var(--sub);}
+.foodrow .fkcal{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.05rem; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums;}
+.foodrow .fkcal small{font-size:.65rem; color:var(--sub); font-family:inherit; font-weight:400;}
+.fdetail{display:none; border-top:1px dashed var(--line); padding:12px 14px; background:#FCFBF6;}
+.foodlist li.open .fdetail{display:block;}
+.gramrow{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+.gramrow input{width:110px; text-align:right; font-size:1.1rem; font-weight:700;}
+.gramrow .unit{font-size:.85rem; color:var(--sub);}
+.pfcline{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; text-align:center; margin-bottom:10px;}
+.pfcline .cell{background:#fff; border:1px solid var(--line); border-radius:10px; padding:8px 4px;}
+.pfcline .cell .t{font-size:.66rem; color:var(--sub);}
+.pfcline .cell .n{font-weight:700; font-size:1rem; font-variant-numeric:tabular-nums;}
+.pfcline .cell.P .n{color:var(--p);} .pfcline .cell.F .n{color:var(--f);} .pfcline .cell.C .n{color:var(--c);}
+.emptymsg{text-align:center; color:var(--sub); font-size:.85rem; padding:24px 10px;}
+
+/* ---- totals ---- */
+.totals{position:sticky; top:8px; z-index:5;}
+.totals .titem{display:flex; align-items:center; gap:8px; font-size:.85rem; padding:6px 0; border-bottom:1px dashed var(--line);}
+.totals .titem .tn{flex:1;}
+.totals .titem input{width:70px; padding:6px 8px; text-align:right; font-size:.9rem;}
+.totals .titem .x{border:none; background:none; color:var(--p); font-size:1.1rem; cursor:pointer; padding:2px 6px;}
+.tsum{display:flex; justify-content:space-between; align-items:baseline; padding-top:10px; font-size:.85rem;}
+.tsum .big{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:1.4rem; font-weight:700; font-variant-numeric:tabular-nums;}
+.tvs{font-size:.75rem; color:var(--sub); margin-top:4px;}
+
+/* ---- concerns ---- */
+.concern{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:10px; overflow:hidden;}
+.concern summary{list-style:none; display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer;}
+.concern summary::-webkit-details-marker{display:none;}
+.concern .icon{font-size:1.4rem;}
+.concern .ct{flex:1;}
+.concern .ct .t{font-weight:700; font-size:.95rem;}
+.concern .ct .s{font-size:.72rem; color:var(--sub);}
+.concern .arrow{color:var(--sub); transition:transform .15s;}
+.concern[open] .arrow{transform:rotate(90deg);}
+.cbody{padding:0 16px 16px; border-top:1px solid var(--line);}
+.cbody h4{font-size:.78rem; color:var(--green); letter-spacing:.08em; margin:14px 0 6px;}
+.cbody p{font-size:.85rem; margin-bottom:6px;}
+.cfood{display:flex; gap:10px; padding:8px 10px; background:#FCFBF6; border:1px solid var(--line); border-radius:10px; margin-bottom:6px; font-size:.82rem;}
+.cfood .fn{font-weight:700; white-space:nowrap;}
+.cfood .fw{color:var(--sub);}
+.cbody ul.tips{padding-left:18px; font-size:.83rem;}
+.cbody ul.tips li{margin-bottom:4px;}
+.cref{font-size:.7rem; color:var(--sub); background:#F2F1E9; border-radius:8px; padding:8px 10px; margin-top:12px; line-height:1.5;}
+
+/* ---- evidence ---- */
+.ev{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:12px;}
+.ev h3{font-size:.92rem; margin-bottom:8px; color:var(--green-deep);}
+.ev .formula{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.8rem; background:#F2F1E9; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin:8px 0; overflow-x:auto; white-space:pre; line-height:1.8;}
+.ev p{font-size:.83rem; margin-bottom:6px;}
+.ev .ref{font-size:.7rem; color:var(--sub); border-left:2px solid var(--line); padding-left:8px; margin-top:8px;}
+
+
+/* ---- image modal ---- */
+#imgModal{position:fixed; inset:0; background:rgba(18,24,17,.82); z-index:50; display:none; align-items:flex-start; justify-content:center; overflow-y:auto; padding:20px 14px 48px;}
+#imgModal.on{display:flex;}
+.imWrap{max-width:560px; width:100%;}
+.imWrap img{width:100%; border-radius:12px; display:block; box-shadow:0 10px 34px rgba(0,0,0,.45); margin-top:6px; -webkit-touch-callout:default; touch-action:manipulation;}
+.imTop{color:#fff; font-size:.9rem; font-weight:700; text-align:center; background:rgba(6,199,85,.9); border-radius:10px; padding:10px 12px; margin-bottom:4px; line-height:1.5;}
+.imHint{color:#fff; font-size:.76rem; text-align:center; margin:10px 4px; opacity:.85; line-height:1.5;}
+.imBtns{display:flex; gap:8px;}
+.selbtn{flex:0 0 auto; font-size:.74rem; font-weight:700; padding:7px 11px; border-radius:99px; border:1.5px solid var(--green); color:var(--green); background:#fff; white-space:nowrap; margin-right:6px;}
+.concern.sel{border-color:var(--green); box-shadow:0 0 0 2px var(--green-tint) inset;}
+.concern.sel .selbtn{background:var(--green); color:#fff;}
+.cselrow{display:none;}
+
+/* ---- tab bar ---- */
+nav.tabbar{
+  position:fixed; bottom:0; left:0; right:0; z-index:10;
+  display:flex; background:#FFFFFF; border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+nav.tabbar button{
+  flex:1; padding:10px 4px 8px; border:none; background:none; font-family:inherit;
+  font-size:.66rem; color:var(--sub); cursor:pointer; letter-spacing:.02em;
+}
+nav.tabbar button .ico{display:block; font-size:1.25rem; margin-bottom:2px;}
+nav.tabbar button.on{color:var(--green-deep); font-weight:700;}
+nav.tabbar button.on .ico{transform:translateY(-1px);}
+
+@media(min-width:720px){
+  main{padding-top:24px;}
+  .grid2{grid-template-columns:1fr 1fr 1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>食事設計カルテ</h1>
+  <div class="sub">Meal Design for Physique Clients</div>
+</header>
+
+<main>
+<!-- ============ TAB 1: 設計 ============ -->
+<section id="tab-plan" class="tabpane on">
+
+  <div class="card">
+    <h2>クライアント</h2>
+    <div class="clientrow">
+      <select id="clientSel"><option value="">— 未選択（新規入力）—</option></select>
+      <button class="btn" id="btnSave">保存</button>
+      <button class="btn danger" id="btnDel">削除</button>
+    </div>
+    <div class="hint">入力内容はこの端末（ブラウザ）にのみ保存されます。</div>
+  </div>
+
+  <div class="card">
+    <h2>基本情報</h2>
+    <div class="field">
+      <label>目的</label>
+      <div class="seg" id="segGoal">
+        <button data-v="cut" class="on">減量</button>
+        <button data-v="bulk">リーンバルク</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>性別</label>
+      <div class="seg" id="segSex">
+        <button data-v="m" class="on">男性</button>
+        <button data-v="f">女性</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>年齢</label><input type="number" id="inAge" inputmode="numeric" placeholder="30" min="10" max="99"></div>
+      <div class="field"><label>身長（cm）</label><input type="number" id="inH" inputmode="decimal" placeholder="170" min="100" max="230"></div>
+      <div class="field"><label>体重（kg）</label><input type="number" id="inW" inputmode="decimal" placeholder="70" min="30" max="200" step="0.1"></div>
+      <div class="field"><label>体脂肪率（%・任意）</label><input type="number" id="inBF" inputmode="decimal" placeholder="15" min="3" max="60" step="0.1"></div>
+    </div>
+    <div class="field">
+      <label>日常生活の活動強度</label>
+      <select id="inPAL">
+        <option value="1.2">ほぼ運動なし・デスクワーク中心（×1.2）</option>
+        <option value="1.375">軽い運動 週1〜3回（×1.375）</option>
+        <option value="1.55" selected>中程度の運動 週3〜5回（×1.55）</option>
+        <option value="1.725">激しい運動 週6〜7回（×1.725）</option>
+        <option value="1.9">肉体労働＋ハードトレーニング（×1.9）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>基礎代謝の計算式</label>
+      <select id="inBMRf">
+        <option value="msj" selected>Mifflin-St Jeor 式（標準）</option>
+        <option value="km">Katch-McArdle 式（体脂肪率が必要）</option>
+      </select>
+    </div>
+    <label class="inline-check"><input type="checkbox" id="ckTDEE"> 維持カロリーを実測値で上書きする</label>
+    <div class="field" id="rowTDEE" style="display:none;"><label>実測の維持カロリー（kcal）</label><input type="number" id="inTDEE" inputmode="numeric" placeholder="2600"></div>
+    <div class="field">
+      <label>カロリー調整の決め方</label>
+      <div class="seg" id="segAdjMode">
+        <button data-v="pace" class="on">月◯kgペースで自動</button>
+        <button data-v="manual">kcalを直接入力</button>
+      </div>
+    </div>
+    <div class="field" id="rowPace">
+      <label id="lblPace">1ヶ月の減量ペース（kg）</label>
+      <input type="number" id="inPace" inputmode="decimal" value="2" min="0.1" max="8" step="0.1">
+      <div class="hint" id="hintPace"></div>
+    </div>
+    <div class="field" id="rowAdj" style="display:none;">
+      <label id="lblAdj">1日のアンダーカロリー（kcal）</label>
+      <input type="number" id="inAdj" inputmode="numeric" value="400" min="0" max="1500" step="50">
+      <div class="hint" id="hintAdj"></div>
+    </div>
+
+    <details class="adv">
+      <summary>詳細設定（P・F・食事配分・水分）</summary>
+      <div class="inner">
+        <div class="grid2">
+          <div class="field"><label>タンパク質（g／体重kg）</label><input type="number" id="inPkg" inputmode="decimal" step="0.1" min="1.0" max="3.5"></div>
+          <div class="field"><label>脂質（目標kcalに対する%）</label><input type="number" id="inFpct" inputmode="numeric" step="1" min="10" max="40"></div>
+        </div>
+        <div class="field"><label>食事配分（合計100%）</label>
+          <div class="grid2">
+            <div><input type="number" id="mB" value="25" min="0" max="100"><div class="hint">朝 %</div></div>
+            <div><input type="number" id="mL" value="30" min="0" max="100"><div class="hint">昼 %</div></div>
+            <div><input type="number" id="mD" value="30" min="0" max="100"><div class="hint">夜 %</div></div>
+            <div><input type="number" id="mS" value="15" min="0" max="100"><div class="hint">間食 %</div></div>
+          </div>
+          <div class="hint" id="mealSumHint"></div>
+        </div>
+        <label class="inline-check"><input type="checkbox" id="ckTrain" checked> トレーニング日の水分加算（＋500〜1,000ml）を表示</label>
+      </div>
+    </details>
+  </div>
+
+  <div class="chart" id="resultChart">
+    <div class="chead">
+      <div class="tag">NUTRITION CHART</div>
+      <h2 id="chartTitle">栄養設計</h2>
+    </div>
+    <div id="chartBody"><div class="emptymsg">年齢・身長・体重を入力すると自動で計算されます</div></div>
+    <div id="shareBar" style="display:none; padding:12px 16px; border-top:2.5px solid var(--ink);">
+      <button class="btn" id="btnImg" style="width:100%; margin-bottom:8px; padding:13px;">📷 カルテを画像で共有（LINEに送れます）</button>
+      <button class="btn" id="btnPyramid" style="width:100%; margin-bottom:8px; padding:13px; background:var(--green-deep);">🔺 栄養の優先順位ピラミッドを共有</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" id="btnLine" style="flex:1; background:#06C755;">LINE（テキスト）</button>
+        <button class="btn ghost" id="btnShare" style="flex:1;">テキストをコピー</button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============ TAB 2: 食材検索 ============ -->
+<section id="tab-search" class="tabpane">
+  <div class="card totals" id="totalsCard" style="display:none;">
+    <h2>選択中の食材　合計</h2>
+    <div id="totalsList"></div>
+    <div class="tsum"><span>合計</span><span><span class="big num" id="tKcal">0</span> <small>kcal</small>　<span class="num" id="tPFC" style="font-size:.8rem;color:var(--sub);"></span></span></div>
+    <div class="tvs" id="tVs"></div>
+    <div style="margin-top:10px; text-align:right;"><button class="btn ghost" id="btnClearTotals">リストを空にする</button></div>
+  </div>
+
+  <div class="card">
+    <h2>食材検索</h2>
+    <div class="searchbox"><input type="text" id="inSearch" placeholder="例：鶏むね、さつまいも、オートミール…"></div>
+    <div class="chips" id="catChips"></div>
+    <ul class="foodlist" id="foodList"></ul>
+    <div class="hint" style="margin-top:8px;">数値は<strong>文部科学省「日本食品標準成分表2020年版（八訂）」</strong>に基づく100gあたりの目安値です。市販品・調理品（「目安」表記）はメーカー公表値や標準的レシピからの推計を含み、商品により差があります。グラム数を入力すると自動換算されます。</div>
+  </div>
+</section>
+
+<!-- ============ TAB 3: お悩み別 ============ -->
+<section id="tab-concern" class="tabpane">
+  <div class="card" style="margin-bottom:14px;">
+    <h2>お悩み別・おすすめ食材（全83テーマ）</h2>
+    <div class="hint">各カード右の「＋追加」を押すと、開かなくてもまとめ画像に選べます。複数選んで下のボタンから1枚にまとめてLINEで送れます。医療的な症状が続く場合は受診をすすめてください。</div>
+    <div class="searchbox" style="margin-top:12px;"><input type="text" id="inConcernSearch" placeholder="例：睡眠、プロテイン、便秘、鉄分…"></div>
+  </div>
+  <div id="concernList"></div>
+  <button class="btn" id="btnCMulti" style="display:none; position:sticky; bottom:calc(76px + env(safe-area-inset-bottom)); z-index:6; width:100%; margin-top:12px; padding:14px; box-shadow:0 6px 20px rgba(31,65,48,.4);">📷 選択した0件をまとめて画像で共有</button>
+</section>
+
+<!-- ============ TAB 4: 計算式の根拠 ============ -->
+<section id="tab-evidence" class="tabpane">
+  <div class="ev">
+    <h3>① 基礎代謝（BMR）</h3>
+    <p><strong>Mifflin-St Jeor 式</strong>：現在最も予測精度が高いとされる推定式。米国栄養士会（ADA/AND）も推奨。</p>
+    <div class="formula">男性: BMR = 10×体重kg + 6.25×身長cm − 5×年齢 + 5
+女性: BMR = 10×体重kg + 6.25×身長cm − 5×年齢 − 161</div>
+    <p><strong>Katch-McArdle 式</strong>：除脂肪体重（LBM）ベース。体脂肪率が分かっている競技者・筋量が多い人ではこちらが実態に近いことが多い。</p>
+    <div class="formula">LBM = 体重 × (1 − 体脂肪率/100)
+BMR = 370 + 21.6 × LBM</div>
+    <div class="ref">Mifflin MD et al. Am J Clin Nutr. 1990 / Katch & McArdle. Exercise Physiology.</div>
+  </div>
+
+  <div class="ev">
+    <h3>② 維持カロリー（TDEE）</h3>
+    <div class="formula">TDEE = BMR × 活動係数（1.2 / 1.375 / 1.55 / 1.725 / 1.9）</div>
+    <p>活動係数はHarris-Benedict系のPAL（身体活動レベル）区分。推定式なので±10%程度の誤差は前提とし、2〜3週間の体重推移で微調整するのが実務的です。実測値がある場合は「実測値で上書き」を使用してください。</p>
+  </div>
+
+  <div class="ev">
+    <h3>③ カロリー調整幅</h3>
+    <p><strong>減量</strong>：週あたり体重の0.5〜1.0%の減少が筋量維持と両立しやすいペース（コンテスト選手は0.5〜0.7%推奨）。体脂肪1kg≒7,200kcalより、</p>
+    <div class="formula">アンダーカロリー ≒ 体重kg × 0.005〜0.007 × 7200 ÷ 7日
+（例：70kgなら 約350〜490 kcal/日）
+
+月◯kg指定時の自動換算：
+1日の調整kcal = 月間目標kg × 7,200 ÷ 30日
+（例：月2kg減 → 480 kcal/日のアンダー）</div>
+    <p><strong>リーンバルク</strong>：+200〜300kcal/日（週+0.25〜0.5%程度の体重増）が脂肪蓄積を抑えつつ筋合成を最大化しやすい範囲。</p>
+    <div class="ref">Helms ER et al. JISSN. 2014 / Garthe I et al. IJSNEM. 2011 / Slater G et al. Front Nutr. 2019</div>
+  </div>
+
+  <div class="ev">
+    <h3>④ タンパク質（P）</h3>
+    <div class="formula">P(g) = 体重kg × 係数
+減量: 2.2 g/kg（初期値・2.3〜3.1g/kg LBMの研究に基づく）
+増量: 2.0 g/kg（初期値・1.6〜2.2g/kgで筋合成は頭打ち）</div>
+    <p>減量中はアンダーカロリーによる筋分解を防ぐため多め、増量中は1.6g/kg以上で十分というメタ分析（Morton 2018）に基づき設定。除脂肪体重が分かる場合はLBM基準での調整も可。</p>
+    <div class="ref">Morton RW et al. Br J Sports Med. 2018 / Helms ER et al. IJSNEM. 2014 / ISSN Position Stand (Jäger R et al. 2017)</div>
+  </div>
+
+  <div class="ev">
+    <h3>⑤ 脂質（F）と炭水化物（C）</h3>
+    <div class="formula">F(g) = 目標kcal × F比率(減量20% / 増量25%) ÷ 9
+C(g) = (目標kcal − P×4 − F×9) ÷ 4</div>
+    <p>脂質はホルモン産生（テストステロン等）維持のため最低でも0.5〜0.8g/kgを確保。下回る場合アプリが警告を出します。残りをトレーニングの燃料である炭水化物に割り当てます（エネルギー換算：P=4, C=4, F=9 kcal/g）。</p>
+    <div class="ref">ISSN Diets & Body Composition (Aragon AA et al. 2017)</div>
+  </div>
+
+  <div class="ev">
+    <h3>⑥ 食事配分と1食あたりのタンパク質</h3>
+    <div class="formula">1食あたりP目安 = 体重kg × 0.4 g（1日3〜5食に分割）</div>
+    <p>筋タンパク合成（MPS）の最大化には0.4g/kg程度を3〜5回に分けて摂るのが効率的。初期配分（朝25/昼30/夜30/間食15%）は目安で、生活リズムに合わせて%を変更できます。</p>
+    <div class="ref">Schoenfeld BJ & Aragon AA. JISSN. 2018</div>
+  </div>
+
+  <div class="ev">
+    <h3>⑦ 水分量</h3>
+    <div class="formula">1日の水分目安 = 体重kg × 35 ml
+トレーニング日 = ＋500〜1,000 ml（発汗量に応じて）</div>
+    <p>35ml/kgは成人の一般的な必要量の目安（EFSA・日本の食事摂取基準の考え方に整合）。体重2%の脱水でパフォーマンスが低下するため、トレ前後の体重差で発汗量を実測するとより正確です。</p>
+    <div class="ref">EFSA Panel on Dietetic Products. 2010 / ACSM Position Stand: Exercise and Fluid Replacement. 2007</div>
+  </div>
+
+  <div class="ev">
+    <h3>⑧ このアプリの数値の限界</h3>
+    <p>すべて「推定式」であり、個人差（NEAT・腸内環境・ホルモン状態）で±10〜15%ずれます。設計値は出発点として、<strong>週平均体重の推移</strong>を見ながら100〜200kcal単位で調整するのが正しい使い方です。</p>
+  </div>
+</section>
+
+<!-- 画像プレビューモーダル -->
+<div id="imgModal">
+  <div class="imWrap">
+    <div class="imTop">画像を長押し →「"写真"に保存」または「共有」でLINEに送れます。<br>ボタンが効かない時は画像をタップで別画面表示できます。</div>
+    <img id="imPic" alt="共有画像プレビュー">
+    <div class="imHint">1件だけの共有はスマホ画面にぴったり収まります。3件以上は自動で2列レイアウトになります。<br><b>確実に送るには、この画面のURLをSafariで開いてください（アプリ内ブラウザは保存・共有が制限されます）。</b></div>
+    <div class="imBtns">
+      <button class="btn" id="imShare" style="flex:1.3; background:#06C755;">共有する（LINEなど）</button>
+      <button class="btn ghost" id="imSave" style="flex:.9; background:#fff;">保存</button>
+      <button class="btn ghost" id="imClose" style="flex:.7; background:#fff;">閉じる</button>
+    </div>
+  </div>
+</div>
+</main>
+
+<nav class="tabbar">
+  <button class="on" data-tab="tab-plan"><span class="ico">📋</span>設計</button>
+  <button data-tab="tab-search"><span class="ico">🔎</span>食材検索</button>
+  <button data-tab="tab-concern"><span class="ico">💡</span>お悩み別</button>
+  <button data-tab="tab-evidence"><span class="ico">📖</span>計算式の根拠</button>
+</nav>
+<script>
+/* ================= 食材データベース =================
+   出典：日本食品標準成分表2020年版（八訂）に基づく目安値
+   100gあたり kcal / P / F / C(g)                        */
+const FOODS=[
+// 肉類
+{n:"鶏むね肉（皮なし・生）",k:"とりむね chicken breast",c:"肉",kcal:105,p:23.3,f:1.9,cb:0.1},
+{n:"鶏むね肉（皮つき・生）",k:"とりむね",c:"肉",kcal:133,p:21.3,f:5.9,cb:0.1},
+{n:"鶏ささみ（生）",k:"ささみ",c:"肉",kcal:98,p:23.9,f:0.8,cb:0.1},
+{n:"鶏もも肉（皮なし・生）",k:"とりもも",c:"肉",kcal:113,p:19.0,f:5.0,cb:0},
+{n:"鶏もも肉（皮つき・生）",k:"とりもも",c:"肉",kcal:190,p:16.6,f:14.2,cb:0},
+{n:"サラダチキン（市販目安）",k:"さらだちきん",c:"肉",kcal:108,p:23.0,f:1.5,cb:0.5},
+{n:"豚ヒレ肉（生）",k:"ぶたひれ",c:"肉",kcal:118,p:22.2,f:3.7,cb:0.3},
+{n:"豚もも肉（脂身なし・生）",k:"ぶたもも",c:"肉",kcal:138,p:21.5,f:5.3,cb:0.2},
+{n:"豚ロース（生）",k:"ぶたろーす",c:"肉",kcal:248,p:19.3,f:19.2,cb:0.2},
+{n:"豚バラ（生）",k:"ぶたばら",c:"肉",kcal:366,p:14.4,f:35.4,cb:0.1},
+{n:"牛もも肉（赤肉・生）",k:"ぎゅうもも 赤身",c:"肉",kcal:130,p:21.9,f:4.9,cb:0.4},
+{n:"牛ヒレ肉（輸入・生）",k:"ぎゅうひれ 赤身",c:"肉",kcal:123,p:20.5,f:4.8,cb:0.3},
+{n:"牛肩ロース（生）",k:"ぎゅうかたろーす",c:"肉",kcal:221,p:17.9,f:17.4,cb:0.1},
+{n:"馬肉（赤身・生）",k:"ばにく 赤身",c:"肉",kcal:102,p:20.1,f:2.5,cb:0.3},
+{n:"ラム肉もも（生）",k:"らむ 羊",c:"肉",kcal:164,p:20.0,f:12.0,cb:0.3},
+{n:"砂肝（生）",k:"すなぎも",c:"肉",kcal:86,p:18.3,f:1.8,cb:0},
+{n:"鶏レバー（生）",k:"ればー 肝臓",c:"肉",kcal:100,p:18.9,f:3.1,cb:0.6},
+// 魚介
+{n:"鮭（しろさけ・生）",k:"さけ しゃけ salmon",c:"魚介",kcal:124,p:22.3,f:4.1,cb:0.1},
+{n:"サバ（生）",k:"さば 鯖",c:"魚介",kcal:211,p:20.6,f:16.8,cb:0.3},
+{n:"サバ缶（水煮）",k:"さばかん",c:"魚介",kcal:174,p:20.9,f:10.7,cb:0.2},
+{n:"ツナ缶（水煮）",k:"つな ノンオイル",c:"魚介",kcal:70,p:16.0,f:0.7,cb:0.2},
+{n:"ツナ缶（油漬）",k:"つな",c:"魚介",kcal:265,p:17.7,f:21.7,cb:0.1},
+{n:"マグロ赤身（生）",k:"まぐろ 鮪",c:"魚介",kcal:115,p:26.4,f:1.4,cb:0.1},
+{n:"カツオ（春獲り・生）",k:"かつお 鰹",c:"魚介",kcal:108,p:25.8,f:0.5,cb:0.1},
+{n:"タラ（生）",k:"たら 鱈",c:"魚介",kcal:72,p:17.6,f:0.2,cb:0.1},
+{n:"ぶり（生）",k:"ぶり 鰤",c:"魚介",kcal:222,p:21.4,f:17.6,cb:0.3},
+{n:"あじ（生）",k:"あじ 鯵",c:"魚介",kcal:112,p:19.7,f:4.5,cb:0.1},
+{n:"さんま（生）",k:"さんま 秋刀魚",c:"魚介",kcal:287,p:18.1,f:25.6,cb:0.1},
+{n:"エビ（バナメイ・生）",k:"えび 海老",c:"魚介",kcal:82,p:19.6,f:0.6,cb:0.7},
+{n:"イカ（するめいか・生）",k:"いか",c:"魚介",kcal:76,p:17.9,f:0.8,cb:0.1},
+{n:"タコ（ゆで）",k:"たこ 蛸",c:"魚介",kcal:91,p:21.7,f:0.7,cb:0.1},
+{n:"ホタテ貝柱（生）",k:"ほたて",c:"魚介",kcal:66,p:13.5,f:0.9,cb:1.5},
+{n:"しらす干し（微乾燥）",k:"しらす",c:"魚介",kcal:113,p:24.5,f:2.1,cb:0.1},
+{n:"うなぎ蒲焼",k:"うなぎ 鰻",c:"魚介",kcal:285,p:23.0,f:21.0,cb:3.1},
+// 卵・乳
+{n:"全卵（生）",k:"たまご 卵",c:"卵・乳",kcal:142,p:12.2,f:10.2,cb:0.4},
+{n:"卵白（生）",k:"らんぱく エッグホワイト",c:"卵・乳",kcal:44,p:10.1,f:0,cb:0.5},
+{n:"卵黄（生）",k:"らんおう",c:"卵・乳",kcal:336,p:16.5,f:34.3,cb:0.2},
+{n:"牛乳（普通）",k:"ぎゅうにゅう ミルク",c:"卵・乳",kcal:61,p:3.3,f:3.8,cb:4.8},
+{n:"低脂肪乳",k:"ていしぼう",c:"卵・乳",kcal:42,p:3.8,f:1.0,cb:5.5},
+{n:"ヨーグルト（無糖）",k:"よーぐると プレーン",c:"卵・乳",kcal:56,p:3.6,f:3.0,cb:4.9},
+{n:"ギリシャヨーグルト（無脂肪目安）",k:"ぎりしゃ おいこす オイコス",c:"卵・乳",kcal:59,p:10.0,f:0,cb:4.5},
+{n:"カッテージチーズ",k:"かってーじ",c:"卵・乳",kcal:99,p:13.3,f:4.5,cb:1.9},
+{n:"プロセスチーズ",k:"ちーず",c:"卵・乳",kcal:313,p:22.7,f:26.0,cb:1.3},
+{n:"ホエイプロテイン（WPC目安）",k:"ぷろていん whey",c:"卵・乳",kcal:400,p:75.0,f:7.0,cb:8.0},
+// 大豆・豆
+{n:"木綿豆腐",k:"もめんどうふ とうふ",c:"大豆・豆",kcal:73,p:7.0,f:4.9,cb:1.5},
+{n:"絹ごし豆腐",k:"きぬごし とうふ",c:"大豆・豆",kcal:56,p:5.3,f:3.5,cb:2.0},
+{n:"納豆",k:"なっとう",c:"大豆・豆",kcal:190,p:16.5,f:10.0,cb:12.1},
+{n:"無調整豆乳",k:"とうにゅう",c:"大豆・豆",kcal:44,p:3.6,f:2.0,cb:3.1},
+{n:"枝豆（ゆで）",k:"えだまめ",c:"大豆・豆",kcal:118,p:11.5,f:6.1,cb:8.9},
+{n:"高野豆腐（乾）",k:"こうやどうふ",c:"大豆・豆",kcal:496,p:50.5,f:34.1,cb:4.2},
+{n:"ひよこ豆（ゆで）",k:"ひよこまめ",c:"大豆・豆",kcal:149,p:9.5,f:2.5,cb:27.4},
+{n:"ミックスビーンズ（ゆで目安）",k:"まめ びーんず",c:"大豆・豆",kcal:135,p:9.0,f:1.5,cb:23.0},
+// 穀類
+{n:"白米（炊飯後）",k:"はくまい ごはん 白飯 めし",c:"穀類",kcal:156,p:2.5,f:0.3,cb:37.1},
+{n:"玄米（炊飯後）",k:"げんまい ごはん",c:"穀類",kcal:152,p:2.8,f:1.0,cb:35.6},
+{n:"もち（切り餅）",k:"もち 餅",c:"穀類",kcal:223,p:4.0,f:0.6,cb:50.8},
+{n:"オートミール",k:"おーとみーる オーツ",c:"穀類",kcal:350,p:13.7,f:5.7,cb:69.1},
+{n:"食パン",k:"しょくぱん パン",c:"穀類",kcal:248,p:8.9,f:4.1,cb:46.4},
+{n:"全粒粉パン",k:"ぜんりゅうふん パン",c:"穀類",kcal:254,p:7.9,f:5.7,cb:45.3},
+{n:"そば（ゆで）",k:"そば 蕎麦",c:"穀類",kcal:130,p:4.8,f:1.0,cb:26.0},
+{n:"うどん（ゆで）",k:"うどん",c:"穀類",kcal:95,p:2.6,f:0.4,cb:21.6},
+{n:"パスタ（ゆで）",k:"ぱすた スパゲッティ",c:"穀類",kcal:150,p:5.8,f:0.9,cb:32.0},
+{n:"おにぎり（鮭・市販目安）",k:"おにぎり",c:"穀類",kcal:170,p:4.0,f:1.5,cb:36.0},
+// いも
+{n:"さつまいも（蒸し・皮なし）",k:"さつまいも 薩摩芋",c:"いも",kcal:131,p:1.2,f:0.2,cb:31.9},
+{n:"じゃがいも（蒸し）",k:"じゃがいも",c:"いも",kcal:76,p:1.9,f:0.3,cb:18.1},
+{n:"干し芋",k:"ほしいも",c:"いも",kcal:277,p:3.1,f:0.6,cb:71.9},
+{n:"かぼちゃ（西洋・ゆで）",k:"かぼちゃ 南瓜",c:"いも",kcal:80,p:1.6,f:0.3,cb:21.3},
+// 野菜
+{n:"ブロッコリー（ゆで）",k:"ぶろっこりー",c:"野菜",kcal:30,p:3.9,f:0.4,cb:5.2},
+{n:"ほうれん草（ゆで）",k:"ほうれんそう",c:"野菜",kcal:23,p:2.6,f:0.5,cb:4.0},
+{n:"アスパラガス（ゆで）",k:"あすぱら",c:"野菜",kcal:25,p:2.6,f:0.1,cb:4.6},
+{n:"トマト",k:"とまと",c:"野菜",kcal:20,p:0.7,f:0.1,cb:4.7},
+{n:"ミニトマト",k:"みにとまと",c:"野菜",kcal:30,p:1.1,f:0.1,cb:7.2},
+{n:"きゅうり",k:"きゅうり 胡瓜",c:"野菜",kcal:13,p:1.0,f:0.1,cb:3.0},
+{n:"キャベツ",k:"きゃべつ",c:"野菜",kcal:21,p:1.3,f:0.2,cb:5.2},
+{n:"レタス",k:"れたす",c:"野菜",kcal:11,p:0.6,f:0.1,cb:2.8},
+{n:"玉ねぎ",k:"たまねぎ",c:"野菜",kcal:33,p:1.0,f:0.1,cb:8.4},
+{n:"にんじん",k:"にんじん 人参",c:"野菜",kcal:35,p:0.7,f:0.2,cb:9.3},
+{n:"ピーマン",k:"ぴーまん",c:"野菜",kcal:20,p:0.9,f:0.2,cb:5.1},
+{n:"なす",k:"なす 茄子",c:"野菜",kcal:18,p:1.1,f:0.1,cb:5.1},
+{n:"大根",k:"だいこん",c:"野菜",kcal:15,p:0.5,f:0.1,cb:4.1},
+{n:"ごぼう（ゆで）",k:"ごぼう 牛蒡",c:"野菜",kcal:50,p:1.5,f:0.2,cb:13.7},
+{n:"れんこん",k:"れんこん 蓮根",c:"野菜",kcal:66,p:1.9,f:0.1,cb:15.5},
+{n:"オクラ",k:"おくら",c:"野菜",kcal:26,p:2.1,f:0.2,cb:6.6},
+{n:"もやし（緑豆）",k:"もやし",c:"野菜",kcal:15,p:1.7,f:0.1,cb:2.6},
+{n:"ぶなしめじ",k:"しめじ きのこ",c:"野菜",kcal:22,p:2.7,f:0.5,cb:4.8},
+{n:"えのきたけ",k:"えのき きのこ",c:"野菜",kcal:34,p:2.7,f:0.2,cb:7.6},
+{n:"まいたけ",k:"まいたけ きのこ",c:"野菜",kcal:22,p:2.0,f:0.5,cb:4.4},
+{n:"エリンギ",k:"えりんぎ きのこ",c:"野菜",kcal:31,p:2.8,f:0.4,cb:6.0},
+{n:"アボカド",k:"あぼかど",c:"野菜",kcal:176,p:2.1,f:17.5,cb:7.9},
+{n:"わかめ（生）",k:"わかめ 海藻",c:"野菜",kcal:24,p:1.9,f:0.2,cb:5.6},
+{n:"めかぶ",k:"めかぶ 海藻",c:"野菜",kcal:14,p:0.9,f:0.6,cb:3.4},
+{n:"キムチ（白菜）",k:"きむち",c:"野菜",kcal:27,p:2.3,f:0.1,cb:5.4},
+// 果物
+{n:"バナナ",k:"ばなな",c:"果物",kcal:93,p:1.1,f:0.2,cb:22.5},
+{n:"りんご（皮なし）",k:"りんご 林檎",c:"果物",kcal:53,p:0.2,f:0.3,cb:15.5},
+{n:"キウイ（緑）",k:"きうい きういふるーつ",c:"果物",kcal:51,p:1.0,f:0.2,cb:13.4},
+{n:"ブルーベリー",k:"ぶるーべりー ベリー",c:"果物",kcal:48,p:0.5,f:0.1,cb:12.9},
+{n:"いちご",k:"いちご 苺",c:"果物",kcal:31,p:0.9,f:0.1,cb:8.5},
+{n:"みかん",k:"みかん 蜜柑",c:"果物",kcal:49,p:0.7,f:0.1,cb:12.0},
+{n:"ぶどう",k:"ぶどう 葡萄",c:"果物",kcal:58,p:0.4,f:0.1,cb:15.7},
+{n:"パイナップル",k:"ぱいなっぷる",c:"果物",kcal:54,p:0.6,f:0.1,cb:13.7},
+{n:"プルーン（乾）",k:"ぷるーん",c:"果物",kcal:211,p:2.4,f:0.2,cb:62.3},
+// ナッツ・油
+{n:"アーモンド（素焼き）",k:"あーもんど なっつ",c:"ナッツ・油",kcal:608,p:20.3,f:54.1,cb:20.7},
+{n:"くるみ",k:"くるみ なっつ",c:"ナッツ・油",kcal:713,p:14.6,f:68.8,cb:11.7},
+{n:"カシューナッツ",k:"かしゅー なっつ",c:"ナッツ・油",kcal:591,p:19.8,f:47.6,cb:26.7},
+{n:"ピーナッツバター（無糖）",k:"ぴーなっつばたー",c:"ナッツ・油",kcal:599,p:25.0,f:50.0,cb:21.0},
+{n:"オリーブオイル",k:"おりーぶおいる 油",c:"ナッツ・油",kcal:894,p:0,f:100,cb:0},
+{n:"MCTオイル",k:"えむしーてぃー 油",c:"ナッツ・油",kcal:900,p:0,f:100,cb:0},
+{n:"えごま油",k:"えごま 油 オメガ3",c:"ナッツ・油",kcal:897,p:0,f:100,cb:0},
+{n:"バター",k:"ばたー",c:"ナッツ・油",kcal:700,p:0.6,f:81.0,cb:0.2},
+// その他
+{n:"はちみつ",k:"はちみつ 蜂蜜",c:"その他",kcal:329,p:0.3,f:0,cb:81.9},
+{n:"甘酒",k:"あまざけ",c:"その他",kcal:76,p:1.7,f:0.1,cb:18.3},
+{n:"和菓子（大福目安）",k:"わがし だいふく",c:"その他",kcal:223,p:4.6,f:0.5,cb:53.2},
+{n:"プロテインバー（市販目安）",k:"ぷろていんばー",c:"その他",kcal:380,p:30.0,f:12.0,cb:40.0},
+{n:"味噌",k:"みそ",c:"その他",kcal:182,p:12.5,f:6.0,cb:21.9},
+// ===== 追加：肉類 =====
+{n:"鶏手羽元（生）",k:"てばもと",c:"肉",kcal:175,p:18.2,f:12.8,cb:0},
+{n:"鶏手羽先（生）",k:"てばさき",c:"肉",kcal:207,p:17.4,f:16.2,cb:0},
+{n:"鶏ひき肉（生）",k:"とりひきにく ミンチ",c:"肉",kcal:171,p:17.5,f:12.0,cb:0},
+{n:"豚ひき肉（生）",k:"ぶたひきにく ミンチ",c:"肉",kcal:209,p:17.7,f:17.2,cb:0.1},
+{n:"牛ひき肉（生）",k:"ぎゅうひきにく ミンチ",c:"肉",kcal:251,p:17.1,f:21.1,cb:0.3},
+{n:"合いびき肉（目安）",k:"あいびき ミンチ",c:"肉",kcal:230,p:17.4,f:19.0,cb:0.2},
+{n:"牛タン",k:"ぎゅうたん",c:"肉",kcal:318,p:13.3,f:31.8,cb:0.2},
+{n:"牛ハラミ",k:"はらみ",c:"肉",kcal:288,p:14.8,f:27.3,cb:0.3},
+{n:"牛サーロイン（輸入・生）",k:"さーろいん ステーキ",c:"肉",kcal:273,p:17.4,f:23.7,cb:0.4},
+{n:"牛バラ・カルビ（輸入・生）",k:"かるび ぎゅうばら",c:"肉",kcal:338,p:14.4,f:32.9,cb:0.2},
+{n:"豚肩ロース（生）",k:"ぶたかたろーす",c:"肉",kcal:237,p:17.1,f:19.2,cb:0.1},
+{n:"ロースハム",k:"はむ",c:"肉",kcal:211,p:18.6,f:14.5,cb:2.0},
+{n:"生ハム",k:"なまはむ",c:"肉",kcal:243,p:24.0,f:16.6,cb:0.5},
+{n:"ベーコン",k:"べーこん",c:"肉",kcal:400,p:12.9,f:39.1,cb:0.3},
+{n:"ウインナーソーセージ",k:"ういんなー",c:"肉",kcal:319,p:11.5,f:30.6,cb:3.3},
+{n:"ローストビーフ（市販）",k:"ろーすとびーふ",c:"肉",kcal:190,p:21.7,f:11.7,cb:0.9},
+{n:"合鴨肉",k:"かも あいがも",c:"肉",kcal:304,p:14.2,f:29.0,cb:0.1},
+{n:"コンビーフ缶",k:"こんびーふ",c:"肉",kcal:191,p:19.8,f:13.0,cb:1.7},
+// ===== 追加：魚介 =====
+{n:"イワシ（まいわし・生）",k:"いわし 鰯",c:"魚介",kcal:156,p:19.2,f:9.2,cb:0.2},
+{n:"イワシ缶（味付）",k:"いわしかん",c:"魚介",kcal:203,p:20.4,f:11.9,cb:5.7},
+{n:"ホッケ（開き）",k:"ほっけ",c:"魚介",kcal:161,p:20.6,f:9.1,cb:0.1},
+{n:"マダイ（養殖・生）",k:"たい 鯛",c:"魚介",kcal:160,p:20.9,f:9.4,cb:0.1},
+{n:"ヒラメ（生）",k:"ひらめ 平目",c:"魚介",kcal:96,p:20.0,f:2.0,cb:0},
+{n:"カレイ（生）",k:"かれい 鰈",c:"魚介",kcal:89,p:19.6,f:1.3,cb:0.1},
+{n:"スズキ（生）",k:"すずき 鱸",c:"魚介",kcal:113,p:19.8,f:4.2,cb:0},
+{n:"サワラ（生）",k:"さわら 鰆",c:"魚介",kcal:161,p:20.1,f:9.7,cb:0.1},
+{n:"メカジキ（生）",k:"かじき",c:"魚介",kcal:139,p:19.2,f:7.6,cb:0.1},
+{n:"金目鯛（生）",k:"きんめだい",c:"魚介",kcal:147,p:17.8,f:9.0,cb:0.1},
+{n:"牡蠣（生）",k:"かき オイスター",c:"魚介",kcal:58,p:6.9,f:2.2,cb:4.9},
+{n:"あさり（生）",k:"あさり 浅蜊",c:"魚介",kcal:27,p:6.0,f:0.3,cb:0.4},
+{n:"しじみ（生）",k:"しじみ 蜆",c:"魚介",kcal:54,p:7.5,f:1.4,cb:4.5},
+{n:"ずわいがに（ゆで）",k:"かに 蟹",c:"魚介",kcal:65,p:15.0,f:0.6,cb:0.1},
+{n:"たらこ（生）",k:"たらこ",c:"魚介",kcal:131,p:24.0,f:4.7,cb:0.4},
+{n:"明太子",k:"めんたいこ",c:"魚介",kcal:121,p:21.0,f:3.3,cb:3.0},
+{n:"いくら",k:"いくら",c:"魚介",kcal:252,p:32.6,f:15.6,cb:0.2},
+{n:"かまぼこ",k:"かまぼこ 蒲鉾 練り物",c:"魚介",kcal:93,p:12.0,f:0.9,cb:9.7},
+{n:"ちくわ",k:"ちくわ 竹輪 練り物",c:"魚介",kcal:119,p:12.2,f:2.0,cb:13.5},
+{n:"カニカマ",k:"かにかま 練り物",c:"魚介",kcal:89,p:12.1,f:0.5,cb:9.2},
+{n:"はんぺん",k:"はんぺん 練り物",c:"魚介",kcal:93,p:9.9,f:1.0,cb:11.4},
+{n:"さつま揚げ",k:"さつまあげ 練り物",c:"魚介",kcal:135,p:12.5,f:3.7,cb:13.9},
+{n:"魚肉ソーセージ",k:"ぎょにく そーせーじ",c:"魚介",kcal:158,p:11.5,f:7.2,cb:12.6},
+// ===== 追加：卵・乳 =====
+{n:"うずら卵（生）",k:"うずら",c:"卵・乳",kcal:157,p:12.6,f:13.1,cb:0.3},
+{n:"スキムミルク（粉）",k:"すきむみるく 脱脂粉乳",c:"卵・乳",kcal:354,p:34.0,f:1.0,cb:53.3},
+{n:"生クリーム（乳脂肪）",k:"なまくりーむ",c:"卵・乳",kcal:404,p:1.9,f:43.0,cb:6.5},
+{n:"モッツァレラチーズ",k:"もっつぁれら ちーず",c:"卵・乳",kcal:269,p:18.4,f:19.9,cb:4.2},
+{n:"カマンベールチーズ",k:"かまんべーる ちーず",c:"卵・乳",kcal:291,p:19.1,f:24.7,cb:0.9},
+{n:"クリームチーズ",k:"くりーむちーず",c:"卵・乳",kcal:313,p:8.2,f:33.0,cb:2.3},
+{n:"粉チーズ（パルメザン）",k:"こなちーず ぱるめざん",c:"卵・乳",kcal:445,p:44.0,f:30.8,cb:1.9},
+{n:"ヨーグルト（加糖）",k:"よーぐると",c:"卵・乳",kcal:65,p:4.3,f:0.2,cb:11.9},
+{n:"飲むヨーグルト",k:"のむよーぐると",c:"卵・乳",kcal:64,p:2.9,f:0.5,cb:12.2},
+{n:"WPI プロテイン（目安）",k:"ぷろていん あいそれーと wpi",c:"卵・乳",kcal:370,p:87.0,f:1.5,cb:4.0},
+// ===== 追加：大豆・豆 =====
+{n:"厚揚げ",k:"あつあげ",c:"大豆・豆",kcal:143,p:10.7,f:11.3,cb:0.9},
+{n:"油揚げ",k:"あぶらあげ",c:"大豆・豆",kcal:377,p:23.4,f:34.4,cb:0.4},
+{n:"おから（生）",k:"おから",c:"大豆・豆",kcal:88,p:6.1,f:3.6,cb:13.8},
+{n:"おからパウダー",k:"おからぱうだー",c:"大豆・豆",kcal:333,p:23.1,f:13.6,cb:52.3},
+{n:"きなこ",k:"きなこ",c:"大豆・豆",kcal:451,p:36.7,f:25.7,cb:28.5},
+{n:"大豆ミート（乾・目安）",k:"だいずみーと ソイミート",c:"大豆・豆",kcal:360,p:50.0,f:3.0,cb:30.0},
+{n:"ソイプロテイン（目安）",k:"そいぷろていん",c:"大豆・豆",kcal:380,p:80.0,f:3.0,cb:8.0},
+{n:"レンズ豆（ゆで）",k:"れんずまめ",c:"大豆・豆",kcal:149,p:11.2,f:0.8,cb:29.1},
+{n:"ゆであずき缶（加糖）",k:"あずき あんこ",c:"大豆・豆",kcal:202,p:4.4,f:0.4,cb:45.8},
+// ===== 追加：穀類 =====
+{n:"もち麦（ゆで）",k:"もちむぎ",c:"穀類",kcal:130,p:3.6,f:0.6,cb:28.4},
+{n:"そうめん（ゆで）",k:"そうめん 素麺",c:"穀類",kcal:114,p:3.5,f:0.4,cb:25.8},
+{n:"中華麺（ゆで）",k:"ちゅうかめん らーめん",c:"穀類",kcal:133,p:4.9,f:0.6,cb:29.2},
+{n:"フランスパン",k:"ふらんすぱん バゲット",c:"穀類",kcal:289,p:9.4,f:1.3,cb:57.5},
+{n:"ベーグル",k:"べーぐる",c:"穀類",kcal:270,p:9.6,f:2.0,cb:54.6},
+{n:"ロールパン",k:"ろーるぱん",c:"穀類",kcal:309,p:10.1,f:9.0,cb:48.6},
+{n:"クロワッサン",k:"くろわっさん",c:"穀類",kcal:438,p:7.9,f:26.8,cb:43.9},
+{n:"ライ麦パン",k:"らいむぎぱん",c:"穀類",kcal:252,p:8.4,f:2.2,cb:52.7},
+{n:"グラノーラ（目安）",k:"ぐらのーら しりある",c:"穀類",kcal:469,p:8.0,f:16.0,cb:72.0},
+{n:"コーンフレーク",k:"こーんふれーく しりある",c:"穀類",kcal:380,p:7.8,f:1.7,cb:83.6},
+// ===== 追加：いも =====
+{n:"焼き芋",k:"やきいも さつまいも",c:"いも",kcal:163,p:1.4,f:0.2,cb:39.0},
+{n:"里芋（水煮）",k:"さといも",c:"いも",kcal:52,p:1.5,f:0.1,cb:13.1},
+{n:"長芋（生）",k:"ながいも とろろ",c:"いも",kcal:64,p:2.2,f:0.3,cb:13.9},
+{n:"フライドポテト",k:"ふらいどぽてと ポテトフライ",c:"いも",kcal:229,p:2.9,f:10.6,cb:32.4},
+{n:"春雨（ゆで）",k:"はるさめ",c:"いも",kcal:78,p:0,f:0,cb:19.9},
+{n:"こんにゃく",k:"こんにゃく 蒟蒻",c:"いも",kcal:5,p:0.1,f:0,cb:2.3},
+{n:"しらたき",k:"しらたき 糸こんにゃく",c:"いも",kcal:7,p:0.2,f:0,cb:3.0},
+// ===== 追加：野菜 =====
+{n:"小松菜（ゆで）",k:"こまつな",c:"野菜",kcal:14,p:1.6,f:0.1,cb:3.0},
+{n:"水菜",k:"みずな",c:"野菜",kcal:23,p:2.2,f:0.1,cb:4.8},
+{n:"チンゲン菜",k:"ちんげんさい",c:"野菜",kcal:9,p:0.6,f:0.1,cb:2.0},
+{n:"白菜",k:"はくさい",c:"野菜",kcal:13,p:0.8,f:0.1,cb:3.2},
+{n:"ニラ",k:"にら 韮",c:"野菜",kcal:18,p:1.7,f:0.3,cb:4.0},
+{n:"長ねぎ",k:"ねぎ 葱",c:"野菜",kcal:35,p:1.4,f:0.1,cb:8.3},
+{n:"セロリ",k:"せろり",c:"野菜",kcal:12,p:0.4,f:0.1,cb:3.6},
+{n:"ズッキーニ",k:"ずっきーに",c:"野菜",kcal:16,p:1.3,f:0.1,cb:2.8},
+{n:"パプリカ（赤）",k:"ぱぷりか",c:"野菜",kcal:28,p:1.0,f:0.2,cb:7.2},
+{n:"ゴーヤ",k:"ごーや にがうり",c:"野菜",kcal:15,p:1.0,f:0.1,cb:3.9},
+{n:"とうもろこし（ゆで）",k:"とうもろこし コーン",c:"野菜",kcal:95,p:3.5,f:1.7,cb:18.6},
+{n:"スナップエンドウ",k:"すなっぷえんどう",c:"野菜",kcal:47,p:2.9,f:0.1,cb:9.9},
+{n:"さやいんげん",k:"いんげん",c:"野菜",kcal:23,p:1.8,f:0.1,cb:5.1},
+{n:"カリフラワー（ゆで）",k:"かりふらわー",c:"野菜",kcal:26,p:2.7,f:0.1,cb:5.1},
+{n:"春菊（ゆで）",k:"しゅんぎく",c:"野菜",kcal:25,p:2.7,f:0.5,cb:4.5},
+{n:"かぶ",k:"かぶ 蕪",c:"野菜",kcal:20,p:0.6,f:0.1,cb:4.8},
+{n:"生姜",k:"しょうが",c:"野菜",kcal:28,p:0.9,f:0.3,cb:6.6},
+{n:"にんにく",k:"にんにく 大蒜",c:"野菜",kcal:129,p:6.4,f:0.9,cb:27.5},
+{n:"たけのこ（ゆで）",k:"たけのこ 筍",c:"野菜",kcal:31,p:3.5,f:0.2,cb:5.5},
+{n:"マッシュルーム",k:"まっしゅるーむ きのこ",c:"野菜",kcal:15,p:2.9,f:0.3,cb:2.1},
+{n:"なめこ",k:"なめこ きのこ",c:"野菜",kcal:21,p:1.8,f:0.2,cb:5.4},
+{n:"生しいたけ",k:"しいたけ きのこ",c:"野菜",kcal:25,p:3.1,f:0.3,cb:6.4},
+{n:"ひじき（ゆで）",k:"ひじき 海藻",c:"野菜",kcal:11,p:0.7,f:0.3,cb:3.4},
+{n:"もずく",k:"もずく 海藻",c:"野菜",kcal:4,p:0.2,f:0.1,cb:1.4},
+{n:"焼き海苔",k:"のり 海苔",c:"野菜",kcal:297,p:41.4,f:3.7,cb:44.3},
+{n:"切り干し大根（乾）",k:"きりぼしだいこん",c:"野菜",kcal:280,p:9.7,f:0.8,cb:69.7},
+{n:"トマトジュース（無塩）",k:"とまとじゅーす",c:"野菜",kcal:15,p:0.7,f:0.1,cb:4.0},
+{n:"野菜ジュース（目安）",k:"やさいじゅーす",c:"野菜",kcal:21,p:0.6,f:0.1,cb:4.7},
+// ===== 追加：果物 =====
+{n:"マンゴー",k:"まんごー",c:"果物",kcal:68,p:0.6,f:0.1,cb:16.9},
+{n:"桃",k:"もも",c:"果物",kcal:38,p:0.6,f:0.1,cb:10.2},
+{n:"梨",k:"なし",c:"果物",kcal:38,p:0.3,f:0.1,cb:11.3},
+{n:"柿",k:"かき",c:"果物",kcal:63,p:0.4,f:0.2,cb:15.9},
+{n:"スイカ",k:"すいか 西瓜",c:"果物",kcal:41,p:0.6,f:0.1,cb:9.5},
+{n:"メロン",k:"めろん",c:"果物",kcal:40,p:1.1,f:0.1,cb:10.3},
+{n:"グレープフルーツ",k:"ぐれーぷふるーつ",c:"果物",kcal:40,p:0.9,f:0.1,cb:9.6},
+{n:"オレンジ",k:"おれんじ",c:"果物",kcal:48,p:1.0,f:0.1,cb:11.8},
+{n:"さくらんぼ",k:"さくらんぼ",c:"果物",kcal:64,p:1.0,f:0.2,cb:16.6},
+{n:"レーズン",k:"れーずん 干しぶどう",c:"果物",kcal:324,p:2.7,f:0.2,cb:80.3},
+{n:"ドライマンゴー",k:"どらいまんごー",c:"果物",kcal:339,p:3.1,f:0.7,cb:84.9},
+{n:"冷凍ミックスベリー（目安）",k:"れいとうべりー",c:"果物",kcal:50,p:0.8,f:0.2,cb:12.0},
+// ===== 追加：ナッツ・油 =====
+{n:"マカダミアナッツ",k:"まかだみあ なっつ",c:"ナッツ・油",kcal:751,p:8.3,f:76.7,cb:12.2},
+{n:"ピスタチオ",k:"ぴすたちお なっつ",c:"ナッツ・油",kcal:617,p:17.4,f:56.1,cb:20.9},
+{n:"ピーナッツ（いり）",k:"ぴーなっつ 落花生",c:"ナッツ・油",kcal:613,p:25.0,f:49.6,cb:19.6},
+{n:"ミックスナッツ（目安）",k:"みっくすなっつ",c:"ナッツ・油",kcal:640,p:19.0,f:56.0,cb:18.0},
+{n:"チアシード",k:"ちあしーど",c:"ナッツ・油",kcal:446,p:19.4,f:33.9,cb:34.5},
+{n:"アマニ油",k:"あまにゆ オメガ3 油",c:"ナッツ・油",kcal:897,p:0,f:100,cb:0},
+{n:"ごま油",k:"ごまあぶら 油",c:"ナッツ・油",kcal:890,p:0,f:100,cb:0},
+{n:"サラダ油",k:"さらだあぶら 油",c:"ナッツ・油",kcal:886,p:0,f:100,cb:0},
+{n:"ココナッツオイル",k:"ここなっつおいる 油",c:"ナッツ・油",kcal:889,p:0,f:100,cb:0},
+{n:"マヨネーズ",k:"まよねーず",c:"ナッツ・油",kcal:669,p:1.4,f:76.0,cb:3.6},
+{n:"マヨネーズ（カロリーハーフ）",k:"まよねーず はーふ",c:"ナッツ・油",kcal:273,p:2.6,f:28.2,cb:2.7},
+// ===== 追加：調味料 =====
+{n:"砂糖（上白糖）",k:"さとう",c:"調味料",kcal:391,p:0,f:0,cb:99.3},
+{n:"みりん",k:"みりん",c:"調味料",kcal:241,p:0.3,f:0,cb:43.2},
+{n:"醤油（こいくち）",k:"しょうゆ",c:"調味料",kcal:77,p:7.7,f:0,cb:7.9},
+{n:"ケチャップ",k:"けちゃっぷ",c:"調味料",kcal:106,p:1.6,f:0.2,cb:27.6},
+{n:"中濃ソース",k:"そーす",c:"調味料",kcal:129,p:0.8,f:0.1,cb:30.9},
+{n:"めんつゆ（ストレート）",k:"めんつゆ",c:"調味料",kcal:44,p:2.2,f:0,cb:8.7},
+{n:"ポン酢しょうゆ",k:"ぽんず",c:"調味料",kcal:59,p:3.4,f:0.1,cb:10.8},
+{n:"焼肉のたれ（目安）",k:"やきにくのたれ",c:"調味料",kcal:165,p:4.2,f:2.2,cb:32.1},
+{n:"ノンオイル和風ドレッシング",k:"どれっしんぐ のんおいる",c:"調味料",kcal:47,p:3.1,f:0.1,cb:8.6},
+{n:"シーザードレッシング（目安）",k:"どれっしんぐ しーざー",c:"調味料",kcal:390,p:1.5,f:39.0,cb:6.3},
+{n:"カレールー",k:"かれーるー",c:"調味料",kcal:474,p:6.5,f:34.1,cb:44.7},
+{n:"オイスターソース",k:"おいすたーそーす",c:"調味料",kcal:105,p:7.7,f:0.3,cb:18.1},
+// ===== 追加：飲料・酒 =====
+{n:"コーラ",k:"こーら ジュース",c:"飲料・酒",kcal:46,p:0,f:0,cb:11.4},
+{n:"オレンジジュース（濃縮還元）",k:"おれんじじゅーす",c:"飲料・酒",kcal:46,p:0.7,f:0.1,cb:10.7},
+{n:"スポーツドリンク",k:"すぽーつどりんく ポカリ アクエリ",c:"飲料・酒",kcal:21,p:0,f:0,cb:5.1},
+{n:"エナジードリンク（目安）",k:"えなじーどりんく モンスター レッドブル",c:"飲料・酒",kcal:45,p:0,f:0,cb:11.0},
+{n:"カフェラテ（無糖・目安）",k:"かふぇらて コーヒー",c:"飲料・酒",kcal:39,p:2.0,f:2.2,cb:3.0},
+{n:"ビール",k:"びーる",c:"飲料・酒",kcal:39,p:0.3,f:0,cb:3.1},
+{n:"日本酒",k:"にほんしゅ 酒",c:"飲料・酒",kcal:107,p:0.4,f:0,cb:4.9},
+{n:"焼酎（25度）",k:"しょうちゅう",c:"飲料・酒",kcal:144,p:0,f:0,cb:0},
+{n:"ウイスキー",k:"ういすきー",c:"飲料・酒",kcal:234,p:0,f:0,cb:0},
+{n:"赤ワイン",k:"わいん",c:"飲料・酒",kcal:68,p:0.2,f:0,cb:1.5},
+{n:"ハイボール（目安）",k:"はいぼーる",c:"飲料・酒",kcal:47,p:0,f:0,cb:0},
+{n:"梅酒",k:"うめしゅ",c:"飲料・酒",kcal:155,p:0.1,f:0,cb:20.7},
+{n:"缶チューハイ（レモン7%目安）",k:"ちゅーはい さわー",c:"飲料・酒",kcal:51,p:0,f:0,cb:2.6},
+// ===== 追加：菓子 =====
+{n:"ミルクチョコレート",k:"ちょこれーと ちょこ",c:"菓子",kcal:550,p:6.9,f:34.1,cb:55.8},
+{n:"ハイカカオチョコ（70%目安）",k:"はいかかお ちょこ",c:"菓子",kcal:590,p:9.0,f:44.0,cb:40.0},
+{n:"ポテトチップス",k:"ぽてとちっぷす ぽてち",c:"菓子",kcal:541,p:4.7,f:35.2,cb:54.7},
+{n:"クッキー（目安）",k:"くっきー びすけっと",c:"菓子",kcal:511,p:5.7,f:26.9,cb:62.3},
+{n:"アイスクリーム（普通脂肪）",k:"あいす",c:"菓子",kcal:178,p:3.9,f:8.0,cb:23.2},
+{n:"シュークリーム",k:"しゅーくりーむ",c:"菓子",kcal:211,p:6.0,f:11.4,cb:22.3},
+{n:"ショートケーキ",k:"けーき",c:"菓子",kcal:314,p:6.9,f:15.2,cb:38.4},
+{n:"どら焼き",k:"どらやき 和菓子",c:"菓子",kcal:282,p:6.6,f:3.2,cb:57.9},
+{n:"みたらし団子",k:"だんご 和菓子",c:"菓子",kcal:194,p:3.2,f:0.4,cb:44.9},
+{n:"カステラ",k:"かすてら 和菓子",c:"菓子",kcal:313,p:7.1,f:5.0,cb:61.8},
+{n:"せんべい（醤油）",k:"せんべい",c:"菓子",kcal:368,p:7.3,f:1.0,cb:83.9},
+{n:"グミ（目安）",k:"ぐみ",c:"菓子",kcal:340,p:7.0,f:0,cb:78.0},
+{n:"羊羹",k:"ようかん 和菓子",c:"菓子",kcal:289,p:3.6,f:0.2,cb:69.9},
+{n:"プリン",k:"ぷりん",c:"菓子",kcal:116,p:5.7,f:5.5,cb:14.0},
+{n:"果汁ゼリー（目安）",k:"ぜりー",c:"菓子",kcal:65,p:0.1,f:0,cb:16.0},
+{n:"メロンパン",k:"めろんぱん 菓子パン",c:"菓子",kcal:349,p:8.0,f:10.5,cb:59.9},
+{n:"あんぱん",k:"あんぱん 菓子パン",c:"菓子",kcal:267,p:7.0,f:3.8,cb:53.5},
+{n:"ドーナツ（目安）",k:"どーなつ",c:"菓子",kcal:367,p:7.2,f:11.7,cb:58.7},
+// ===== 追加：料理（目安） =====
+{n:"鶏の唐揚げ",k:"からあげ",c:"料理(目安)",kcal:307,p:24.2,f:18.1,cb:13.3},
+{n:"餃子（焼き）",k:"ぎょうざ",c:"料理(目安)",kcal:209,p:6.9,f:11.3,cb:22.3},
+{n:"とんかつ（ロース）",k:"とんかつ",c:"料理(目安)",kcal:429,p:22.0,f:35.9,cb:9.8},
+{n:"ハンバーグ",k:"はんばーぐ",c:"料理(目安)",kcal:223,p:13.3,f:14.2,cb:10.0},
+{n:"フライドチキン",k:"ふらいどちきん",c:"料理(目安)",kcal:237,p:18.3,f:14.7,cb:7.9},
+{n:"カレーライス（全体）",k:"かれーらいす",c:"料理(目安)",kcal:127,p:3.5,f:4.4,cb:18.7},
+{n:"牛丼（全体）",k:"ぎゅうどん",c:"料理(目安)",kcal:152,p:6.5,f:5.5,cb:19.5},
+{n:"ピザ（ミックス）",k:"ぴざ",c:"料理(目安)",kcal:268,p:11.0,f:11.0,cb:31.0},
+{n:"えび天ぷら",k:"てんぷら",c:"料理(目安)",kcal:199,p:15.0,f:10.5,cb:11.0},
+{n:"焼きそば",k:"やきそば",c:"料理(目安)",kcal:165,p:5.0,f:6.0,cb:22.0},
+{n:"お好み焼き",k:"おこのみやき",c:"料理(目安)",kcal:140,p:6.5,f:6.0,cb:15.0},
+{n:"サンドイッチ（ハム＆卵）",k:"さんどいっち",c:"料理(目安)",kcal:240,p:9.0,f:12.0,cb:24.0},
+{n:"おにぎり（ツナマヨ）",k:"おにぎり",c:"料理(目安)",kcal:190,p:4.5,f:5.5,cb:30.0},
+{n:"おにぎり（梅）",k:"おにぎり",c:"料理(目安)",kcal:165,p:3.0,f:0.8,cb:36.0},
+{n:"カップラーメン（乾・1個約75g）",k:"かっぷらーめん かっぷめん",c:"料理(目安)",kcal:448,p:10.7,f:19.1,cb:58.6},
+// ===== 追加：その他 =====
+{n:"マルトデキストリン（粉飴）",k:"まるとできすとりん 粉飴 カーボ",c:"その他",kcal:380,p:0,f:0,cb:95.0},
+{n:"梅干し",k:"うめぼし",c:"その他",kcal:29,p:0.9,f:0.7,cb:8.6},
+{n:"塩昆布",k:"しおこんぶ",c:"その他",kcal:193,p:16.9,f:0.4,cb:37.0},
+{n:"ふりかけ（目安）",k:"ふりかけ",c:"その他",kcal:390,p:20.0,f:10.0,cb:50.0},
+{n:"栄養ゼリー飲料（目安）",k:"うぃだー ぜりー いんぜりー",c:"その他",kcal:100,p:0,f:0,cb:25.0},
+// ===== 追加2：肉類 =====
+{n:"鶏むね肉（皮なし・ゆで）",k:"とりむね",c:"肉",kcal:115,p:25.5,f:1.9,cb:0},
+{n:"鶏もも肉（皮なし・ゆで）",k:"とりもも",c:"肉",kcal:141,p:22.2,f:5.2,cb:0},
+{n:"鶏ささみ（ゆで）",k:"ささみ",c:"肉",kcal:106,p:25.4,f:1.0,cb:0},
+{n:"鶏軟骨（生）",k:"なんこつ とり",c:"肉",kcal:54,p:12.5,f:0.4,cb:0.4},
+{n:"鶏皮（生）",k:"とりかわ",c:"肉",kcal:466,p:9.4,f:48.1,cb:0},
+{n:"豚ロース（ゆで）",k:"ぶたろーす",c:"肉",kcal:242,p:23.9,f:14.6,cb:0.3},
+{n:"豚ヒレ（焼き）",k:"ぶたひれ",c:"肉",kcal:202,p:39.3,f:5.9,cb:0.4},
+{n:"豚レバー（生）",k:"ぶたればー 肝臓",c:"肉",kcal:114,p:20.4,f:3.4,cb:2.5},
+{n:"豚バラ（焼き・目安）",k:"ぶたばら",c:"肉",kcal:386,p:17.7,f:34.9,cb:0.1},
+{n:"牛もも（和牛・赤身・生）",k:"わぎゅう もも",c:"肉",kcal:176,p:21.3,f:10.7,cb:0.5},
+{n:"牛肩ロース（輸入・生）",k:"ぎゅうかたろーす",c:"肉",kcal:240,p:17.9,f:19.8,cb:0.1},
+{n:"牛リブロース（輸入・生）",k:"りぶろーす",c:"肉",kcal:212,p:20.1,f:15.4,cb:0.4},
+{n:"牛レバー（生）",k:"ぎゅうればー 肝臓 レバー",c:"肉",kcal:119,p:19.6,f:3.7,cb:3.7},
+{n:"牛ミノ（第一胃・ゆで）",k:"みの ホルモン",c:"肉",kcal:166,p:24.5,f:8.4,cb:0},
+{n:"牛ハツ（心臓・生）",k:"はつ ホルモン",c:"肉",kcal:128,p:16.5,f:7.6,cb:0.1},
+{n:"ラムロース（生）",k:"らむ ろーす 羊",c:"肉",kcal:287,p:15.6,f:25.9,cb:0.2},
+{n:"マトン（もも・生）",k:"まとん 羊",c:"肉",kcal:198,p:20.0,f:15.0,cb:0.3},
+{n:"鴨ロース（皮なし目安）",k:"かも ろーす",c:"肉",kcal:128,p:23.6,f:3.0,cb:0.1},
+{n:"鹿肉（赤身・生）",k:"しか ジビエ ベニソン",c:"肉",kcal:119,p:23.9,f:4.0,cb:0.5},
+{n:"猪肉（生）",k:"いのしし ジビエ",c:"肉",kcal:249,p:18.8,f:19.8,cb:0.5},
+{n:"焼き鳥（もも・たれ・目安）",k:"やきとり",c:"肉",kcal:230,p:17.0,f:14.0,cb:8.0},
+{n:"サラダチキン（プレーン・目安）",k:"さらだちきん",c:"肉",kcal:105,p:24.1,f:0.8,cb:0.3},
+{n:"スモークチキン（目安）",k:"すもーくちきん",c:"肉",kcal:135,p:22.0,f:5.0,cb:0.5},
+{n:"焼豚（チャーシュー）",k:"ちゃーしゅー やきぶた",c:"肉",kcal:166,p:19.4,f:8.2,cb:5.1},
+{n:"サラミ",k:"さらみ",c:"肉",kcal:335,p:16.9,f:29.7,cb:2.9},
+{n:"鶏つくね（目安）",k:"つくね",c:"肉",kcal:235,p:15.0,f:15.0,cb:9.0},
+// ===== 追加2：魚介 =====
+{n:"鮭（塩・焼き）",k:"しゃけ さけ しおざけ",c:"魚介",kcal:183,p:29.1,f:7.9,cb:0.1},
+{n:"甘塩鮭",k:"あまじお さけ",c:"魚介",kcal:183,p:22.4,f:11.1,cb:0.1},
+{n:"銀鮭（養殖・生）",k:"ぎんざけ",c:"魚介",kcal:188,p:19.6,f:12.8,cb:0.3},
+{n:"サバ（焼き）",k:"さば",c:"魚介",kcal:264,p:25.2,f:19.1,cb:0.4},
+{n:"サバ缶（味噌煮）",k:"さばかん みそに",c:"魚介",kcal:210,p:16.3,f:13.9,cb:6.6},
+{n:"ぶり（焼き・目安）",k:"ぶり",c:"魚介",kcal:260,p:26.2,f:18.2,cb:0.3},
+{n:"あじ（干物・焼き）",k:"あじ ひもの",c:"魚介",kcal:168,p:24.6,f:8.9,cb:0.1},
+{n:"さんま（塩焼き）",k:"さんま",c:"魚介",kcal:281,p:23.3,f:22.3,cb:0.2},
+{n:"うるめいわし（丸干し）",k:"いわし めざし",c:"魚介",kcal:219,p:38.8,f:7.1,cb:0.7},
+{n:"ししゃも（生干し・焼き）",k:"ししゃも",c:"魚介",kcal:162,p:24.3,f:8.1,cb:0.5},
+{n:"きんき（生）",k:"きんき",c:"魚介",kcal:238,p:13.6,f:21.7,cb:0.1},
+{n:"あなご（蒸し）",k:"あなご 穴子",c:"魚介",kcal:194,p:17.6,f:12.7,cb:0},
+{n:"サーモン（アトランティック・養殖・生）",k:"さーもん salmon",c:"魚介",kcal:218,p:20.1,f:16.5,cb:0.1},
+{n:"びんちょうまぐろ（生）",k:"びんちょう まぐろ ツナ",c:"魚介",kcal:111,p:26.0,f:0.7,cb:0.1},
+{n:"まぐろトロ（脂身）",k:"とろ まぐろ",c:"魚介",kcal:308,p:20.1,f:27.5,cb:0.1},
+{n:"ブラックタイガー（えび・生）",k:"えび ブラックタイガー",c:"魚介",kcal:77,p:18.4,f:0.3,cb:0.3},
+{n:"甘えび（生）",k:"あまえび えび",c:"魚介",kcal:85,p:19.8,f:1.5,cb:0.1},
+{n:"毛がに（ゆで）",k:"けがに かに",c:"魚介",kcal:78,p:18.4,f:0.5,cb:0.2},
+{n:"車えび（養殖・生）",k:"くるまえび えび",c:"魚介",kcal:90,p:21.6,f:0.6,cb:0},
+{n:"赤貝（生）",k:"あかがい 貝",c:"魚介",kcal:70,p:13.5,f:0.3,cb:3.5},
+{n:"つぶ貝（生）",k:"つぶがい ばい貝",c:"魚介",kcal:82,p:17.8,f:0.2,cb:2.3},
+{n:"うに（生）",k:"うに",c:"魚介",kcal:109,p:11.7,f:2.5,cb:9.8},
+{n:"あん肝",k:"あんきも",c:"魚介",kcal:401,p:10.0,f:41.9,cb:2.2},
+{n:"数の子（塩蔵・水戻し）",k:"かずのこ",c:"魚介",kcal:80,p:15.0,f:3.0,cb:0.6},
+{n:"すじこ",k:"すじこ",c:"魚介",kcal:263,p:30.5,f:17.4,cb:0.9},
+{n:"しめさば",k:"しめさば",c:"魚介",kcal:292,p:18.6,f:26.9,cb:1.7},
+{n:"焼きちくわ",k:"ちくわ 練り物",c:"魚介",kcal:119,p:12.2,f:2.0,cb:13.5},
+{n:"だて巻き",k:"だてまき 練り物",c:"魚介",kcal:190,p:14.6,f:7.5,cb:17.6},
+{n:"つみれ",k:"つみれ 練り物",c:"魚介",kcal:104,p:12.0,f:4.3,cb:6.5},
+{n:"ツナ缶（油漬・ライト）",k:"つな シーチキン",c:"魚介",kcal:267,p:17.7,f:21.7,cb:0.1},
+{n:"サバ水煮缶（汁除き目安）",k:"さばかん すいに",c:"魚介",kcal:190,p:22.0,f:11.5,cb:0.2},
+{n:"かつお節",k:"かつおぶし かつおぶし だし",c:"魚介",kcal:332,p:77.1,f:2.9,cb:0.8},
+{n:"煮干し（かたくちいわし）",k:"にぼし いりこ だし",c:"魚介",kcal:298,p:64.5,f:6.2,cb:0.3},
+{n:"あおさ（乾）",k:"あおさ 海藻",c:"魚介",kcal:130,p:22.1,f:0.6,cb:41.7},
+// ===== 追加2：卵・乳 =====
+{n:"ゆで卵",k:"ゆでたまご",c:"卵・乳",kcal:134,p:12.5,f:10.4,cb:0.3},
+{n:"目玉焼き（油込み目安）",k:"めだまやき",c:"卵・乳",kcal:196,p:12.7,f:16.0,cb:0.4},
+{n:"卵焼き（だし巻き・目安）",k:"たまごやき だしまき",c:"卵・乳",kcal:128,p:9.6,f:8.0,cb:4.5},
+{n:"温泉卵",k:"おんせんたまご",c:"卵・乳",kcal:131,p:11.0,f:9.0,cb:0.4},
+{n:"ピータン",k:"ぴーたん",c:"卵・乳",kcal:188,p:13.7,f:13.5,cb:0},
+{n:"加工乳（濃厚）",k:"のうこう ぎゅうにゅう",c:"卵・乳",kcal:70,p:3.4,f:4.2,cb:5.3},
+{n:"コーヒー牛乳（目安）",k:"こーひーぎゅうにゅう",c:"卵・乳",kcal:56,p:2.2,f:2.0,cb:7.7},
+{n:"練乳（加糖）",k:"れんにゅう コンデンスミルク",c:"卵・乳",kcal:314,p:7.7,f:8.5,cb:56.0},
+{n:"エバミルク（無糖練乳）",k:"えばみるく",c:"卵・乳",kcal:144,p:6.8,f:7.9,cb:11.2},
+{n:"ラッシー（目安）",k:"らっしー",c:"卵・乳",kcal:80,p:2.5,f:2.0,cb:13.0},
+{n:"チェダーチーズ",k:"ちぇだー ちーず",c:"卵・乳",kcal:390,p:25.7,f:33.8,cb:1.4},
+{n:"ゴーダチーズ",k:"ごーだ ちーず",c:"卵・乳",kcal:356,p:25.8,f:29.0,cb:1.4},
+{n:"ブルーチーズ",k:"ぶるーちーず",c:"卵・乳",kcal:326,p:18.8,f:29.0,cb:1.0},
+{n:"6Pチーズ（プロセス目安）",k:"ちーず",c:"卵・乳",kcal:313,p:22.7,f:26.0,cb:1.3},
+{n:"さけるチーズ（目安）",k:"さけるちーず ストリング",c:"卵・乳",kcal:330,p:28.0,f:24.0,cb:0.5},
+{n:"バター（無塩）",k:"むえんばたー",c:"卵・乳",kcal:720,p:0.5,f:83.0,cb:0.2},
+{n:"ホエイプロテイン（WPC・水割り目安）",k:"ぷろていん",c:"卵・乳",kcal:400,p:75.0,f:7.0,cb:8.0},
+{n:"カゼインプロテイン（目安）",k:"かぜいん ぷろていん",c:"卵・乳",kcal:365,p:80.0,f:1.5,cb:5.0},
+// ===== 追加2：大豆・豆 =====
+{n:"豆腐（焼き豆腐）",k:"やきどうふ とうふ",c:"大豆・豆",kcal:82,p:7.8,f:5.7,cb:0.5},
+{n:"豆腐（ソフト木綿目安）",k:"とうふ",c:"大豆・豆",kcal:73,p:7.0,f:4.9,cb:1.5},
+{n:"がんもどき",k:"がんもどき",c:"大豆・豆",kcal:223,p:15.3,f:17.8,cb:1.6},
+{n:"湯葉（生）",k:"ゆば",c:"大豆・豆",kcal:218,p:21.8,f:13.7,cb:4.1},
+{n:"ひきわり納豆",k:"ひきわりなっとう",c:"大豆・豆",kcal:185,p:16.6,f:10.0,cb:10.5},
+{n:"大豆（蒸し・目安）",k:"だいず 蒸し大豆",c:"大豆・豆",kcal:186,p:16.6,f:9.8,cb:12.9},
+{n:"大豆（水煮）",k:"だいず 水煮",c:"大豆・豆",kcal:124,p:12.9,f:6.7,cb:7.7},
+{n:"金時豆（ゆで）",k:"きんときまめ いんげん豆",c:"大豆・豆",kcal:127,p:9.3,f:1.2,cb:24.5},
+{n:"えんどう豆（ゆで）",k:"えんどうまめ グリンピース",c:"大豆・豆",kcal:129,p:9.2,f:1.0,cb:25.2},
+{n:"そら豆（ゆで）",k:"そらまめ",c:"大豆・豆",kcal:103,p:10.5,f:0.2,cb:16.9},
+{n:"豆乳（調製）",k:"ちょうせいとうにゅう",c:"大豆・豆",kcal:63,p:3.2,f:3.6,cb:4.8},
+{n:"豆乳ヨーグルト（目安）",k:"とうにゅうよーぐると",c:"大豆・豆",kcal:63,p:3.6,f:3.5,cb:4.2},
+{n:"テンペ",k:"てんぺ",c:"大豆・豆",kcal:180,p:15.8,f:9.0,cb:15.4},
+// ===== 追加2：穀類 =====
+{n:"雑穀米（炊飯後・目安）",k:"ざっこくまい",c:"穀類",kcal:160,p:3.4,f:0.9,cb:35.0},
+{n:"発芽玄米（炊飯後）",k:"はつがげんまい",c:"穀類",kcal:161,p:3.0,f:1.4,cb:35.0},
+{n:"赤飯",k:"せきはん",c:"穀類",kcal:186,p:4.3,f:0.6,cb:41.9},
+{n:"おかゆ（全がゆ）",k:"おかゆ かゆ",c:"穀類",kcal:65,p:1.1,f:0.1,cb:15.7},
+{n:"ビーフン（ゆで）",k:"びーふん",c:"穀類",kcal:189,p:2.8,f:0.6,cb:43.4},
+{n:"きしめん（ゆで）",k:"きしめん",c:"穀類",kcal:95,p:2.6,f:0.4,cb:21.6},
+{n:"沖縄そば（ゆで）",k:"おきなわそば",c:"穀類",kcal:132,p:5.2,f:0.8,cb:25.9},
+{n:"冷凍うどん（ゆで目安）",k:"れいとううどん",c:"穀類",kcal:105,p:2.6,f:0.4,cb:23.0},
+{n:"食パン（6枚切1枚60g）",k:"しょくぱん",c:"穀類",kcal:149,p:5.3,f:2.5,cb:27.8},
+{n:"ナン",k:"なん",c:"穀類",kcal:257,p:10.3,f:3.4,cb:47.6},
+{n:"イングリッシュマフィン",k:"まふぃん",c:"穀類",kcal:224,p:8.1,f:3.6,cb:40.6},
+{n:"コーンフレーク（砂糖なし）",k:"こーんふれーく",c:"穀類",kcal:380,p:7.8,f:1.7,cb:83.6},
+{n:"小麦粉（薄力粉）",k:"こむぎこ はくりきこ",c:"穀類",kcal:349,p:8.3,f:1.5,cb:75.8},
+{n:"パン粉（乾）",k:"ぱんこ",c:"穀類",kcal:369,p:14.6,f:6.8,cb:63.4},
+{n:"ホットケーキ（目安）",k:"ほっとけーき ぱんけーき",c:"穀類",kcal:253,p:7.7,f:5.4,cb:45.3},
+{n:"オートミール（クイック目安）",k:"おーとみーる オーツ",c:"穀類",kcal:350,p:13.7,f:5.7,cb:69.1},
+{n:"キヌア（ゆで）",k:"きぬあ キノア",c:"穀類",kcal:120,p:4.4,f:1.9,cb:21.3},
+// ===== 追加2：いも =====
+{n:"じゃがいも（生）",k:"じゃがいも ポテト",c:"いも",kcal:59,p:1.8,f:0.1,cb:17.3},
+{n:"マッシュポテト（目安）",k:"ましゅぽてと",c:"いも",kcal:100,p:2.0,f:4.0,cb:15.0},
+{n:"さつまいも（生）",k:"さつまいも",c:"いも",kcal:126,p:1.2,f:0.2,cb:31.9},
+{n:"むらさきいも",k:"むらさきいも",c:"いも",kcal:123,p:1.2,f:0.3,cb:29.9},
+{n:"やまいも（いちょういも）",k:"やまいも",c:"いも",kcal:108,p:4.5,f:0.5,cb:22.6},
+{n:"タロイモ（目安）",k:"たろいも",c:"いも",kcal:97,p:1.5,f:0.2,cb:23.0},
+{n:"くずきり（ゆで）",k:"くずきり",c:"いも",kcal:133,p:0.1,f:0.1,cb:33.3},
+{n:"タピオカ（ゆで）",k:"たぴおか",c:"いも",kcal:61,p:0,f:0,cb:15.4},
+// ===== 追加2：野菜 =====
+{n:"アスパラガス（生）",k:"あすぱらがす",c:"野菜",kcal:21,p:2.6,f:0.2,cb:3.9},
+{n:"ブロッコリースプラウト",k:"すぷらうと",c:"野菜",kcal:19,p:1.9,f:0.6,cb:2.6},
+{n:"モロヘイヤ（ゆで）",k:"もろへいや",c:"野菜",kcal:24,p:3.0,f:0.4,cb:4.0},
+{n:"ケール",k:"けーる",c:"野菜",kcal:26,p:1.6,f:0.2,cb:5.6},
+{n:"ルッコラ",k:"るっこら",c:"野菜",kcal:17,p:1.9,f:0.4,cb:3.1},
+{n:"サニーレタス",k:"さにーれたす",c:"野菜",kcal:15,p:1.2,f:0.2,cb:3.2},
+{n:"サンチュ",k:"さんちゅ",c:"野菜",kcal:14,p:1.2,f:0.2,cb:2.5},
+{n:"青梗菜（ゆで）",k:"ちんげんさい",c:"野菜",kcal:11,p:0.9,f:0.1,cb:2.4},
+{n:"ふきのとう",k:"ふきのとう",c:"野菜",kcal:38,p:2.5,f:0.1,cb:10.0},
+{n:"みょうが",k:"みょうが",c:"野菜",kcal:11,p:0.9,f:0.1,cb:2.6},
+{n:"大葉（しそ）",k:"おおば しそ 紫蘇",c:"野菜",kcal:32,p:3.9,f:0.1,cb:7.5},
+{n:"パセリ",k:"ぱせり",c:"野菜",kcal:34,p:4.0,f:0.7,cb:7.8},
+{n:"バジル（生）",k:"ばじる",c:"野菜",kcal:21,p:2.0,f:0.6,cb:4.0},
+{n:"パプリカ（黄）",k:"ぱぷりか きいろ",c:"野菜",kcal:28,p:0.8,f:0.2,cb:7.2},
+{n:"ししとう",k:"ししとう",c:"野菜",kcal:24,p:1.9,f:0.3,cb:5.7},
+{n:"かぼちゃ（生）",k:"かぼちゃ",c:"野菜",kcal:78,p:1.9,f:0.3,cb:20.6},
+{n:"れんこん（ゆで）",k:"れんこん",c:"野菜",kcal:66,p:1.3,f:0.1,cb:16.1},
+{n:"ごぼう（生）",k:"ごぼう",c:"野菜",kcal:58,p:1.8,f:0.1,cb:15.4},
+{n:"うど",k:"うど",c:"野菜",kcal:19,p:0.8,f:0.1,cb:4.3},
+{n:"みつば",k:"みつば",c:"野菜",kcal:19,p:0.9,f:0.1,cb:4.0},
+{n:"わらび（ゆで）",k:"わらび 山菜",c:"野菜",kcal:13,p:1.5,f:0.1,cb:3.0},
+{n:"ぜんまい（ゆで）",k:"ぜんまい 山菜",c:"野菜",kcal:17,p:1.7,f:0.4,cb:3.8},
+{n:"エリンギ（生）",k:"えりんぎ きのこ",c:"野菜",kcal:31,p:2.8,f:0.4,cb:6.0},
+{n:"きくらげ（乾）",k:"きくらげ 木耳",c:"野菜",kcal:216,p:7.9,f:2.1,cb:71.1},
+{n:"干ししいたけ（乾）",k:"ほししいたけ しいたけ",c:"野菜",kcal:258,p:21.2,f:2.8,cb:62.5},
+{n:"昆布（素干し）",k:"こんぶ 海藻 だし",c:"野菜",kcal:170,p:5.8,f:1.3,cb:64.3},
+{n:"寒天（乾）",k:"かんてん 寒天",c:"野菜",kcal:159,p:2.4,f:0.2,cb:81.7},
+{n:"ところてん",k:"ところてん",c:"野菜",kcal:2,p:0.2,f:0,cb:0.6},
+{n:"のりの佃煮",k:"のりのつくだに",c:"野菜",kcal:148,p:14.4,f:1.3,cb:21.4},
+{n:"ザーサイ",k:"ざーさい",c:"野菜",kcal:20,p:2.5,f:0.1,cb:4.6},
+{n:"福神漬",k:"ふくじんづけ",c:"野菜",kcal:137,p:2.7,f:0.1,cb:31.3},
+{n:"たくあん",k:"たくあん 漬物",c:"野菜",kcal:43,p:0.6,f:0.3,cb:10.2},
+{n:"らっきょう（甘酢漬）",k:"らっきょう",c:"野菜",kcal:118,p:0.6,f:0.2,cb:29.3},
+{n:"紅生姜",k:"べにしょうが",c:"野菜",kcal:10,p:0.2,f:0.2,cb:2.2},
+{n:"ぬか漬け（きゅうり目安）",k:"ぬかづけ 漬物",c:"野菜",kcal:27,p:1.5,f:0.1,cb:6.2},
+{n:"コールスロー（目安）",k:"こーるすろー",c:"野菜",kcal:110,p:1.0,f:9.0,cb:6.5},
+// ===== 追加2：果物 =====
+{n:"アセロラ",k:"あせろら",c:"果物",kcal:36,p:0.7,f:0.1,cb:9.0},
+{n:"ゆず（果皮）",k:"ゆず 柚子",c:"果物",kcal:59,p:1.2,f:0.5,cb:14.2},
+{n:"レモン（全果）",k:"れもん",c:"果物",kcal:43,p:0.9,f:0.7,cb:12.5},
+{n:"ライム",k:"らいむ",c:"果物",kcal:39,p:0.4,f:0.1,cb:9.3},
+{n:"すだち（果汁）",k:"すだち",c:"果物",kcal:29,p:0.5,f:0.1,cb:6.6},
+{n:"いちじく",k:"いちじく",c:"果物",kcal:57,p:0.6,f:0.1,cb:14.3},
+{n:"ざくろ",k:"ざくろ",c:"果物",kcal:63,p:0.2,f:0,cb:15.5},
+{n:"ドラゴンフルーツ",k:"どらごんふるーつ ピタヤ",c:"果物",kcal:52,p:1.4,f:0.3,cb:11.8},
+{n:"パパイヤ",k:"ぱぱいや",c:"果物",kcal:33,p:0.5,f:0.2,cb:9.5},
+{n:"ライチ",k:"らいち",c:"果物",kcal:61,p:1.0,f:0.1,cb:16.4},
+{n:"びわ",k:"びわ 枇杷",c:"果物",kcal:41,p:0.3,f:0.1,cb:10.6},
+{n:"あんず（生）",k:"あんず 杏",c:"果物",kcal:37,p:1.0,f:0.3,cb:8.5},
+{n:"ネクタリン",k:"ねくたりん",c:"果物",kcal:39,p:0.7,f:0.3,cb:10.7},
+{n:"プラム（すもも）",k:"ぷらむ すもも",c:"果物",kcal:46,p:0.6,f:1.0,cb:9.4},
+{n:"デーツ（乾）",k:"でーつ なつめやし",c:"果物",kcal:281,p:2.2,f:0.2,cb:71.3},
+{n:"ドライいちじく",k:"どらいいちじく",c:"果物",kcal:272,p:3.0,f:1.1,cb:70.7},
+{n:"ドライアプリコット",k:"どらいあぷりこっと",c:"果物",kcal:296,p:9.2,f:0.5,cb:70.4},
+{n:"バナナチップス",k:"ばななちっぷす",c:"果物",kcal:299,p:3.8,f:24.8,cb:78.5},
+{n:"栗（ゆで）",k:"くり 栗",c:"果物",kcal:152,p:3.5,f:0.6,cb:36.7},
+{n:"甘栗（むき）",k:"あまぐり",c:"果物",kcal:207,p:4.9,f:0.9,cb:48.5},
+// ===== 追加2：ナッツ・油 =====
+{n:"ヘーゼルナッツ",k:"へーぜるなっつ",c:"ナッツ・油",kcal:701,p:13.6,f:69.3,cb:13.9},
+{n:"ブラジルナッツ",k:"ぶらじるなっつ",c:"ナッツ・油",kcal:703,p:14.9,f:69.1,cb:9.6},
+{n:"ペカンナッツ",k:"ぺかんなっつ",c:"ナッツ・油",kcal:716,p:9.6,f:73.4,cb:13.3},
+{n:"松の実",k:"まつのみ",c:"ナッツ・油",kcal:690,p:15.8,f:68.2,cb:10.6},
+{n:"かぼちゃの種",k:"かぼちゃのたね パンプキンシード",c:"ナッツ・油",kcal:590,p:26.5,f:51.8,cb:12.0},
+{n:"ひまわりの種",k:"ひまわりのたね",c:"ナッツ・油",kcal:611,p:20.1,f:56.3,cb:17.2},
+{n:"ごま（いり）",k:"ごま 胡麻",c:"ナッツ・油",kcal:599,p:20.3,f:54.2,cb:18.5},
+{n:"すりごま",k:"すりごま",c:"ナッツ・油",kcal:599,p:20.3,f:54.2,cb:18.5},
+{n:"ねりごま（タヒニ）",k:"ねりごま たひに",c:"ナッツ・油",kcal:605,p:19.0,f:57.1,cb:15.6},
+{n:"アーモンドバター（無糖）",k:"あーもんどばたー",c:"ナッツ・油",kcal:614,p:21.2,f:55.7,cb:19.5},
+{n:"米油",k:"こめあぶら 油",c:"ナッツ・油",kcal:886,p:0,f:100,cb:0},
+{n:"バター（有塩・再掲なし）",k:"ゆうえんばたー",c:"ナッツ・油",kcal:700,p:0.6,f:81.0,cb:0.2},
+{n:"ラード（豚脂）",k:"らーど",c:"ナッツ・油",kcal:885,p:0,f:100,cb:0},
+{n:"牛脂（ヘット）",k:"ぎゅうし へっと",c:"ナッツ・油",kcal:869,p:0.2,f:99.8,cb:0},
+{n:"タルタルソース（目安）",k:"たるたるそーす",c:"ナッツ・油",kcal:430,p:2.0,f:44.0,cb:6.0},
+// ===== 追加2：調味料 =====
+{n:"味噌（赤・辛味噌）",k:"あかみそ みそ",c:"調味料",kcal:178,p:13.1,f:5.5,cb:21.1},
+{n:"白味噌（甘味噌）",k:"しろみそ みそ",c:"調味料",kcal:206,p:9.7,f:3.0,cb:37.9},
+{n:"減塩醤油",k:"げんえんしょうゆ",c:"調味料",kcal:68,p:8.1,f:0,cb:8.9},
+{n:"だし醤油（目安）",k:"だししょうゆ",c:"調味料",kcal:60,p:5.0,f:0,cb:9.0},
+{n:"米酢",k:"こめず 酢",c:"調味料",kcal:46,p:0.2,f:0,cb:7.4},
+{n:"バルサミコ酢",k:"ばるさみこ",c:"調味料",kcal:99,p:0.5,f:0,cb:19.4},
+{n:"料理酒",k:"りょうりしゅ",c:"調味料",kcal:88,p:0.2,f:0,cb:4.7},
+{n:"コンソメ（顆粒）",k:"こんそめ",c:"調味料",kcal:233,p:7.0,f:4.3,cb:41.8},
+{n:"鶏がらスープの素",k:"とりがら がらすーぷ",c:"調味料",kcal:210,p:12.4,f:1.4,cb:36.0},
+{n:"だしの素（顆粒和風）",k:"だしのもと ほんだし",c:"調味料",kcal:223,p:24.2,f:0.3,cb:31.1},
+{n:"豆板醤",k:"とうばんじゃん",c:"調味料",kcal:49,p:2.0,f:2.3,cb:4.1},
+{n:"甜麺醤",k:"てんめんじゃん",c:"調味料",kcal:249,p:8.5,f:7.7,cb:38.1},
+{n:"コチュジャン",k:"こちゅじゃん",c:"調味料",kcal:247,p:5.3,f:1.4,cb:55.4},
+{n:"ナンプラー",k:"なんぷらー",c:"調味料",kcal:47,p:6.3,f:0,cb:5.5},
+{n:"わさび（練り）",k:"わさび",c:"調味料",kcal:265,p:3.3,f:10.3,cb:39.8},
+{n:"からし（練り）",k:"からし マスタード",c:"調味料",kcal:314,p:5.9,f:14.5,cb:40.1},
+{n:"粒マスタード",k:"つぶますたーど",c:"調味料",kcal:229,p:7.6,f:16.0,cb:12.7},
+{n:"はちみつ（再掲なし・調味）",k:"はちみつ",c:"調味料",kcal:329,p:0.3,f:0,cb:81.9},
+{n:"メープルシロップ",k:"めーぷるしろっぷ",c:"調味料",kcal:266,p:0.1,f:0,cb:66.3},
+{n:"ラー油",k:"らーゆ",c:"調味料",kcal:887,p:0.1,f:99.8,cb:0},
+{n:"甘酢あん（目安）",k:"あまずあん",c:"調味料",kcal:110,p:0.5,f:0,cb:27.0},
+{n:"デミグラスソース（目安）",k:"でみぐらす",c:"調味料",kcal:82,p:1.9,f:3.0,cb:11.0},
+{n:"ホワイトソース（目安）",k:"ほわいとそーす べしゃめる",c:"調味料",kcal:99,p:1.8,f:6.2,cb:9.2},
+{n:"青のり",k:"あおのり",c:"調味料",kcal:249,p:29.4,f:5.2,cb:41.0},
+// ===== 追加2：飲料・酒 =====
+{n:"緑茶（浸出液）",k:"りょくちゃ お茶",c:"飲料・酒",kcal:2,p:0.2,f:0,cb:0.2},
+{n:"麦茶",k:"むぎちゃ",c:"飲料・酒",kcal:1,p:0,f:0,cb:0.3},
+{n:"コーヒー（ブラック・浸出液）",k:"こーひー ブラック",c:"飲料・酒",kcal:4,p:0.2,f:0,cb:0.7},
+{n:"無糖炭酸水",k:"たんさんすい ソーダ",c:"飲料・酒",kcal:0,p:0,f:0,cb:0},
+{n:"アーモンドミルク（無糖・目安）",k:"あーもんどみるく",c:"飲料・酒",kcal:15,p:0.5,f:1.1,cb:0.9},
+{n:"オーツミルク（目安）",k:"おーつみるく",c:"飲料・酒",kcal:47,p:1.0,f:1.5,cb:7.0},
+{n:"ココア（無糖・粉のみ100g）",k:"ここあ",c:"飲料・酒",kcal:386,p:18.5,f:21.6,cb:42.4},
+{n:"甘酒（酒粕・目安）",k:"あまざけ",c:"飲料・酒",kcal:76,p:1.7,f:0.1,cb:18.3},
+{n:"りんごジュース（ストレート）",k:"りんごじゅーす",c:"飲料・酒",kcal:43,p:0.2,f:0.1,cb:11.4},
+{n:"グレープフルーツジュース",k:"ぐれーぷふるーつじゅーす",c:"飲料・酒",kcal:44,p:0.7,f:0.1,cb:10.3},
+{n:"レモンサワー（缶・目安）",k:"れもんさわー",c:"飲料・酒",kcal:51,p:0,f:0,cb:2.9},
+{n:"生ビール（ジョッキ換算目安）",k:"なまびーる",c:"飲料・酒",kcal:39,p:0.3,f:0,cb:3.1},
+{n:"発泡酒",k:"はっぽうしゅ",c:"飲料・酒",kcal:45,p:0.1,f:0,cb:3.6},
+{n:"ノンアルコールビール（目安）",k:"のんあるこーる びーる",c:"飲料・酒",kcal:5,p:0.1,f:0,cb:1.2},
+{n:"白ワイン",k:"しろわいん わいん",c:"飲料・酒",kcal:75,p:0.1,f:0,cb:2.0},
+{n:"ジン",k:"じん",c:"飲料・酒",kcal:284,p:0,f:0,cb:0.1},
+{n:"ウォッカ",k:"うぉっか",c:"飲料・酒",kcal:240,p:0,f:0,cb:0},
+{n:"紹興酒",k:"しょうこうしゅ",c:"飲料・酒",kcal:127,p:1.7,f:0,cb:5.1},
+// ===== 追加2：菓子 =====
+{n:"ビターチョコ（カカオ85%目安）",k:"びたーちょこ はいかかお",c:"菓子",kcal:600,p:11.0,f:48.0,cb:31.0},
+{n:"チョコ（ホワイト）",k:"ほわいとちょこ",c:"菓子",kcal:588,p:7.2,f:39.5,cb:50.3},
+{n:"マカロン（目安）",k:"まかろん",c:"菓子",kcal:420,p:6.0,f:20.0,cb:54.0},
+{n:"チーズケーキ（ベイクド）",k:"ちーずけーき",c:"菓子",kcal:299,p:8.5,f:21.2,cb:18.6},
+{n:"ティラミス（目安）",k:"てぃらみす",c:"菓子",kcal:270,p:5.0,f:18.0,cb:22.0},
+{n:"バウムクーヘン",k:"ばうむくーへん",c:"菓子",kcal:426,p:6.5,f:24.0,cb:45.0},
+{n:"ワッフル（目安）",k:"わっふる",c:"菓子",kcal:280,p:6.0,f:12.0,cb:37.0},
+{n:"クレープ（目安）",k:"くれーぷ",c:"菓子",kcal:230,p:5.0,f:9.0,cb:32.0},
+{n:"大福",k:"だいふく 和菓子",c:"菓子",kcal:223,p:4.6,f:0.5,cb:53.2},
+{n:"たい焼き",k:"たいやき 和菓子",c:"菓子",kcal:220,p:4.5,f:1.5,cb:47.0},
+{n:"今川焼き（あん）",k:"いまがわやき おおばんやき",c:"菓子",kcal:220,p:4.5,f:1.8,cb:47.0},
+{n:"わらび餅",k:"わらびもち 和菓子",c:"菓子",kcal:170,p:1.5,f:0.2,cb:40.0},
+{n:"おはぎ",k:"おはぎ ぼたもち",c:"菓子",kcal:238,p:4.0,f:0.7,cb:53.0},
+{n:"あんみつ（目安）",k:"あんみつ",c:"菓子",kcal:180,p:2.5,f:0.3,cb:42.0},
+{n:"ポップコーン（塩）",k:"ぽっぷこーん",c:"菓子",kcal:484,p:10.2,f:22.8,cb:59.6},
+{n:"チュロス（目安）",k:"ちゅろす",c:"菓子",kcal:380,p:5.0,f:18.0,cb:48.0},
+{n:"かりんとう",k:"かりんとう",c:"菓子",kcal:441,p:7.5,f:11.6,cb:76.3},
+{n:"あられ・おかき",k:"あられ おかき",c:"菓子",kcal:381,p:7.5,f:1.4,cb:82.9},
+{n:"ミックスナッツチョコ（目安）",k:"なっつちょこ",c:"菓子",kcal:570,p:9.0,f:40.0,cb:42.0},
+{n:"ガム（砂糖入り目安）",k:"がむ",c:"菓子",kcal:389,p:0,f:0,cb:96.9},
+// ===== 追加2：料理（目安） =====
+{n:"親子丼（全体）",k:"おやこどん",c:"料理(目安)",kcal:145,p:8.0,f:4.0,cb:18.5},
+{n:"チャーハン（全体）",k:"ちゃーはん 炒飯",c:"料理(目安)",kcal:185,p:4.5,f:6.5,cb:26.0},
+{n:"オムライス（全体）",k:"おむらいす",c:"料理(目安)",kcal:160,p:5.0,f:6.5,cb:20.0},
+{n:"ナポリタン（全体）",k:"なぽりたん ぱすた",c:"料理(目安)",kcal:150,p:4.5,f:5.0,cb:22.0},
+{n:"ミートソースパスタ（全体）",k:"みーとそーす ぱすた",c:"料理(目安)",kcal:150,p:5.5,f:5.0,cb:21.0},
+{n:"ペペロンチーノ（全体）",k:"ぺぺろんちーの ぱすた",c:"料理(目安)",kcal:170,p:4.5,f:6.5,cb:23.0},
+{n:"カルボナーラ（全体）",k:"かるぼなーら ぱすた",c:"料理(目安)",kcal:195,p:6.5,f:9.5,cb:20.0},
+{n:"味噌ラーメン（全体・スープ込目安）",k:"みそらーめん",c:"料理(目安)",kcal:120,p:5.0,f:4.5,cb:15.0},
+{n:"醤油ラーメン（全体・目安）",k:"しょうゆらーめん",c:"料理(目安)",kcal:100,p:5.0,f:2.5,cb:14.5},
+{n:"つけ麺（全体・目安）",k:"つけめん",c:"料理(目安)",kcal:150,p:7.0,f:4.0,cb:22.0},
+{n:"天丼（全体）",k:"てんどん",c:"料理(目安)",kcal:180,p:5.0,f:5.0,cb:28.0},
+{n:"カツ丼（全体）",k:"かつどん",c:"料理(目安)",kcal:190,p:7.5,f:7.5,cb:23.0},
+{n:"うな重（全体）",k:"うなじゅう うなぎ",c:"料理(目安)",kcal:200,p:9.0,f:7.5,cb:24.0},
+{n:"ちらし寿司（全体）",k:"ちらしずし すし",c:"料理(目安)",kcal:145,p:5.5,f:2.0,cb:26.0},
+{n:"握り寿司（1貫・目安）",k:"にぎりずし すし",c:"料理(目安)",kcal:60,p:3.0,f:0.8,cb:9.5},
+{n:"太巻き寿司（全体）",k:"まきずし のりまき すし",c:"料理(目安)",kcal:150,p:4.5,f:2.5,cb:27.0},
+{n:"肉じゃが（全体）",k:"にくじゃが",c:"料理(目安)",kcal:130,p:4.5,f:5.0,cb:16.0},
+{n:"麻婆豆腐（全体）",k:"まーぼーどうふ",c:"料理(目安)",kcal:110,p:6.5,f:7.0,cb:5.0},
+{n:"回鍋肉（全体）",k:"ほいこーろー",c:"料理(目安)",kcal:150,p:7.0,f:10.0,cb:7.0},
+{n:"青椒肉絲（全体）",k:"ちんじゃおろーす",c:"料理(目安)",kcal:130,p:8.0,f:8.0,cb:6.0},
+{n:"エビチリ（全体）",k:"えびちり",c:"料理(目安)",kcal:120,p:9.0,f:5.5,cb:8.0},
+{n:"春巻き（1本・目安）",k:"はるまき",c:"料理(目安)",kcal:110,p:2.5,f:6.5,cb:10.0},
+{n:"シュウマイ（1個・目安）",k:"しゅうまい",c:"料理(目安)",kcal:38,p:1.7,f:2.0,cb:3.2},
+{n:"コロッケ（1個・目安）",k:"ころっけ",c:"料理(目安)",kcal:170,p:3.5,f:9.0,cb:19.0},
+{n:"メンチカツ（1個・目安）",k:"めんちかつ",c:"料理(目安)",kcal:270,p:10.0,f:18.0,cb:16.0},
+{n:"チキン南蛮（全体・目安）",k:"ちきんなんばん",c:"料理(目安)",kcal:250,p:15.0,f:16.0,cb:11.0},
+{n:"生姜焼き（全体・目安）",k:"しょうがやき ぶた",c:"料理(目安)",kcal:220,p:14.0,f:14.0,cb:9.0},
+{n:"焼き餃子（1個・目安）",k:"ぎょうざ",c:"料理(目安)",kcal:42,p:1.4,f:2.3,cb:4.5},
+{n:"豚汁（1杯・目安）",k:"とんじる みそしる",c:"料理(目安)",kcal:75,p:4.0,f:4.0,cb:6.0},
+{n:"味噌汁（わかめ・1杯目安）",k:"みそしる",c:"料理(目安)",kcal:35,p:2.5,f:1.0,cb:4.0},
+{n:"けんちん汁（1杯・目安）",k:"けんちんじる",c:"料理(目安)",kcal:70,p:3.0,f:3.5,cb:7.0},
+{n:"ポテトサラダ（目安）",k:"ぽてとさらだ",c:"料理(目安)",kcal:130,p:2.0,f:7.0,cb:15.0},
+{n:"マカロニサラダ（目安）",k:"まかろにさらだ",c:"料理(目安)",kcal:170,p:3.0,f:9.0,cb:19.0},
+{n:"冷奴（1丁分・目安）",k:"ひややっこ とうふ",c:"料理(目安)",kcal:73,p:7.0,f:4.9,cb:1.5},
+{n:"納豆巻き（1本・目安）",k:"なっとうまき すし",c:"料理(目安)",kcal:160,p:5.5,f:1.5,cb:31.0},
+{n:"ハンバーガー（目安）",k:"はんばーがー",c:"料理(目安)",kcal:250,p:13.0,f:9.0,cb:30.0},
+{n:"チーズバーガー（目安）",k:"ちーずばーがー",c:"料理(目安)",kcal:290,p:15.0,f:13.0,cb:29.0},
+{n:"ホットドッグ（目安）",k:"ほっとどっぐ",c:"料理(目安)",kcal:260,p:9.0,f:14.0,cb:24.0},
+{n:"牛カルビ弁当（目安・全体）",k:"かるびべんとう",c:"料理(目安)",kcal:180,p:6.0,f:7.0,cb:24.0},
+{n:"幕の内弁当（目安・全体）",k:"まくのうちべんとう",c:"料理(目安)",kcal:150,p:6.0,f:4.0,cb:22.0},
+{n:"サラダボウル（チキン・目安全体）",k:"さらだぼうる",c:"料理(目安)",kcal:110,p:9.0,f:5.0,cb:8.0},
+{n:"グラタン（マカロニ・目安）",k:"ぐらたん",c:"料理(目安)",kcal:150,p:5.5,f:8.0,cb:14.0},
+{n:"ビーフシチュー（全体・目安）",k:"びーふしちゅー",c:"料理(目安)",kcal:120,p:6.0,f:6.5,cb:9.0},
+{n:"おでん（盛り合わせ・目安全体）",k:"おでん",c:"料理(目安)",kcal:70,p:6.0,f:2.5,cb:6.0},
+// ===== 追加2：その他・サプリ =====
+{n:"EAA（目安・粉10g中）",k:"いーえーえー 必須アミノ酸",c:"その他",kcal:38,p:9.0,f:0,cb:0.5},
+{n:"BCAA（目安・粉10g中）",k:"びーしーえーえー",c:"その他",kcal:38,p:9.0,f:0,cb:0.5},
+{n:"クレアチン（モノハイドレート5g）",k:"くれあちん",c:"その他",kcal:0,p:0,f:0,cb:0},
+{n:"プロテインバー（低糖質・目安）",k:"ぷろていんばー",c:"その他",kcal:200,p:20.0,f:8.0,cb:15.0},
+{n:"カロリーメイト（1本・目安）",k:"かろりーめいと",c:"その他",kcal:100,p:2.0,f:5.5,cb:10.5},
+{n:"甘酒（米麹）",k:"あまざけ こうじ",c:"その他",kcal:81,p:1.7,f:0.1,cb:18.3},
+{n:"ぬか（米ぬか目安）",k:"ぬか",c:"その他",kcal:412,p:13.4,f:19.6,cb:48.8},
+{n:"酒粕",k:"さけかす",c:"その他",kcal:215,p:14.9,f:1.5,cb:23.8},
+{n:"ゼラチン（粉）",k:"ぜらちん",c:"その他",kcal:347,p:87.6,f:0.3,cb:0},
+{n:"寒天ゼリー（無糖・目安）",k:"かんてんぜりー",c:"その他",kcal:3,p:0,f:0,cb:0.8},
+{n:"ベーキングパウダー",k:"べーきんぐぱうだー",c:"その他",kcal:150,p:0,f:1.2,cb:35.0},
+{n:"ドライイースト",k:"どらいいーすと",c:"その他",kcal:313,p:37.1,f:6.8,cb:42.1},
+{n:"味付けもずく（目安）",k:"あじつけもずく",c:"その他",kcal:15,p:0.3,f:0,cb:3.5}
+];
+
+/* ================= お悩み別データ ================= */
+const CONCERNS=[
+{icon:"🚻",t:"便秘",s:"減量中に特に多い悩み",
+why:"減量中は食事量・脂質の減少と発汗による水分不足で便が硬くなりやすく、腸の動きも低下します。ポイントは「水溶性食物繊維（善玉菌のエサになり便を柔らかくする）」「不溶性食物繊維（便のカサを増やし腸を刺激）」「発酵食品（菌そのものを補給）」「十分な水分」の4点セットです。",
+foods:[
+["オートミール","水溶性食物繊維β-グルカンが豊富。朝の主食を白米から置き換えるだけで効果的"],
+["さつまいも","不溶性繊維＋ヤラピン（皮付近の整腸成分）。減量中の炭水化物源として一石二鳥"],
+["きのこ類（しめじ・まいたけ等）","低カロリーで不溶性繊維が豊富。カサ増しにも◎"],
+["わかめ・めかぶ","水溶性繊維（アルギン酸・フコイダン）。ほぼノンカロリーで毎食追加できる"],
+["キウイ","水溶性・不溶性のバランスが良く、タンパク質分解酵素アクチニジンも含む。1日2個で便通改善のエビデンスあり"],
+["プルーン","ソルビトールが浸透圧で便を柔らかくする。ただし糖質が高いので2〜3粒まで"],
+["納豆・キムチ・ヨーグルト","発酵食品。菌の種類を変えて複数を回すと腸内細菌の多様性が上がる"]],
+tips:["水分は体重×35mlを必ず確保（アプリの水分量参照）","起床後すぐコップ1杯の水で胃結腸反射を促す","脂質を極端に削りすぎない（潤滑の役割もある）","改善しない・血便がある場合は受診をすすめる"],ref:"日本消化器病学会 慢性便秘症診療ガイドライン／Bae SH. Pediatr Gastroenterol Hepatol Nutr. 2014（キウイと便通）"},
+
+{icon:"💨",t:"お腹の張り・ガス",s:"食物繊維の摂りすぎでも起こる",
+why:"腸内細菌が発酵しやすい糖質（FODMAP）を一気に摂ると、ガスが発生して張りを感じます。「体に良いから」と繊維や発酵食品を急に増やした時に起こりやすいのが特徴。一時的に発酵しにくい食材へ寄せて、少しずつ戻すのが定石です。",
+foods:[
+["白米","低FODMAPの代表。張りが強い時期の主食に最適"],
+["バナナ（熟しすぎていないもの）","熟すほどフルクタンが増えるため、やや青めが◎"],
+["鶏むね肉・卵・魚","タンパク源はほぼ低FODMAP。張りの原因になりにくい"],
+["ほうれん草・にんじん・トマト","低FODMAPの野菜。玉ねぎ・ごぼうの代わりに"],
+["キウイ","低FODMAPかつ消化酵素を含み、張り対策と便通を両立"]],
+tips:["よく噛む・早食いをやめる（空気の飲み込みもガスの原因）","玉ねぎ・にんにく・豆類・小麦を2週間ほど控えて様子を見る","乳製品で張る場合は乳糖不耐の可能性。ヨーグルトかラクトースフリーへ","プロテインで張る場合はWPI（アイソレート）に変更"],ref:"Monash University FODMAP プログラム／Halmos EP et al. Gastroenterology. 2014（低FODMAP食）"},
+
+{icon:"🔋",t:"疲労・回復が遅い",s:"トレーニングボリュームが多い時期に",
+why:"疲労の主因は「糖質不足によるグリコーゲン枯渇」「ビタミンB1不足（糖質をエネルギーに変換できない）」「鉄不足（酸素運搬の低下）」の3つが大半。特に減量中は糖質と鉄が不足しやすくなります。",
+foods:[
+["白米・もち・干し芋","トレ前後の糖質補給でグリコーゲンを回復。回復の土台はまず糖質"],
+["豚ヒレ肉","ビタミンB1含有量が全食材トップクラス。糖質代謝の補酵素"],
+["カツオ・マグロ赤身","ヘム鉄＋B6が豊富。吸収率の低い植物性鉄より効率的"],
+["鶏レバー","鉄・ビタミンA・B群の宝庫。週1〜2回、50g程度で十分"],
+["ブルーベリー・いちご","抗酸化ポリフェノールが運動後の酸化ストレスを軽減"],
+["みかん・キウイ","クエン酸＋ビタミンC。鉄の吸収も高める"]],
+tips:["疲労時はまず睡眠と糖質量を見直す（脂質より優先度が高い）","鉄はビタミンCと同時摂取で吸収率アップ、コーヒー・緑茶は食後1時間空ける","慢性的なだるさが続く場合は貧血・甲状腺の血液検査を"],ref:"厚生労働省「食事摂取基準（2025年版）」（鉄・ビタミンB1）／Beard JL. J Nutr. 2001（鉄と疲労）"},
+
+{icon:"😴",t:"睡眠の質が悪い",s:"回復と食欲コントロールの土台",
+why:"睡眠不足は食欲ホルモン（グレリン増・レプチン減）を乱し、減量の最大の敵になります。睡眠ホルモン「メラトニン」の材料はトリプトファン（アミノ酸）で、ビタミンB6と糖質があると脳内でセロトニン→メラトニンへ変換されます。",
+foods:[
+["牛乳・ヨーグルト","トリプトファンの古典的供給源。就寝1〜2時間前のカゼインは筋合成にも有利"],
+["豆腐・納豆・豆乳","大豆はトリプトファン＋マグネシウムが豊富"],
+["バナナ","トリプトファン＋B6＋糖質を1本で揃う「眠りの果物」"],
+["エビ・ホタテ・イカ","グリシンが深部体温を下げ入眠を助ける（就寝前3gの研究あり）"],
+["キウイ","就寝1時間前に2個で睡眠の質が改善した研究がある"]],
+tips:["就寝直前の高脂質・大量の食事は消化で睡眠が浅くなるので避ける","カフェインは半減期5〜6時間。14時以降のコーヒーは控えめに","夕食の炭水化物を抜きすぎると入眠が悪くなる人が多い（減量中でも夜に一定量残す）"],ref:"St-Onge MP et al. Adv Nutr. 2016（食事と睡眠）／Lin HH et al. 2011（キウイと睡眠）"},
+
+{icon:"✨",t:"肌荒れ・髪のパサつき",s:"減量が進んだ時期に出やすい",
+why:"肌も髪も材料はタンパク質。加えて「脂質の削りすぎ（皮脂・細胞膜の材料不足）」「亜鉛不足（ターンオーバー低下）」「ビタミンC不足（コラーゲン合成低下）」が重なると一気に荒れます。カロリーは削っても材料は削らないのが鉄則。",
+foods:[
+["サバ・鮭","オメガ3（EPA/DHA）が炎症を抑え、肌のバリア機能を守る。週3回が目安"],
+["牛赤身肉","亜鉛＋ヘム鉄＋タンパク質。肌のターンオーバーの材料が揃う"],
+["全卵","ビオチン・ビタミンA・良質な脂質。減量中も1日1〜2個は卵黄ごと"],
+["ブロッコリー・キウイ・いちご","ビタミンCがコラーゲン合成の必須補酵素"],
+["アーモンド","ビタミンE（抗酸化）と良質な脂質。1日20〜25粒まで"],
+["アボカド","ビタミンE＋オレイン酸。脂質枠を「肌に効く脂質」で使う"]],
+tips:["脂質は最低でも体重×0.8g/kgを死守（アプリが警告を出すライン）","極端な減量ペース（週1%超）は皮膚のたるみ・抜け毛のリスクを上げる","コンテスト前のタンニングと保湿ルーティンは別途設計を"],ref:"皮膚の栄養に関する一般的知見／オメガ3・亜鉛・ビタミンCと皮膚のレビュー"},
+
+{icon:"🍽️",t:"減量中の空腹がつらい",s:"食事量を増やさず満腹感を上げる",
+why:"満腹感は「胃の物理的な容積」「タンパク質の食欲抑制ホルモン（PYY・GLP-1）」「血糖の安定」で決まります。同じカロリーでも“カサ・タンパク質・咀嚼回数”を増やせば空腹は大幅に減らせます。",
+foods:[
+["きのこ類・もやし","ほぼノンカロリーで料理のカサを1.5倍にできる最強のカサ増し食材"],
+["わかめ・めかぶ・海藻サラダ","水分と繊維で胃の容積を稼ぐ。汁物に入れると更に◎"],
+["鶏むね肉・タラ・エビ","高タンパク低脂質。タンパク質はPFC中で最も満腹感が持続する"],
+["ギリシャヨーグルト・カッテージチーズ","間食枠で満腹感の高いタンパク質を確保"],
+["じゃがいも（蒸し）","満腹感指数（Satiety Index）全食品1位。白米の一部を置き換えも有効"],
+["オートミール","β-グルカンがゲル化して胃滞留時間を延ばす"]],
+tips:["飲むカロリー（ジュース・ラテ）を噛むカロリーに置き換える","食事の最初に汁物・野菜で胃を満たす（ベジファースト）","空腹のピークは20分で引く。まず水500mlと温かいお茶で様子を見る","どうしても辛い日はリフィード（炭水化物を維持カロリーまで戻す日）を計画的に"],ref:"Holt SH et al. Eur J Clin Nutr. 1995（満腹感指数）／タンパク質の食欲抑制に関するレビュー"},
+
+{icon:"💧",t:"むくみ",s:"塩分と水分バランスの調整",
+why:"むくみの多くは「塩分過多」か逆に「極端な水分・塩分制限のリバウンド」で起こります。ナトリウムを排出するカリウムを増やし、水分はむしろしっかり摂るのが正解。水を減らすと体は水を溜め込もうとします。",
+foods:[
+["バナナ・キウイ","カリウムが豊富でナトリウム排出を促す"],
+["アボカド","カリウム含有量は果物トップクラス"],
+["ほうれん草・かぼちゃ","野菜からのカリウム補給。ゆでる場合はスープごと摂ると◎"],
+["さつまいも・じゃがいも","炭水化物源とカリウム補給を兼ねられる"],
+["納豆・枝豆","マグネシウム＋カリウム。大豆系は水分バランス調整に有利"]],
+tips:["加工食品・外食が続く週は塩分が2倍になりがち。自炊比率を上げる","水分制限は逆効果。体重×35mlを均等に飲む","塩分を急に減らしすぎない（急変動が一番むくむ）","朝だけのむくみは生理的な範囲のことが多い。片脚だけ・痛みを伴う場合は受診を"],ref:"WHO Potassium intake guideline. 2012／ナトリウム・カリウムと体液調節の一般的知見"},
+
+{icon:"🩸",t:"貧血ぎみ・スタミナ不足",s:"特に女性クライアント・減量後期",
+why:"鉄が不足するとヘモグロビンが作れず、酸素運搬能力が落ちてトレーニング強度が維持できません。動物性の「ヘム鉄」は植物性の非ヘム鉄より吸収率が5〜10倍高く、ビタミンCが吸収をさらに高めます。月経のある女性は特に需要が大きい栄養素です。",
+foods:[
+["牛赤身肉・馬肉","ヘム鉄の代表格。減量中でも週3回は赤身肉を入れたい"],
+["カツオ・マグロ赤身","魚からのヘム鉄＋高タンパク低脂質"],
+["鶏レバー・砂肝","鉄濃度が最も高い食材群。レバーは週1〜2回・50gで十分"],
+["あさり・しじみ（汁物で）","鉄＋ビタミンB12。※DBには未収載、汁物での活用を推奨"],
+["ブロッコリー・いちご・みかん","ビタミンCを同じ食事に添えて吸収率を上げる"]],
+tips:["コーヒー・緑茶のタンニンは鉄の吸収を阻害。食事と1時間ずらす","カルシウムサプリと鉄は同時に摂らない（競合する）","立ちくらみ・爪の変形・氷を食べたくなる等があればフェリチン込みの血液検査を"],ref:"厚生労働省「食事摂取基準（2025年版）」（鉄）／日本鉄バイオサイエンス学会 鉄剤の適正使用指針"},
+
+{icon:"🥤",t:"プロテインの飲み方・タイミング",s:"種類の使い分けと効果的な摂り方",
+why:"最も重要なのは「1日の総タンパク質量」で、タイミングはその次です。ただし1回に筋合成を最大化できるのは約0.4g/kg（20〜40g）なので、まとめて摂るより分けた方が効率的。トレ後の「ゴールデンタイム」は従来言われた30分より長く数時間ありますが、トレ前後どちらかで20〜40g摂っておくのが確実です。種類による吸収速度の違いを、飲む場面で使い分けるのがコツです。",
+foods:[
+["ホエイプロテイン（WPC）","吸収が速くトレ後の定番。コスパも最良。まずはこれで十分"],
+["WPI（アイソレート）","乳糖をほぼ除去。牛乳でお腹が張る人・減量後期の脂質カットに"],
+["ソイプロテイン","吸収がゆっくりで腹持ちが良い。間食・就寝前・置き換え向き"],
+["ギリシャヨーグルト・カッテージチーズ","カゼイン主体で就寝中にゆっくり吸収。寝る前のタンパク質補給に最適"],
+["牛乳・豆乳（割り材として）","増量期は牛乳割りでカロリーと吸収の持続性をプラス。減量期は水割り"],
+["バナナ・和菓子","トレ後にプロテインと一緒に摂ると、糖質がインスリンを介して筋合成と回復を後押し"]],
+tips:["定番タイミングは①起床後②トレ前後③食間④就寝1時間前","1回20〜40gが目安。40g超は効率が落ちる（無駄にはならない）","お腹がゴロゴロする人はWPIに変えるか、少量を2回に分ける","シェイク後は早めに飲む（作り置きは雑菌繁殖のもと）","プロテインは「補助」。食事で摂れた日は無理に飲まなくてOK"],ref:"Morton RW et al. Br J Sports Med. 2018／Schoenfeld BJ, Aragon AA. JISSN. 2018／ISSN Position Stand (Jäger R et al. 2017)"},
+
+{icon:"⏱️",t:"トレーニング前の食事",s:"トレの質は直前の糖質で決まる",
+why:"筋トレの燃料は筋グリコーゲン（＝糖質）です。空腹でのトレーニングは挙上重量とレップ数が落ち、結果的に筋肥大の刺激も減ります。基本は2〜3時間前に消化の良い食事、時間がなければ30〜60分前に脂質・食物繊維の少ない「速い糖質」を少量。カフェインは運動30〜60分前の摂取で挙上パフォーマンス向上のエビデンスが豊富です。",
+foods:[
+["白米・おにぎり","2〜3時間前の基本。脂質が少なく消化が速い王道の燃料"],
+["バナナ","30〜60分前の定番。消化が速くカリウムも補給できる"],
+["もち・和菓子（大福・団子）","低脂質・高糖質でトレ前に理想的。ボディビルダーの定番には理由がある"],
+["はちみつ","直前でもOKな最速の糖質。トーストやヨーグルトに"],
+["ブラックコーヒー","カフェイン3〜6mg/kg（60kgなら180〜360mg＝コーヒー2〜3杯）で筋力・集中力が向上"]],
+tips:["直前の高脂質（揚げ物・ラーメン等）は胃もたれで最悪のパフォーマンスに","朝イチトレはバナナ＋プロテイン半量など「胃に軽い糖質＋P」","食後すぐのトレは血流が消化に取られる。最低45分は空ける","カフェインに慣れていない人は少量から（動悸・不眠に注意）"],ref:"Grgic J et al. Br J Sports Med. 2020（カフェインと筋力）／Burke LM. IOC consensus. 2011"},
+
+{icon:"🏋️",t:"トレーニング後の食事",s:"回復と筋合成のゴールデンルール",
+why:"トレ後の目的は2つ：①筋グリコーゲンの回復（糖質：体重×1g目安）②筋タンパク合成のスイッチON（タンパク質20〜40g）。「30分以内」の神話は絶対ではありませんが、トレ前の食事から時間が空いている場合は早めに摂るほど有利です。減量中でも、トレ後の糖質は最も脂肪になりにくいタイミングなので削りすぎないこと。",
+foods:[
+["ホエイプロテイン","トレ直後の最速タンパク質。糖質と一緒に摂ると回復が加速"],
+["白米","筋グリコーゲン回復の主役。トレ後は1日の中で糖質を最も寄せたい時間"],
+["オレンジジュース","果糖＋ブドウ糖で肝臓と筋肉の両方のグリコーゲンを回復。プロテインと相性◎"],
+["鶏むね肉・鮭","トレ後2時間以内の固形食で。プロテインだけで終わらせない"],
+["全卵","ロイシンが豊富。卵黄ごと食べた方が筋合成が高いという研究もある"],
+["和菓子・干し芋","減量中のトレ後糖質として。低脂質で罪悪感なく使える"]],
+tips:["トレ後2時間以内に固形の食事を1回入れるのが理想","減量中こそトレ後に糖質を配置（1日の配分をトレ後に寄せる）","夜遅いトレならプロテイン＋バナナ等で軽く済ませ、消化を優先","水分もセットで。トレ前後の体重差×1.5倍の水を数時間かけて"],ref:"Aragon AA, Schoenfeld BJ. JISSN. 2013（栄養タイミング）／Kerksick CM et al. JISSN. 2017"},
+
+{icon:"📉",t:"減量の停滞（プラトー）",s:"焦って削る前に確認すること",
+why:"体重が減ると維持カロリー自体が下がり、無意識の活動量（NEAT)も減るため、同じ食事でも差が縮まります。またストレスホルモン（コルチゾール）による水分貯留で「脂肪は減っているのに体重が動かない」見かけの停滞も非常に多い。判断は必ず週平均体重で、2週間動かなければ本物の停滞です。",
+foods:[
+["白米・さつまいも","週1回のリフィード（維持カロリーまで糖質を戻す日）の主役。代謝とホルモンを立て直す"],
+["タラ・エビ・イカ","脂質をさらに絞る余地を作る超低脂質タンパク源"],
+["きのこ・海藻・こんにゃく","摂取量を守りながら満足感をキープするカサ増し要員"],
+["ブラックコーヒー・緑茶","トレ強度と日中の活動量を落とさないためのカフェイン"]],
+tips:["毎朝同条件（起床後・トイレ後）で計測し、週平均で比較する","2週間止まったら：①100〜150kcal下げる か ②1日8,000歩など活動量を足す","塩分・炭水化物量が日によってバラバラだと水分で体重が暴れる","睡眠不足はコルチゾール→水分貯留→見かけの停滞の典型ルート","停滞期こそ写真とサイズ計測。体重以外の変化を見る"],ref:"Trexler ET et al. JISSN. 2014（代謝適応）／Rosenbaum M, Leibel RL. Int J Obes. 2010"},
+
+{icon:"🍚",t:"増量期に食べきれない",s:"食が細い人のカロリー戦略",
+why:"食が細い人は「満腹感の低い食品」で稼ぐのがコツです。減量の逆の発想で、液体カロリー・カロリー密度の高い脂質・精製された糖質を戦略的に使います。カサが大きく満腹感の強い野菜・スープを先に食べないことも重要です。",
+foods:[
+["牛乳・豆乳・ジュース","飲むカロリーは満腹感が低く総量を稼ぎやすい。食間に活用"],
+["オリーブオイル","かけるだけで大さじ1杯＋110kcal。味も量もほぼ変わらない最強の追いカロリー"],
+["ナッツ・ピーナッツバター","少量で高カロリー。間食とトーストで無理なく追加"],
+["白米","玄米よりカサあたりのカロリーが高く量も食べやすい。増量期は白米推奨"],
+["パスタ・もち","主食のバリエーション。もちは白飯より少ない量で糖質が稼げる"],
+["グラノーラ・ドライフルーツ","朝食と間食のカロリー密度を上げる"]],
+tips:["食事回数を4〜6回に分割（1回の満腹で止まらない）","汁物・サラダを先に食べない（主食・主菜から）","トレ前後に糖質を集中させると食欲too低下しにくい","それでも増えなければ液体（プロテイン＋牛乳＋バナナ＋オートミールのシェイク）で1食追加"],ref:"Slater GJ et al. Front Nutr. 2019（増量の栄養戦略）／食欲と満腹感に関するレビュー"},
+
+{icon:"🏪",t:"コンビニ・外食の選び方",s:"忙しい日でもPFCを崩さない",
+why:"原則は「主食＋タンパク質＋野菜を単品で組む」こと。実はコンビニは全商品に栄養成分表示があるため、慣れれば最も管理しやすい環境です。外食は「揚げ物とクリーム系を避ける」「丼より定食」の2つだけで大きく改善します。",
+foods:[
+["サラダチキン＋おにぎり","コンビニ最強の基本形。これに海藻サラダで完成"],
+["ゆで卵・焼き鳥（塩）","タンパク質の追加枠。焼き鳥はタレより塩"],
+["サバ缶・ツナ缶（水煮）","そのまま食べられる魚枠。オメガ3も摂れる"],
+["ギリシャヨーグルト","デザート枠でタンパク質を稼ぐ"],
+["刺身・焼き魚定食","外食の最適解。定食は単品調整ができる"],
+["冷奴・枝豆・だし巻き卵","居酒屋で組める低脂質タンパク源"]],
+tips:["成分表示は「熱量・タンパク質・脂質・炭水化物」の4つだけ見ればOK","麺・丼単品は糖質と脂質に偏る。＋タンパク質単品を必ず足す","ドレッシング・マヨは「かけない・別添え」で脂質を制御","1食崩れても1日・1週間で帳尻を合わせれば問題ない"],ref:"食品成分表示（食品表示法）／PFCバランスと外食選択に関する一般的知見"},
+
+{icon:"🍺",t:"お酒との付き合い方",s:"飲みながら絞るための設計",
+why:"アルコールは1gあたり7kcalありながら栄養がない「エンプティカロリー」で、さらに大量摂取は筋タンパク合成を一時的に下げ、睡眠の質と回復も落とします。ただしゼロにできない付き合いもあるのが現実。「種類・量・つまみ・頻度」を設計すれば減量と両立できます。",
+foods:[
+["ハイボール・焼酎","糖質ほぼゼロの蒸留酒。飲むならこの2択が基本"],
+["赤ワイン","適量（グラス1〜2杯）ならポリフェノールも。糖質は少なめ"],
+["枝豆・冷奴・刺身","つまみの正解。タンパク質を摂りながら飲む"],
+["焼き鳥（塩）・砂肝","居酒屋の低脂質タンパク枠"],
+["水・炭酸水","お酒と交互に同量。脱水と飲みすぎの両方を防ぐ"]],
+tips:["ビール・日本酒・梅酒・カクテルは糖質も上乗せされる","飲む日はその日の脂質を控えめにしてカロリー枠を空ける","トレ直後の飲酒は回復・筋合成への影響が最も大きい。トレ日と飲む日を分ける","揚げ物・シメのラーメンが本体。酒より「つまみの脂質」に注意","目安：週2回まで、1回2ドリンク程度なら進捗への影響は小さい"],ref:"Parr EB et al. PLoS One. 2014（アルコールと筋タンパク合成）／厚生労働省 健康に配慮した飲酒に関するガイドライン. 2024"},
+
+{icon:"🍫",t:"甘いものがやめられない",s:"我慢より「枠に収める」が正解",
+why:"「完全にゼロ」にする極端な制限は、反動のドカ食いを招く典型的な失敗パターンです。研究でも、厳格な食事制限より柔軟な食事管理の方が長期的な成功率が高いことが分かっています。また、甘いもの欲求の裏には血糖の乱高下・睡眠不足・タンパク質不足が隠れていることが多く、そちらの改善が根本対策になります。",
+foods:[
+["ハイカカオチョコ（70%以上）","少量で満足感が高い。ミルクチョコより糖質が大幅に少ない"],
+["ギリシャヨーグルト＋はちみつ","タンパク質を摂りながら甘味を満たすデザートの定番"],
+["冷凍ブルーベリー・いちご","低カロリーで自然な甘さ。アイス代わりに"],
+["焼き芋・干し芋","自然な甘さで食物繊維つき。減量中のおやつの優等生"],
+["和菓子","洋菓子より脂質が圧倒的に低い。量を決めて楽しむ"],
+["プロテイン（デザート系フレーバー）","甘い飲み物欲をタンパク質摂取に変換"]],
+tips:["目標カロリーの10〜15%は好きなものに使ってOKと最初から設計する","空腹時ではなく食後に少量（ドカ食い防止）","睡眠6時間未満の日は甘いもの欲求が強くなる。まず寝る","タンパク質が足りない日ほど甘味に手が伸びる","家に買い置きしない。食べる分だけその日に買う"],ref:"Helms ER et al. JISSN. 2014（柔軟な食事管理）／Stewart TM et al. Appetite. 2002（柔軟 vs 厳格な制限）"},
+
+{icon:"🛡️",t:"免疫力・風邪をひきやすい",s:"減量後期・ハードトレ期の防御",
+why:"激しいトレーニング直後は一時的に免疫が下がる時間帯（オープンウィンドウ）があり、さらに大きなアンダーカロリーが続くと免疫機能全体が低下します。免疫細胞の約7割は腸に集中しているため腸内環境が土台。加えてビタミンD・亜鉛・ビタミンCが免疫の主要栄養素です。",
+foods:[
+["納豆・キムチ・ヨーグルト","腸内環境＝免疫の土台。毎日どれか1つは入れたい"],
+["鮭・サバ","ビタミンDの主要供給源。日照が少ない冬は特に重要"],
+["牡蠣・牛赤身肉","亜鉛が免疫細胞の生成に必須。風邪をひきやすい人はまず亜鉛"],
+["ブロッコリー・キウイ・いちご","ビタミンCの補給。トレ後の酸化ストレス対策にも"],
+["生姜・にんにく","抗炎症・抗菌作用。スープや炒め物に日常使い"],
+["はちみつ","喉の違和感の初期に。就寝前のスプーン1杯"]],
+tips:["トレ後は早めに糖質＋タンパク質（免疫低下の窓を短くする）","極端なアンダーカロリーが続くと真っ先に免疫が削られる","睡眠7時間未満は風邪リスクが数倍になる研究がある","コンテスト直前期の人混みはマスクが合理的"],ref:"Walsh NP. Sports Med. 2018（運動と免疫）／ビタミンD・亜鉛と免疫のレビュー"},
+
+{icon:"🧠",t:"集中力・日中の眠気",s:"昼食後に落ちる人の食べ方",
+why:"昼食後の強烈な眠気の主因は血糖値スパイク（急上昇→急降下）です。麺・丼など精製糖質の単品ドカ食いが典型パターン。低GIの主食に置き換え、タンパク質と一緒に食べるだけで血糖カーブは大きく変わります。カフェインは戦略的に使えば強力な味方です。",
+foods:[
+["玄米・もち麦・そば","低GIの主食。白米より血糖の上下がゆるやか"],
+["卵・魚","集中に関わる神経伝達物質の材料（チロシン・DHA）"],
+["ナッツ","午後の間食に。血糖が安定し夕方のパフォーマンス低下を防ぐ"],
+["ブラックコーヒー・緑茶","緑茶はカフェイン＋テアニンで「静かな集中」に向く"],
+["ハイカカオチョコ","カカオポリフェノール＋少量のカフェインで午後のブースト"]],
+tips:["昼は「糖質を適量＋タンパク質をしっかり」の定食スタイルに","丼・麺の単品を避けるだけで午後が変わる","カフェインは半減期5〜6時間。14時以降は控えると睡眠を守れる","午後の眠気は軽い脱水のことも。まず水をコップ1杯"],ref:"Imai S et al. J Clin Biochem Nutr. 2014（食べる順番と血糖）／血糖と眠気に関する一般的知見"},
+
+{icon:"🌸",t:"女性の減量・月経周期",s:"周期を知れば停滞に焦らない",
+why:"月経前（黄体期）はプロゲステロンの影響で体温が上がり、食欲増加・水分貯留が起こって体重が1〜2kg増えて見えます。これは脂肪ではなく水分。周期を把握して「増えて見える時期」を知っておくことが、メンタルを守り減量を続ける最大のコツです。また月経で失われる鉄の補給は必須です。",
+foods:[
+["牛赤身肉・カツオ","ヘム鉄の補給。月経のある女性は男性の1.5倍の鉄が必要"],
+["小松菜・ほうれん草","鉄＋葉酸。ビタミンC食材と一緒に摂ると吸収アップ"],
+["納豆・豆腐・豆乳","大豆イソフラボン。ホルモンバランスの揺らぎ対策に"],
+["バナナ・アボカド","カリウムで黄体期のむくみを軽減"],
+["ハイカカオチョコ","PMS期の甘味欲求の受け皿。マグネシウムも摂れる"]],
+tips:["体重は「前の周期の同じ時期」と比較する（先週と比べない）","黄体期は維持〜ゆるめ、月経後〜卵胞期に攻める周期設計も有効","月経が止まるような減量は絶対NG。即ペースを緩める","基礎体温・周期アプリと体重グラフを並べて見ると納得感が出る"],ref:"Sung ES et al. J Exerc Nutrition Biochem. 2014（月経周期と代謝）／厚生労働省「食事摂取基準（2025年版）」（女性の鉄）"},
+
+{icon:"💪",t:"筋肉がつきにくい",s:"ハードゲイナーの食事優先順位",
+why:"「筋肉がつかない」原因の大半は、①総カロリー不足（そもそも体重が増えていない）②タンパク質不足③トレーニングの漸進性過負荷の欠如、の3つです。食事面の優先順位は「総カロリー＞タンパク質量＞タイミング＞サプリ」。まず週0.25〜0.5%のペースで体重が増えているかを確認しましょう。",
+foods:[
+["白米","増量の土台はカロリー。まず主食を1〜2割増やすところから"],
+["全卵","ロイシン豊富で筋合成効率が高い。1日2〜3個を卵黄ごと"],
+["牛赤身肉","タンパク質＋クレアチン＋亜鉛。増量期の主役"],
+["牛乳","「飲む増量食」の古典。プロテインを牛乳で割るだけで+130kcal"],
+["ナッツ・オリーブオイル","カロリー密度で総量を底上げ"],
+["ホエイプロテイン","食事で足りない分の補填。1日の総量を最優先"]],
+tips:["体重が週0.25〜0.5%増えていなければ+200kcal追加","クレアチン（モノハイドレート3〜5g/日）は最もエビデンスの強いサプリ","タンパク質は体重×1.6〜2.2gで十分。それ以上増やすより糖質を増やす","トレーニングの重量・回数が伸びているかを記録で確認（食事だけでは筋肉は増えない）"],ref:"Slater GJ et al. Front Nutr. 2019／Kreider RB et al. JISSN. 2017（クレアチン）／Morton RW et al. 2018"},
+
+{icon:"🧂",t:"塩分の摂りすぎ",s:"むくみ・血圧・コンディション",
+why:"日本人の食塩摂取量は平均約10g/日で、目標（男性7.5g・女性6.5g未満）を大きく超えています。過剰なナトリウムは水分貯留・血圧上昇を招き、コンテスト調整でも狂いの原因に。対策はカリウムで排出を促し、だし・酸味・香辛料で「減塩でも満足」を作ること。",
+foods:[
+["わかめ・ほうれん草・アボカド","カリウムが豊富でナトリウム排出を促進"],
+["バナナ・キウイ","手軽なカリウム補給。間食で"],
+["レモン・酢・ゆず","酸味で塩分が少なくても満足感が出る"],
+["かつお節・昆布・干ししいたけ","うま味（だし）で減塩をカバー。和食の知恵"],
+["無塩ナッツ","塩なしでも満足できるおやつへの置き換え"]],
+tips:["加工食品・練り物・漬物・ラーメンのスープに塩分が集中","麺類の汁は残すだけで2〜3g減らせる","調味料は「かける」より「つける」","目標：男性7.5g・女性6.5g未満/日（厚労省 食事摂取基準2025）"],
+ref:"厚生労働省「日本人の食事摂取基準（2025年版）」／WHO Guideline: Sodium intake 2012／令和元年 国民健康・栄養調査"},
+
+{icon:"🦴",t:"骨を強くしたい",s:"疲労骨折予防・長期の健康",
+why:"高強度トレーニングを続ける競技者は疲労骨折のリスクがあり、特に減量で摂取が減る時期は注意。骨はカルシウムだけでなく、その吸収を助けるビタミンD、骨基質を作るビタミンK、土台のタンパク質が揃って初めて強くなります。エネルギー不足（LEA）そのものが骨密度を下げることも分かっています。",
+foods:[
+["牛乳・ヨーグルト・チーズ","吸収率の高いカルシウム源。乳製品は骨に最も効率的"],
+["小魚（ししゃも・しらす・煮干し）","骨ごと食べられ、カルシウムとビタミンDを同時に"],
+["鮭・サバ","ビタミンD。カルシウムの吸収に必須"],
+["納豆・小松菜","ビタミンK（骨基質の形成）。納豆は特に豊富"],
+["豆腐・厚揚げ","カルシウム＋タンパク質の植物性コンビ"],
+["干ししいたけ","日光でビタミンDが増える。天日干しがおすすめ"]],
+tips:["極端なエネルギー不足は骨密度低下の直接原因（RED-S）","日光を1日15分ほど浴びるとビタミンDが体内合成される","カルシウムは1回500mg以下に分けた方が吸収が良い","目標カルシウム：成人男性750〜800mg/日（食事摂取基準2025）"],
+ref:"厚生労働省「食事摂取基準（2025年版）」／Mountjoy M et al. IOC consensus on RED-S. Br J Sports Med. 2018／IOF（国際骨粗鬆症財団）"},
+
+{icon:"🩹",t:"関節・腱のケア",s:"重量を扱う人の消耗対策",
+why:"腱・靱帯・軟骨はコラーゲンが主成分。近年の研究で、運動の30〜60分前にコラーゲン（またはゼラチン）＋ビタミンCを摂ると腱のコラーゲン合成が高まる可能性が示されています。加えてオメガ3の抗炎症作用が関節の慢性的な炎症を和らげます。",
+foods:[
+["ゼラチン・手羽先・牛すじ","コラーゲンの供給源。トレ前の摂取で腱に働きかける"],
+["ブロッコリー・キウイ・パプリカ","ビタミンC。コラーゲン合成の必須補酵素"],
+["サバ・鮭・くるみ","オメガ3で関節の炎症を抑える"],
+["鮭の皮・魚のアラ","コラーゲンとオメガ3を同時に"],
+["生姜・ターメリック","抗炎症スパイス。慢性的な関節の張りに"]],
+tips:["痛みが強い・腫れがある場合は栄養より先に整形外科へ","コラーゲン＋ビタミンCは運動30〜60分前がタイミングの目安","抗炎症のためオメガ6（サラダ油・揚げ物）を摂りすぎない","ウォームアップと漸進性が土台。栄養は補助"],
+ref:"Shaw G et al. Am J Clin Nutr. 2017（ゼラチン＋VitCと腱コラーゲン）／Calder PC. Biochim Biophys Acta. 2015（オメガ3と炎症）"},
+
+{icon:"🔥",t:"体脂肪を効率的に落としたい",s:"脂肪燃焼の科学的な本質",
+why:"「脂肪燃焼食品」で痩せることはなく、痩せるのは総カロリー収支がマイナスの時だけ、というのが大原則です。ただしタンパク質は消化に多くのエネルギーを使い（食事誘発性熱産生が高い）、満腹感も強いため、同じカロリーでも減量を有利にします。カフェイン・カテキンにわずかな代謝促進効果はありますが、あくまで補助です。",
+foods:[
+["鶏むね・白身魚・卵白","高タンパクは消化で約25〜30%が熱に。満腹感も最強"],
+["緑茶・コーヒー","カテキン・カフェインに軽度の脂肪酸化促進効果"],
+["唐辛子（カプサイシン）","一時的に代謝を上げる。過信は禁物だが食事の満足度は上がる"],
+["きのこ・海藻・こんにゃく","低カロリーでカサを稼ぎ、総摂取を抑える"],
+["酢","食後血糖の上昇をゆるやかにする報告あり"]],
+tips:["痩せる=総カロリー収支マイナス。これ以外に近道はない","タンパク質を増やすのが最も効果的な「代謝を味方につける」方法","有酸素は消費を増やす手段の一つ。食事管理が主、運動が従","『脂肪燃焼サプリ』の多くは効果が誇張されている。冷静に"],
+ref:"Hall KD et al. Am J Clin Nutr. 2017（エネルギー収支）／Westerterp-Plantenga MS. 2004（タンパク質とTEF）／Hursel R et al. Int J Obes. 2011（カテキン）"},
+
+{icon:"🍬",t:"血糖値の安定・GIを意識",s:"眠気・空腹・脂肪蓄積の予防",
+why:"精製された糖質を単体で摂ると血糖が急上昇→インスリン大量分泌→急降下、という乱高下が起き、眠気・強い空腹・脂肪蓄積につながります。低GI食品を選び、食物繊維・タンパク質・脂質と一緒に食べ、野菜から食べる（ベジファースト）ことで血糖カーブは大きく穏やかになります。",
+foods:[
+["玄米・もち麦・オートミール","低GIの主食。白米より血糖の上下がゆるやか"],
+["そば","小麦麺より低GI。ルチンも含む"],
+["葉物野菜・きのこ・海藻","食物繊維で糖の吸収を遅らせる。食事の最初に"],
+["酢の物・レモン","酸が胃排出を遅らせ血糖上昇を抑える"],
+["ナッツ・チーズ","間食の血糖スパイクを防ぐ低GIおやつ"]],
+tips:["食べる順番『野菜→タンパク質→糖質』で血糖カーブが変わる","白米は冷ますとレジスタントスターチが増えGIがやや下がる","糖質単体のドカ食い（菓子パン・ジュースのみ）が最悪パターン","糖尿病等の診断がある場合は主治医の指示を優先"],
+ref:"Atkinson FS et al. Diabetes Care.（GI国際表）／Imai S et al. J Clin Biochem Nutr. 2014（食べる順番）"},
+
+{icon:"🧬",t:"腸内環境を整えたい",s:"免疫・メンタル・吸収の土台",
+why:"腸内細菌は免疫の約7割、さらにセロトニン産生にも関わり心の状態にも影響します。カギは『プロバイオティクス（善玉菌そのもの）』と『プレバイオティクス（菌のエサ＝食物繊維・オリゴ糖）』の両方を摂ること。菌の種類を増やすには食材の多様性が最も効きます。",
+foods:[
+["ヨーグルト・キムチ・ぬか漬け","生きた善玉菌（プロバイオティクス）。種類を回すと多様性UP"],
+["納豆","納豆菌＋食物繊維＋オリゴ糖の三拍子"],
+["玉ねぎ・ごぼう・にんにく","オリゴ糖（善玉菌のエサ）の代表"],
+["オートミール・大麦","水溶性食物繊維で善玉菌が短鎖脂肪酸を作る"],
+["バナナ","オリゴ糖と食物繊維。手軽なプレバイオティクス"],
+["きのこ・海藻","水溶性・不溶性繊維をバランスよく"]],
+tips:["『発酵食品（菌）＋食物繊維（エサ）』をセットで摂る","1週間で30種類の植物性食品を目標にすると多様性が上がる","繊維を急に増やすとガスが出る。少しずつ増やす","抗生物質の後は特に発酵食品を意識"],
+ref:"Valdes AM et al. BMJ. 2018（腸内細菌と健康）／McDonald D et al. mSystems. 2018（American Gut Project・食品多様性）"},
+
+{icon:"💊",t:"サプリの優先順位",s:"何から使えばいいか迷ったら",
+why:"サプリは『食事で不足した分を埋める補助』であり、土台の食事とトレが8割です。その上でエビデンスが強い順に選ぶのが賢い使い方。国際オリンピック委員会も、効果が確立したサプリは限られると明言しています。まずは基本の数種類で十分です。",
+foods:[
+["ホエイプロテイン","タンパク質量が足りない時の最優先。食品扱いで安全性も高い"],
+["クレアチン（モノハイドレート）","筋力・筋量への効果が最もエビデンスの強いサプリ。3〜5g/日"],
+["ビタミンD","日照不足の現代人に不足しがち。骨・免疫・筋力に関与"],
+["フィッシュオイル（オメガ3）","魚が少ない食生活の炎症・回復対策"],
+["カフェイン","トレ前のパフォーマンス向上。3〜6mg/kg"]],
+tips:["優先順位：①食事 ②プロテイン ③クレアチン ④ビタミンD・オメガ3","クレアチンは『ローディング不要、毎日3〜5gを継続』でOK","高価な『脂肪燃焼系』『テストブースター』の多くは根拠が薄い","競技者は第三者認証（Informed Sport等）製品でドーピング対策を"],
+ref:"Maughan RJ et al. IOC consensus statement on dietary supplements. Br J Sports Med. 2018／Kreider RB et al. JISSN. 2017（クレアチン）"},
+
+{icon:"🕔",t:"食事の回数・タイミング",s:"1日何食がベストか",
+why:"『1日の総カロリーと総タンパク質』が最重要で、食事回数そのものが代謝を大きく変える証拠は乏しいです。ただし筋合成の観点では、タンパク質を1回20〜40gずつ3〜5回に分けると効率が良い。回数はライフスタイルと満腹感の好みで選んでOK、というのが現在の結論です。",
+foods:[
+["ゆで卵・ギリシャヨーグルト","食間に足しやすい手軽なタンパク質"],
+["プロテイン","食事の間隔が空く時のタンパク質補給"],
+["サラダチキン・チーズ","持ち運べる高タンパク間食"],
+["ナッツ・果物","血糖を安定させる軽い間食"]],
+tips:["回数より『1日の総量』がまず大事","筋合成重視ならP20〜40gを3〜5回が効率的","少食なら回数を増やす、まとめたいなら減らす、どちらでも可","『朝食を抜くと太る』は一概には言えない。総量で考える"],
+ref:"Schoenfeld BJ, Aragon AA. JISSN. 2018（タンパク質分割摂取）／Aragon AA, Schoenfeld BJ. JISSN. 2013（食事タイミング）"},
+
+{icon:"🌙",t:"夜遅い食事との付き合い方",s:"残業・遅いトレの人へ",
+why:"『夜food＝太る』の主因は、夜だから脂肪になるのではなく、夜に食べる人は総カロリーが増えやすい・脂っこいものを選びやすい・睡眠を妨げやすいことにあります。時間帯より中身と量。遅い時間は消化に軽く、脂質を抑えたタンパク質＋適度な糖質にすれば問題ありません。",
+foods:[
+["湯豆腐・冷奴","低脂質・高タンパクで消化に軽い夜の味方"],
+["白身魚・鶏むね","脂質が少なく胃に優しいタンパク源"],
+["納豆・卵","手軽で消化しやすい"],
+["おかゆ・うどん","遅い時間でも胃に負担が少ない糖質"],
+["味噌汁・スープ","温かい汁物で満足感を出し食べ過ぎを防ぐ"]],
+tips:["就寝直前の高脂質・大食いは睡眠の質を下げる","遅いトレ後は『プロテイン＋おにぎり』等で軽く回復を優先","分食（夕方に主食、帰宅後にタンパク質と汁物）も有効","時間帯より1日の総カロリーで判断する"],
+ref:"Kinsey AW, Ormsbee MJ. Nutrients. 2015（夜間摂取レビュー）／Aragon AA, Schoenfeld BJ. JISSN. 2013"},
+
+{icon:"🥩",t:"タンパク質の質（アミノ酸）",s:"同じ量でも効果が違う理由",
+why:"筋合成のスイッチを入れるのは必須アミノ酸、中でもロイシンです。1回の食事で約2.5〜3gのロイシン（＝体重70kgで肉・魚・卵など20〜40g相当）が閾値の目安。動物性は必須アミノ酸が揃い吸収も良い『完全タンパク質』。植物性中心の人は複数を組み合わせて質を補います。",
+foods:[
+["卵・鶏むね・牛乳","アミノ酸スコア満点＋ロイシン豊富の王道"],
+["ホエイプロテイン","ロイシン含有率が高く吸収も速い。筋合成のスイッチに最適"],
+["マグロ・鮭","動物性の完全タンパク質"],
+["大豆・豆腐","植物性で最もアミノ酸バランスが良い"],
+["米＋豆の組み合わせ","互いの不足アミノ酸を補い質を高める伝統の知恵"]],
+tips:["1食あたりロイシン2.5〜3gが筋合成の閾値の目安","植物性中心なら量を1.2倍ほど多めに、種類を組み合わせる","プロテインはロイシンが多く『効率の良いタンパク質』","総量が足りていれば神経質になりすぎなくてOK"],
+ref:"Morton RW et al. Br J Sports Med. 2018／Norton LE, Layman DK. J Nutr. 2006（ロイシン閾値）／FAO/WHO アミノ酸スコア"},
+
+{icon:"💦",t:"水分補給とパフォーマンス",s:"1日どれくらい・いつ飲む",
+why:"体重の2%の脱水で持久力・集中力・筋力が明確に低下します。喉の渇きを感じた時点で既に軽い脱水。目安は体重×35ml/日、トレ日はさらに発汗量に応じて追加。大量発汗時は水だけでなく電解質（ナトリウム）も補うと吸収と保持が良くなります。",
+foods:[
+["水・麦茶","基本はこまめに。一気飲みより分けて飲む"],
+["経口補水液・スポーツドリンク","大量発汗時の電解質補給。長時間・高強度トレで"],
+["味噌汁・スープ","水分＋ナトリウムを自然に補える"],
+["果物（すいか・オレンジ）","水分とカリウムを同時に"],
+["塩・梅干し","夏場や大量発汗時のナトリウム源"]],
+tips:["目安は体重×35ml/日＋トレ日は発汗量に応じて追加","トレ前後の体重差×1.5倍の水分で補正するのが正確","喉が渇く前に、こまめに少量ずつ","尿の色が濃い黄色なら水分不足のサイン"],
+ref:"Sawka MN et al. ACSM Position Stand: Exercise and Fluid Replacement. 2007／EFSA Panel. 2010（水分必要量）"},
+
+{icon:"😤",t:"ストレス・食べ過ぎ（ドカ食い）",s:"感情的な食欲との付き合い",
+why:"ストレスはコルチゾールを上げ、高脂質・高糖質の『快楽食』への欲求を強めます。さらに厳格すぎる食事制限の反動が過食を招く『What the Hell効果』も典型。対策は、極端に禁止しない柔軟な設計、睡眠の確保、タンパク質と繊維で満腹感を保つことです。",
+foods:[
+["ギリシャヨーグルト・チーズ","高タンパクで満腹感が続きドカ食いを防ぐ"],
+["ナッツ・ゆで卵","小腹対策の満足感の高い間食"],
+["ハイカカオチョコ","少量で満足。完全禁止の反動を防ぐ受け皿"],
+["野菜スープ・きのこ","低カロリーで胃を満たす"],
+["バナナ","トリプトファンでセロトニン産生を助ける"]],
+tips:["完全禁止はNG。目標の10〜15%は好きなものに使う設計に","睡眠不足はドカ食いの最大要因の一つ。まず寝る","『お腹が空いた』のか『ストレスで食べたい』のか一呼吸おく","食べてしまった1食で自暴自棄にならない。次の食事で戻せばOK"],
+ref:"Adam TC, Epel ES. Physiol Behav. 2007（ストレスと摂食）／Polivy J, Herman CP.（抑制的摂食理論）"},
+
+{icon:"🥦",t:"食物繊維が足りない",s:"多くの人が不足する栄養素",
+why:"食物繊維の目標は男性21g・女性18g以上/日ですが、日本人の平均は約14gと大きく不足。繊維は便通・血糖・コレステロール・腸内環境すべてに関わる『縁の下の力持ち』です。水溶性（善玉菌のエサ・血糖）と不溶性（便のカサ）を両方バランスよく摂るのがコツ。",
+foods:[
+["オートミール・大麦（もち麦）","水溶性繊維の宝庫。朝食で手軽に稼げる"],
+["ごぼう・れんこん・切り干し大根","不溶性繊維がたっぷり"],
+["納豆・大豆・レンズ豆","豆類は繊維とタンパク質を同時に"],
+["ブロッコリー・アボカド","野菜・果物の中でも繊維が多い"],
+["きのこ・海藻","低カロリーで繊維をプラスできる万能食材"],
+["きなこ・おからパウダー","飲み物や料理に混ぜて手軽に繊維を追加"]],
+tips:["目標：男性21g・女性18g以上/日（食事摂取基準2025）","精製された白い主食を一部『茶色い主食』に変えるだけで増える","急に増やすとガス・張りが出る。水分とセットで少しずつ","便通・血糖・コレステロールすべてに効く投資対効果の高い栄養素"],
+ref:"厚生労働省「食事摂取基準（2025年版）」／令和元年 国民健康・栄養調査／Reynolds A et al. Lancet. 2019"},
+
+{icon:"🧊",t:"減量末期・コンテスト直前",s:"仕上げ期の食事の考え方",
+why:"コンテスト直前は、水分・塩分・炭水化物の操作で見た目を仕上げる繊細な時期です。ただしこれは上級者が経験と記録をもとに行うもので、自己流の極端な脱水・カットは危険（けいれん・失神のリスク）。基本は『前日までに絞りは完成、直前は微調整のみ』が鉄則です。",
+foods:[
+["白米・もち・和菓子","カーボアップの糖質源。筋肉を張らせる"],
+["低脂質のタンパク質（鶏むね・白身魚）","仕上げ期も筋量維持のため確保"],
+["塩・電解質","塩分操作は経験者向け。抜きすぎは逆効果でむくむ"],
+["水","直前の極端な水抜きは危険。指導者の管理下で"]],
+tips:["直前の操作は経験・記録のある上級者が指導下で行うもの","極端な脱水・水抜きはけいれんや失神の危険がある","絞りは『2〜3週間前まで』に完成させ、直前は微調整だけ","この段階は個別性が非常に高い。トレーナー・経験者と必ず相談"],
+ref:"Escalante G et al. JISSN. 2021（コンテスト・ピーキングのレビュー）／Chappell AJ et al. JISSN. 2018（自然派ボディビル準備）"},
+
+{icon:"🥗",t:"ベジタリアン・植物性中心",s:"肉を減らして筋肉を保つ",
+why:"植物性中心でも、総タンパク質量とアミノ酸の質を管理すれば筋肉は十分維持・増量できます。注意点は、植物性タンパクは1.2倍ほど多めに摂ること、複数を組み合わせて必須アミノ酸を補うこと、そして不足しがちなビタミンB12・鉄・亜鉛・オメガ3を意識することです。",
+foods:[
+["大豆・豆腐・納豆・テンペ","植物性で最も質の高いタンパク質"],
+["ソイプロテイン","手軽に総量を確保。ホエイが苦手な人にも"],
+["レンズ豆・ひよこ豆","タンパク質＋繊維＋鉄"],
+["キヌア","植物性で珍しく必須アミノ酸が揃う"],
+["ナッツ・種・えごま油","オメガ3（ALA）と脂溶性の栄養"],
+["海苔・きのこ（日光）","B12・ビタミンD対策（不足時はサプリ推奨）"]],
+tips:["植物性タンパクは動物性より1.2倍ほど多めを目安に","米＋豆、パン＋豆乳など組み合わせでアミノ酸を補完","ビーガンはビタミンB12のサプリがほぼ必須","鉄・亜鉛は吸収が低め。ビタミンCと一緒に、量を意識"],
+ref:"Rogerson D. JISSN. 2017（植物性食と運動）／Position of the Academy of Nutrition and Dietetics: Vegetarian Diets. 2016"},
+
+{icon:"👴",t:"40代以降の体づくり",s:"代謝の変化に合わせる",
+why:"加齢で筋肉は自然に減り（サルコペニア）、若い頃と同じ食事では筋合成の反応も鈍くなります（アナボリック抵抗性）。対策は、タンパク質を若い頃より多め（1.2〜1.6g/kg以上）に、1食あたりもしっかり確保すること。ビタミンD・カルシウムで骨と筋肉を守ることも重要です。",
+foods:[
+["鶏むね・魚・卵","1食あたりのタンパク質をしっかり確保（若い頃より意識的に）"],
+["ホエイプロテイン","食が細くなっても総量を補える。ロイシンが筋合成を後押し"],
+["牛乳・小魚・豆腐","カルシウムで骨と筋肉の両方をケア"],
+["鮭・きのこ","ビタミンDで筋力・骨・免疫を維持"],
+["緑黄色野菜・果物","抗酸化物質で回復と血管の健康を守る"]],
+tips:["中高年こそタンパク質を多めに（1.2〜1.6g/kg以上が目安）","1食20〜40gを毎食。まとめ食いより分けて摂る","筋トレ＋十分なタンパク質がサルコペニア予防の最強の組み合わせ","空腹感が減るので意識的にタンパク質を確保する"],
+ref:"Bauer J et al. PROT-AGE Study Group. JAMDA. 2013／Morton RW et al. Br J Sports Med. 2018／Wall BT et al. 2015（アナボリック抵抗性）"},
+
+{icon:"🤢",t:"胃もたれ・消化不良",s:"高タンパク食で胃が疲れる人へ",
+why:"タンパク質や脂質を一度に大量に摂ると、消化に時間がかかり胃もたれの原因に。特に減量で食事量を無理に増やしている人、脂っこい食事の後に起こりがち。対策は消化の良い調理法を選び、消化酵素を含む食材を活用し、よく噛んで少量ずつに分けることです。",
+foods:[
+["大根・かぶ","消化酵素アミラーゼが糖質の消化を助ける。おろしで"],
+["パイナップル・キウイ","タンパク質分解酵素を含み肉の消化を助ける"],
+["長芋・オクラ","ネバネバ成分が胃粘膜を保護"],
+["おかゆ・うどん・白身魚","胃に優しい消化の良い基本食"],
+["生姜・梅干し","胃の働きを助け食欲を戻す"],
+["ヨーグルト","消化しやすいタンパク質＋整腸"]],
+tips:["揚げる・炒めるより『蒸す・茹でる・煮る』が消化に軽い","一度に大量に食べず、回数を分ける","よく噛むことが最良の消化補助（消化は口から始まる）","脂質の摂りすぎは胃もたれの大きな原因。量を見直す"],
+ref:"消化生理の一般的知見／日本消化器病学会 機能性ディスペプシア診療ガイドライン"},
+
+{icon:"🥶",t:"冷え性・末端が冷える",s:"血流とエネルギー産生",
+why:"冷えの背景には、筋肉量の不足（発熱源が少ない）、鉄不足（酸素運搬低下）、極端な減量によるエネルギー不足などがあります。特に女性や過度な減量中に多い悩み。体を温める栄養素と、そもそもの筋肉・鉄・エネルギーの土台を見直すことが根本対策です。",
+foods:[
+["赤身肉・カツオ・レバー","鉄不足による冷えに。ヘム鉄で酸素運搬を改善"],
+["生姜・唐辛子・にんにく","血行を促し体を温めるスパイス"],
+["根菜（ごぼう・人参・れんこん）","体を温める東洋の知恵。煮物で"],
+["タンパク質全般","食事誘発性熱産生が高く、食べると体が温まる"],
+["温かい汁物・スープ","内側から温め、水分と栄養も補給"]],
+tips:["筋肉は最大の発熱器官。筋トレそのものが冷え対策になる","極端な減量・エネルギー不足は冷えを悪化させる","鉄不足が隠れていることが多い（特に女性）。気になれば検査を","温かい飲み物・食事を選び、朝にタンパク質を摂ると1日温まる"],
+ref:"鉄欠乏と体温調節の一般的知見／Mountjoy M et al. RED-S consensus. 2018（エネルギー不足の影響）"},
+
+{icon:"🍳",t:"朝食を食べる意味",s:"抜くべきか摂るべきか",
+why:"朝食の要否は目的次第で、『朝食を抜くと必ず太る』は正確ではありません。総カロリーが同じなら体重への差は小さいという研究が多い一方、朝にタンパク質を摂ると1日の食欲が安定し、筋合成のリズムも整います。トレーニーには『朝タンパク質』のメリットが大きいのが実情です。",
+foods:[
+["卵・ギリシャヨーグルト","朝の高タンパクで1日の食欲と筋合成を安定させる"],
+["オートミール・バナナ","素早く用意でき、エネルギーと繊維を補給"],
+["納豆・味噌汁・ご飯","和朝食はタンパク質・発酵食品・糖質のバランスが良い"],
+["プロテイン","朝食を作る時間がない日の代替に"],
+["チーズ・ハム","パン食にタンパク質を足す"]],
+tips:["『抜くと太る』は総量次第。ただし朝タンパク質のメリットは大きい","朝にP20g以上摂ると、昼夜の過食を防ぎやすい","抜く場合でも、その分を昼夜でしっかり補う","午前にトレする人は軽くでも糖質を入れると質が上がる"],
+ref:"Sievert K et al. BMJ. 2019（朝食と体重のレビュー）／Leidy HJ et al. Am J Clin Nutr. 2013（朝タンパク質と食欲）"},
+
+{icon:"🧴",t:"むくみを取りたい（水分・塩分操作）",s:"見た目をスッキリさせる",
+why:"むくみの正体は皮下の水分貯留で、主因はナトリウム過多と水分・塩分の急な変動です。逆説的ですが、水を減らすと体は水を溜め込むため、水分はしっかり摂りナトリウムを排出するカリウムを増やすのが正解。糖質の急な増減も水分を動かします。",
+foods:[
+["きゅうり・アボカド・バナナ","カリウムでナトリウムを排出"],
+["ほうれん草・かぼちゃ","カリウム豊富。スープごと摂ると効率的"],
+["あずき・黒豆","カリウムと利尿に関わる成分。和の知恵"],
+["水（しっかり）","制限すると逆に溜め込む。均等に飲む"],
+["きのこ・海藻","低カロリーでカリウムと繊維を補給"]],
+tips:["水を減らすのは逆効果。体が水を溜め込もうとする","塩分を『急に』減らすと一時的にむくむことも。徐々に","加工食品・外食が続いた後のむくみはナトリウム過多が主因","片脚だけ・痛みを伴う・急激なむくみは病気の可能性。受診を"],
+ref:"ナトリウム・カリウムと体液調節の一般的知見／WHO Potassium intake guideline. 2012"},
+
+{icon:"🩺",t:"健康診断の数値が気になる",s:"コレステロール・尿酸・肝機能",
+why:"トレーニーは高タンパク・高頻度の食事で、特定の数値が動くことがあります。LDLコレステロールは飽和脂肪の摂りすぎ、尿酸はプリン体とアルコール、肝機能はアルコールや過度な脂質が関与。数値ごとに『減らす食材』と『増やす食材』を知ると、食事で改善しやすくなります。",
+foods:[
+["青魚（サバ・鮭）・オメガ3","中性脂肪・LDL対策。飽和脂肪から不飽和脂肪へ"],
+["オートミール・大麦・海藻","水溶性繊維がコレステロールの排出を助ける"],
+["野菜・果物・水","尿酸の排出を促す。水をしっかり飲む"],
+["大豆製品","動物性脂肪の一部を置き換えてLDLを下げる"],
+["きのこ・こんにゃく","低カロリーで数値管理をサポート"]],
+tips:["LDLが高い→飽和脂肪（脂身・バター・加工肉）を控え魚・大豆へ","尿酸が高い→プリン体（レバー・白子・ビール）とアルコールを控え水分を","肝機能（γ-GTP等）→まずアルコールを見直す","数値の解釈と治療は医師の領域。食事は補助として、必ず受診を"],
+ref:"日本動脈硬化学会 動脈硬化性疾患予防ガイドライン／日本痛風・尿酸核酸学会 高尿酸血症・痛風の治療ガイドライン"},
+
+{icon:"⚡",t:"トレ中にバテる・力が出ない",s:"途中でエネルギー切れする人へ",
+why:"トレ後半での失速は、①トレ前の糖質不足（グリコーゲン枯渇）②脱水③長時間トレでの血糖低下が主因。特に朝イチや空腹でのトレ、90分を超える長時間セッションで起こりやすい。トレ前の糖質、トレ中の水分、必要なら途中の糖質補給で解決できます。",
+foods:[
+["バナナ・おにぎり（トレ前）","2時間前までに糖質を入れグリコーゲンを満たす"],
+["和菓子・はちみつ（直前）","消化が速く即エネルギーになる"],
+["スポーツドリンク・マルトデキストリン","長時間トレなら途中の糖質補給で失速を防ぐ"],
+["水・電解質","脱水はパフォーマンス低下の隠れた主因"],
+["カフェイン（コーヒー）","トレ前で集中力とパワーを底上げ"]],
+tips:["空腹での高強度トレは失速しやすい。トレ前に糖質を","90分を超えるトレは途中の糖質補給が有効","脱水だけでも力は出なくなる。水分を切らさない","前日の糖質不足が翌日のトレに響く。トレ前日の食事も大事"],
+ref:"Burke LM et al. IOC consensus: Nutrition for athletes. 2011／Jeukendrup A. Sports Med. 2014（運動中の糖質補給）"},
+
+{icon:"🌡️",t:"夏バテ・食欲不振",s:"暑さで食べられない時期",
+why:"暑さで食欲が落ちるのは、消化に使う血流が体温調節に回ること、冷たいものの摂りすぎで胃腸が弱ること、発汗で失うビタミン・ミネラル不足などが原因。食べやすい形で、失われる栄養（ビタミンB群・ミネラル）とタンパク質を確保するのがコツです。",
+foods:[
+["そうめん＋薬味・卵","のど越し良く、薬味と卵でタンパク質とビタミンを追加"],
+["豚肉（B1豊富）","夏バテ回復のビタミンB1。疲労物質の代謝を助ける"],
+["うなぎ","B群・タンパク質・脂質。夏バテ食の王様"],
+["梅干し・酢の物","クエン酸で食欲増進、塩分とミネラルも補給"],
+["冷奴・ネバネバ食材（オクラ・長芋）","食べやすく胃に優しいタンパク質"],
+["果物（すいか・キウイ）","水分・カリウム・ビタミンCを手軽に"]],
+tips:["冷たいものの摂りすぎは胃腸を弱らせ悪循環に。温かい汁物も","少量でも高タンパク・高ビタミンなものを選ぶ","水分＋塩分（電解質）補給で脱水と食欲不振を防ぐ","食べられない日が続く・体重が急に落ちる場合は受診を"],
+ref:"ビタミンB1と糖質代謝の一般的知見／熱中症・脱水と栄養に関する公衆衛生ガイダンス"},
+
+{icon:"🍔",t:"チートデイ・リフィードの使い方",s:"戦略的に食べる日の設計",
+why:"長期の減量では、代謝適応（省エネモード化）や食欲ホルモン（レプチン低下）が進行します。これを一時的に戻すのが『リフィード（計画的に糖質を維持〜やや上まで戻す日）』。無秩序な『チートデイ』との違いは、量と中身をコントロールする点。心理的なリフレッシュ効果もあります。",
+foods:[
+["白米・もち・パスタ","リフィードの主役は糖質。脂質は増やさないのがコツ"],
+["和菓子・果物","低脂質で糖質を戻せるスイーツ枠"],
+["低脂質タンパク質は通常通り","タンパク質は減量中と同じく確保する"],
+["寿司・丼","外食でリフィードするなら低脂質・高糖質の和食が最適"]],
+tips:["リフィードは『糖質を増やし脂質は抑える』のが基本","頻度の目安：減量が進んだら週1回、体脂肪が低いほど頻繁に","無制限のドカ食い（本当のチート）は数日分の努力を消すことも","目的は代謝・ホルモン・メンタルのリセット。羽目を外す日ではない"],
+ref:"Trexler ET et al. JISSN. 2014（代謝適応）／Helms ER et al. JISSN. 2014（ナチュラルボディビル栄養）"},
+
+{icon:"🧘",t:"メンタルと食事（気分の安定）",s:"食べ物と心の関係",
+why:"脳の神経伝達物質（セロトニン・ドーパミン）の材料は食事から摂るアミノ酸で、その合成にはビタミンB群・鉄・オメガ3も関わります。極端な糖質制限や欠食による血糖の乱高下は、イライラや気分の落ち込みの一因に。腸内環境も『腸脳相関』で気分に影響します。",
+foods:[
+["卵・大豆・バナナ","トリプトファン（セロトニンの材料）を含む"],
+["青魚（サバ・鮭）","オメガ3が脳機能と気分の安定に関与"],
+["赤身肉・レバー","鉄・B12不足はうつ様症状・意欲低下と関連"],
+["発酵食品（納豆・ヨーグルト）","腸脳相関を通じて気分に良い影響"],
+["緑黄色野菜・ナッツ","B群・マグネシウムでストレス耐性をサポート"]],
+tips:["極端な糖質制限は人によって気分の落ち込みを招く","血糖の乱高下（欠食後のドカ食い)はイライラの原因","バランスの良い食事はメンタル安定の土台","気分の落ち込みが2週間以上続く場合は、食事より先に専門家へ相談を"],
+ref:"Jacka FN et al. BMC Medicine. 2017（SMILES試験・食事とうつ）／Marx W et al. Proc Nutr Soc. 2017（栄養精神医学）"},
+
+{icon:"🚰",t:"お酒の翌日ケア（二日酔い）",s:"飲んだ後のリカバリー",
+why:"二日酔いは、アルコール分解による脱水、電解質の喪失、低血糖、アセトアルデヒドの蓄積が重なった状態。予防と回復のカギは、水分と電解質の補給、糖質での血糖回復、そして肝臓の分解を助ける栄養です。飲みながら水を摂ることが最大の予防になります。",
+foods:[
+["水・経口補水液","脱水の回復が最優先。飲む前・中・後にしっかり"],
+["味噌汁・スープ","水分＋塩分（電解質）を同時に補える"],
+["しじみ・あさり","オルニチン・タウリンが肝臓の働きを助ける"],
+["果物・はちみつ","果糖と糖質で低血糖を回復"],
+["卵・豆腐","アルコール分解を助けるアミノ酸を補給"],
+["トマト","水分とリコピン、分解を助ける成分"]],
+tips:["最大の予防は『飲みながら同量の水を飲む』こと","寝る前にコップ2杯の水で翌朝がかなり変わる","迎え酒は逆効果。水分・糖質・電解質で回復を","頻繁な深酒は肝機能に影響。飲む頻度そのものを見直す"],
+ref:"アルコール代謝と脱水の一般的知見／厚生労働省 健康に配慮した飲酒に関するガイドライン. 2024"},
+
+{icon:"🦵",t:"筋肉のつり・けいれん予防",s:"トレ中・就寝中につる人へ",
+why:"筋肉のつりの背景には、発汗による電解質（ナトリウム・カリウム・マグネシウム）の喪失、脱水、糖質枯渇による疲労などが関与すると考えられています。特に大量発汗するトレーニーや減量で食事量が減った人に起こりやすい。水分と電解質、ミネラルの補給が対策の基本です。",
+foods:[
+["バナナ・アボカド","カリウムの補給。手軽なつり対策"],
+["ナッツ・大豆・海藻","マグネシウムを含む。不足しやすいミネラル"],
+["経口補水液・味噌汁","ナトリウムを含む水分。大量発汗時に"],
+["小魚・乳製品","カルシウムも筋収縮に関わる"],
+["水（十分に）","脱水そのものがつりの一因"]],
+tips:["大量発汗のトレでは水だけでなく電解質も補給する","減量で食事量が減るとミネラルも不足しがち","就寝中のこむら返りは水分・ミネラル不足やストレッチ不足が関与","頻繁・強い痛みが続く場合は他の原因もあるので受診を"],
+ref:"電解質と筋収縮の一般的知見／Maughan RJ, Shirreffs SM. Scand J Med Sci Sports. 2019（発汗と電解質）"},
+
+{icon:"👁️",t:"目の疲れ・PC作業が多い",s:"デスクワーカーの栄養ケア",
+why:"長時間の画面作業による目の疲れには、網膜を守る抗酸化物質（ルテイン・アントシアニン）、粘膜を保つビタミンA、血流に関わるビタミンEなどが役立つとされます。栄養だけで解決はしませんが、休憩と合わせて『目に良い栄養』を意識すると回復をサポートできます。",
+foods:[
+["ほうれん草・ケール","ルテインが豊富。網膜の黄斑を守る"],
+["ブルーベリー・カシス","アントシアニンが目の疲れの回復をサポート"],
+["にんじん・かぼちゃ・うなぎ","ビタミンA（β-カロテン）で粘膜を保つ"],
+["卵","ルテイン＋ゼアキサンチンを吸収の良い形で含む"],
+["鮭・サバ","オメガ3がドライアイの緩和に関与するとの報告"]],
+tips:["栄養は補助。20分ごとに20秒遠くを見る等の休憩が基本","ルテインは緑黄色野菜と卵から。脂質と一緒だと吸収が良い","水分不足はドライアイを悪化させる","見え方の異常が続く場合は眼科へ"],
+ref:"AREDS2 Research Group. JAMA Ophthalmol. 2013（ルテイン・ゼアキサンチン）／目の健康に関する一般的知見"},
+
+{icon:"🍶",t:"糖質制限（ローカーボ）の注意点",s:"糖質を減らす前に知ること",
+why:"糖質制限は減量に有効な選択肢の一つですが、『糖質を減らせば減らすほど良い』わけではありません。高強度トレーニングの燃料は糖質なので、極端に減らすとパフォーマンスが落ちます。トレーニーには、糖質をゼロにするより『量とタイミング(トレ前後に配置)を最適化する』方が合理的です。",
+foods:[
+["卵・肉・魚","糖質制限中のタンパク質と脂質の主軸"],
+["葉物野菜・きのこ・海藻","低糖質でカサと繊維を確保"],
+["ナッツ・チーズ・アボカド","低糖質の脂質・間食"],
+["トレ前後の白米・和菓子","制限中でもトレ周りには糖質を配置してパフォーマンス維持"],
+["大豆製品","低糖質で植物性タンパクを補う"]],
+tips:["糖質制限の減量効果は主に『総カロリーが減るから』","高強度トレをするなら糖質ゼロは非効率。トレ前後には入れる","導入初期はだるさ・頭痛（ケトフルー）が出ることがある","繊維不足で便秘になりやすい。野菜・海藻を十分に"],
+ref:"Burke LM. Sports Med. 2015（低糖質と持久系）／Vargas-Molina S et al. JISSN. 2020（ケトと体組成）"},
+
+{icon:"🤧",t:"花粉症・アレルギー体質",s:"食事でできる炎症ケア",
+why:"花粉症などのアレルギーは体内の炎症反応です。食事で完治はしませんが、抗炎症作用のあるオメガ3、腸内環境を整える発酵食品・食物繊維（免疫の調整）、抗酸化物質を意識すると、体の炎症傾向をやわらげるサポートになる可能性があります。オメガ6の摂りすぎは逆に炎症を促します。",
+foods:[
+["青魚（サバ・鮭・いわし）","オメガ3（EPA/DHA）が抗炎症的に働く"],
+["ヨーグルト・納豆・キムチ","腸内環境を整え免疫バランスをサポート"],
+["れんこん・ブロッコリー","ポリフェノール・ビタミンCで抗酸化"],
+["青じそ・生姜","抗炎症作用が期待される薬味"],
+["緑茶","カテキンの抗炎症・抗アレルギー作用の研究がある"]],
+tips:["揚げ物・サラダ油（オメガ6）の摂りすぎは炎症を促しやすい","腸内環境を整えることが免疫バランスの土台","食事は補助。症状が強い場合は医療機関での治療を優先","特定食物アレルギーがある人は自己判断で摂取しない"],
+ref:"Calder PC. Biochim Biophys Acta. 2015（オメガ3と炎症）／腸内細菌と免疫に関するレビュー（Valdes AM et al. BMJ. 2018）"},
+
+{icon:"🍫",t:"間食・おやつの選び方",s:"食べるなら何を選ぶか",
+why:"間食は『悪』ではなく、選び方次第で減量にも増量にも武器になります。ポイントは、空腹を満たしつつ次の食事のドカ食いを防ぐこと。タンパク質・食物繊維が多く、血糖を乱高下させないものが理想。逆に、菓子パンやジュースだけの間食は血糖スパイクと空腹の悪循環を招きます。",
+foods:[
+["ギリシャヨーグルト・カッテージチーズ","高タンパクで満腹感が続く間食の王道"],
+["ゆで卵・サラダチキン","持ち運べる高タンパク低脂質"],
+["ナッツ（無塩・素焼き）","良質な脂質と満足感。1日20〜25g目安"],
+["高カカオチョコ・果物","甘いもの欲を少量で満たす"],
+["プロテインバー・プロテイン飲料","タンパク質を手軽に稼げる間食"],
+["するめ・茎わかめ","低カロリーで噛みごたえがあり満足感が高い"]],
+tips:["間食は『タンパク質・繊維が多いもの』を選ぶと次の食事が安定","菓子パン・ジュース単体は血糖スパイクと空腹の悪循環に","減量中の間食は1回150〜200kcalを目安に枠内で","小分け包装を選ぶと食べ過ぎ防止になる"],
+ref:"Njike VY et al. Adv Nutr. 2016（間食と健康）／Ortinau LC et al. Nutr J. 2014（高タンパク間食と食欲）"},
+
+{icon:"🥜",t:"良質な脂質の選び方",s:"脂質＝悪ではない",
+why:"脂質はホルモン産生・細胞膜・脂溶性ビタミンの吸収に必須で、減らしすぎは逆効果です。重要なのは『量』だけでなく『質』。オメガ3を増やし、トランス脂肪酸（マーガリン・加工食品）を避け、オメガ6（サラダ油・揚げ物）に偏らないこと。飽和脂肪は摂りすぎなければ問題ありません。",
+foods:[
+["青魚（サバ・鮭・いわし）","オメガ3（EPA/DHA）。最優先で増やしたい脂質"],
+["えごま油・アマニ油","植物性オメガ3（ALA）。加熱せず生で使う"],
+["オリーブオイル・アボカド","オレイン酸（オメガ9）。加熱にも強く使いやすい"],
+["ナッツ・種","良質な脂質＋ビタミンE。1日20〜25g目安"],
+["卵（卵黄ごと）","脂溶性ビタミンとコレステロール（ホルモンの材料）"]],
+tips:["脂質は体重×0.8g/kg以上を確保（ホルモン維持の最低ライン）","トランス脂肪酸（マーガリン・ショートニング・加工菓子）を避ける","揚げ物のオメガ6過多は炎症を促す。魚の脂を増やしてバランスを","減量中も脂質をゼロにしない。質を選んで適量残す"],
+ref:"Aragon AA et al. ISSN Position Stand: Diets. JISSN. 2017／WHO REPLACE（トランス脂肪酸）／Calder PC. 2015（オメガ3）"},
+
+{icon:"🍠",t:"炭水化物の質と選び方",s:"『茶色い炭水化物』の価値",
+why:"炭水化物はトレーニングの主燃料で、減量中も一定量が必要です。精製された『白い炭水化物』（白米・食パン・砂糖）と、未精製の『茶色い炭水化物』（玄米・オートミール・いも）は、繊維・ビタミン・血糖への影響が大きく違います。トレ周りは吸収の速い糖質、それ以外は質の高い糖質を、が基本戦略です。",
+foods:[
+["オートミール・玄米・もち麦","繊維とビタミンB群を含む質の高い主食"],
+["さつまいも・かぼちゃ","繊維・カリウム・ビタミンが豊富な炭水化物源"],
+["そば","低GIで植物性タンパクとルチンも"],
+["白米・もち・和菓子（トレ周り）","トレ前後は吸収の速い糖質が有利"],
+["果物","ビタミン・繊維つきの糖質。間食に"]],
+tips:["トレ前後＝速い糖質、それ以外＝質の高い糖質、と使い分ける","減量中でも糖質をゼロにするとトレの質が落ちる","精製糖質の単体ドカ食い（菓子パン・ジュース）は血糖を乱す","1日の糖質量は活動量とトレ頻度に応じて調整"],
+ref:"Burke LM et al. IOC consensus: Nutrition for athletes. 2011／Kerksick CM et al. ISSN Nutrient Timing. JISSN. 2017"},
+
+{icon:"🧫",t:"ビタミン不足のサイン",s:"隠れ栄養不足に気づく",
+why:"減量や偏食が続くと、カロリーは足りていてもビタミン・ミネラルが不足する『隠れ栄養失調』が起こります。口内炎（ビタミンB2・B6）、疲れやすさ（B1・鉄）、肌荒れ（B群・C）、あざができやすい（C・K）などは食事からのサインのことも。多様な食材を摂ることが最良の予防です。",
+foods:[
+["豚肉・うなぎ","ビタミンB1（糖質代謝・疲労）"],
+["レバー・青魚・卵","ビタミンB2・B6・B12（皮膚・粘膜・神経）"],
+["緑黄色野菜・果物","ビタミンC・葉酸・β-カロテン"],
+["ナッツ・アボカド","ビタミンE（抗酸化）"],
+["きのこ・鮭","ビタミンD"],
+["海藻・貝類","ミネラル（鉄・亜鉛・ヨウ素）"]],
+tips:["カロリーが足りても微量栄養素は不足しうる（隠れ栄養失調）","1週間で多様な色の食材を摂ると不足しにくい","極端な単品ダイエットは栄養不足の温床","口内炎・疲労・肌荒れが続くなら食事の多様性を見直す"],
+ref:"厚生労働省「日本人の食事摂取基準（2025年版）」／各ビタミン欠乏の臨床所見に関する一般的知見"},
+
+{icon:"🦠",t:"亜鉛不足（味覚・免疫・テストステロン）",s:"トレーニーが不足しやすい",
+why:"亜鉛は300種以上の酵素に関わり、免疫・味覚・皮膚・テストステロン産生に重要です。発汗で失われやすく、激しいトレーニングをする人は不足しがち。不足すると味覚障害・免疫低下・傷の治りの遅さ・性ホルモンの低下が起こりえます。動物性食品からの吸収が良好です。",
+foods:[
+["牡蠣","亜鉛含有量が全食品トップクラス。数個で1日分"],
+["牛赤身肉・レバー","吸収の良い動物性亜鉛"],
+["うなぎ・かに","亜鉛が豊富な魚介"],
+["卵・チーズ","日常的に摂りやすい亜鉛源"],
+["ナッツ・大豆・ごま","植物性亜鉛（吸収はやや低め）"]],
+tips:["大量発汗するトレーニーは亜鉛が不足しやすい","味覚が鈍い・風邪が治りにくいは亜鉛不足のサインのことも","過剰摂取（サプリの摂りすぎ）は銅の吸収を妨げる。食事優先で","ビタミンC・クエン酸と摂ると吸収が高まる"],
+ref:"厚生労働省「食事摂取基準（2025年版）」（亜鉛）／Prasad AS. J Trace Elem Med Biol. 2014（亜鉛と免疫）"},
+
+{icon:"🩸",t:"マグネシウム不足",s:"つり・睡眠・パフォーマンス",
+why:"マグネシウムは筋収縮・神経伝達・エネルギー産生（ATP）に必須のミネラルで、発汗で失われやすく現代人に不足しがちです。不足は筋肉のつり・疲労感・睡眠の質低下・パフォーマンス低下と関連。精製された食品ばかりだと摂りにくいため、意識的な補給が有効です。",
+foods:[
+["ナッツ（アーモンド・カシュー）","マグネシウムの手軽な供給源"],
+["大豆・納豆・豆腐","植物性マグネシウム＋タンパク質"],
+["海藻（わかめ・ひじき）","低カロリーでミネラル豊富"],
+["ほうれん草・アボカド","野菜・果物からのマグネシウム"],
+["玄米・オートミール","未精製の主食に多く含まれる"],
+["ハイカカオチョコ","マグネシウムが豊富。間食で少量"]],
+tips:["精製食品中心の食生活では不足しやすい","つりやすい・寝つきが悪い人はマグネシウムを意識","大量発汗のトレーニーは特に消耗する","サプリより、まずナッツ・大豆・海藻・全粒穀物から"],
+ref:"厚生労働省「食事摂取基準（2025年版）」（マグネシウム）／Nielsen FH, Lukaski HC. Magnes Res. 2006（運動とMg）"},
+
+{icon:"🍋",t:"抗酸化と回復（活性酸素対策）",s:"ハードトレの酸化ストレス",
+why:"激しい運動は大量の活性酸素を生み、これが慢性的に過剰だと回復の遅れや炎症につながります。抗酸化物質（ビタミンC・E、ポリフェノール、カロテノイド）が中和を助けます。ただし、運動直後に高用量の抗酸化サプリを摂ると適応（筋肥大シグナル）を邪魔する可能性があるため、食品から摂るのが賢明です。",
+foods:[
+["ベリー類（ブルーベリー・いちご）","アントシアニンが運動後の酸化ストレスを軽減"],
+["緑黄色野菜（パプリカ・ブロッコリー）","ビタミンC＋カロテノイド"],
+["ナッツ・アボカド","ビタミンE（脂溶性の抗酸化）"],
+["緑茶・コーヒー","カテキン・ポリフェノール"],
+["トマト","リコピン（加熱・油と一緒で吸収UP）"],
+["ダークチョコ（高カカオ）","カカオポリフェノール"]],
+tips:["抗酸化は『食品から』が基本。高用量サプリはトレ適応を妨げうる","色の濃い野菜・果物ほど抗酸化物質が多い","運動直後すぐより、日常的に食品から摂る方が良い","バランスの取れた食事があれば特別なサプリは不要"],
+ref:"Powers SK et al. Physiol Rev. 2020（運動と酸化ストレス）／Merry TL, Ristow M. J Physiol. 2016（抗酸化サプリと適応）"},
+
+{icon:"🌾",t:"グルテン・小麦との付き合い",s:"お腹の不調が続く人へ",
+why:"セリアック病や明確な小麦アレルギーがなくても、小麦で不調（張り・だるさ）を感じる人がいます（非セリアックグルテン過敏）。ただし、その正体は小麦に含まれるFODMAP（発酵性の糖）であることも多い。安易な『グルテンフリー健康法』より、自分の体で合う・合わないを見極めるのが実用的です。",
+foods:[
+["米・米粉","小麦の代替の基本。日本人には馴染み深い"],
+["そば（十割）","小麦不使用のそば。ただし混合そばは小麦入り"],
+["オートミール","グルテンを含まない（※交差汚染に注意）"],
+["いも類","主食の置き換えに。エネルギーと繊維も"],
+["米粉パン・ビーフン","小麦を避けたい時の選択肢"]],
+tips:["自己判断のグルテンフリーは栄養が偏ることも。まず不調の記録を","小麦の不調は実はFODMAPが原因のことも多い","セリアック病・小麦アレルギーが疑われる場合は検査を","健康な人が無理にグルテンを避けるメリットは示されていない"],
+ref:"Biesiekierski JR et al. Gastroenterology. 2013（非セリアックグルテン過敏とFODMAP）／Lebwohl B et al. BMJ. 2017"},
+
+{icon:"🥛",t:"乳糖不耐（牛乳でお腹が緩む）",s:"乳製品で不調が出る人へ",
+why:"牛乳を飲むとお腹が張る・下る場合、乳糖を分解する酵素が少ない『乳糖不耐』の可能性があります。日本人には比較的多い体質。ただし乳製品を完全に諦める必要はなく、乳糖の少ない発酵乳製品や、乳糖を分解済みの製品を選べば、カルシウムとタンパク質を摂り続けられます。",
+foods:[
+["ヨーグルト","発酵で乳糖が減少。牛乳より不調が出にくい"],
+["熟成チーズ（チェダー等）","乳糖がほとんど残っていない"],
+["WPI（アイソレート）プロテイン","乳糖をほぼ除去。プロテインで張る人に"],
+["ラクトースフリー牛乳","乳糖を分解済みで飲みやすい"],
+["豆乳・アーモンドミルク","乳製品以外のカルシウム・タンパク質源"]],
+tips:["プロテインで張るならWPC→WPIに変えると改善することが多い","少量ずつ・温めて飲むと症状が出にくい人も","ヨーグルト・熟成チーズは乳糖が少なく摂りやすい","カルシウムは小魚・豆腐・青菜からも補える"],
+ref:"Suchy FJ et al. NIH Consensus: Lactose Intolerance. 2010／Savaiano DA. Am J Clin Nutr. 2014"},
+
+{icon:"🍳",t:"卵は1日何個まで？",s:"コレステロールの誤解",
+why:"かつて『卵は1日1個まで』とされましたが、健康な人では食事のコレステロールが血中コレステロールに与える影響は小さいことが分かり、多くの国で個数の上限が撤廃されました。卵は安価で完全タンパク質、ビタミン・コリンも豊富。トレーニーにとって優秀な食材です。",
+foods:[
+["全卵","完全タンパク質＋卵黄の栄養（ビタミン・コリン・ロイシン）"],
+["卵白","脂質・カロリーを抑えてタンパク質を足したい時"],
+["ゆで卵","作り置きできる高タンパク間食"],
+["温泉卵・半熟卵","消化が良く吸収されやすい調理法"]],
+tips:["健康な人は1日2〜3個でも問題ないとする研究が多い","卵黄には脂溶性ビタミン・コリン・ロイシンが豊富。捨てるのはもったいない","脂質を絞りたい日は卵白の比率を上げる調整を","脂質異常症の診断がある人は主治医の指示に従う"],
+ref:"Blesso CN, Fernandez ML. Nutrients. 2018（卵とコレステロール）／米国食生活指針2015-2020（コレステロール上限の撤廃）"},
+
+{icon:"☕",t:"カフェインの上手な使い方",s:"効果と摂りすぎのライン",
+why:"カフェインは、トレーニングのパフォーマンス向上において最もエビデンスが強い成分の一つです。集中力・筋力・持久力を高めます。効果的な量は体重×3〜6mg（60kgで180〜360mg）。ただし半減期が長く、午後以降の摂取は睡眠を妨げます。耐性がつくため、常用より狙って使うのが賢い方法です。",
+foods:[
+["ブラックコーヒー","最も手軽なカフェイン源（1杯約80〜100mg）"],
+["緑茶・玉露","カフェイン＋テアニンで穏やかな集中"],
+["カフェインサプリ（無水カフェイン）","量を正確に管理できる。トレ前に"],
+["ダークチョコ","少量のカフェインとポリフェノール"],
+["エナジードリンク","糖質も多いので減量中は成分表示を確認"]],
+tips:["効果的な量は体重×3〜6mg。トレ30〜60分前に","半減期は約5〜6時間。14時以降は睡眠のため控える","毎日大量に摂ると耐性がつく。大事な日に狙って使うと効果的","動悸・不安・不眠が出る人は少量から。個人差が大きい"],
+ref:"Guest NS et al. ISSN Position Stand: Caffeine. JISSN. 2021／Grgic J et al. Br J Sports Med. 2020"},
+
+{icon:"🍬",t:"人工甘味料は使っていい？",s:"ゼロカロリー甘味料の是非",
+why:"アスパルテーム・スクラロース等の人工甘味料は、各国当局が安全性を評価し、通常の摂取量では安全とされています。減量中に甘味欲求を満たしつつカロリーを抑える有効な道具です。一方で腸内細菌への影響を指摘する研究もあり、結論は出ていません。過度に恐れず、頼りすぎず、が現実的です。",
+foods:[
+["ゼロカロリー飲料","砂糖入り飲料からの置き換えで大幅減カロリー"],
+["ラカント・エリスリトール","天然由来で血糖を上げにくい甘味料。料理にも"],
+["プロテイン（甘味料入り）","甘い飲み物欲をタンパク質に変換"],
+["無糖ヨーグルト＋甘味料","加糖ヨーグルトより低カロリー"]],
+tips:["通常の摂取量では安全と評価されている（過度に恐れない）","砂糖飲料からの置き換えは減量に有効な戦略","一方で頼りすぎず、自然な甘味（果物）も取り入れる","お腹が緩くなる場合は糖アルコール（エリスリトール等）を控える"],
+ref:"EFSA アスパルテーム再評価. 2013／WHO 非糖質甘味料ガイドライン. 2023／Suez J et al. Nature. 2014"},
+
+{icon:"🐟",t:"魚を食べる習慣（オメガ3）",s:"肉に偏りがちな人へ",
+why:"トレーニーは鶏むね・牛赤身など肉に偏りがちですが、魚には肉にないオメガ3（EPA/DHA）が豊富です。オメガ3は抗炎症・回復・心血管・脳機能に働き、筋タンパク合成を高める可能性も報告されています。週2〜3回、特に青魚を取り入れると栄養バランスが大きく改善します。",
+foods:[
+["サバ・いわし・さんま","オメガ3が最も豊富な青魚。缶詰でも手軽"],
+["鮭","オメガ3＋アスタキサンチン（抗酸化）＋ビタミンD"],
+["まぐろ・かつお","高タンパク低脂質＋鉄。刺身で手軽に"],
+["サバ缶・ツナ缶","調理不要でオメガ3を摂れる常備食材"],
+["ぶり・さわら","脂ののった旬の魚でオメガ3を"]],
+tips:["肉ばかりの人は週2〜3回を魚に置き換える","青魚のオメガ3は加熱で減るので刺身・缶詰も活用","サバ缶は水煮なら手軽で低コストなオメガ3源","魚が難しければフィッシュオイルのサプリも選択肢"],
+ref:"Smith GI et al. Clin Sci. 2011（オメガ3と筋タンパク合成）／厚労省「食事摂取基準（2025年版）」（n-3系脂肪酸）"},
+
+{icon:"🧊",t:"減量中の外食・飲み会を乗り切る",s:"付き合いを断らずに絞る",
+why:"減量中でも仕事の会食や友人との食事は避けられません。完璧を目指して付き合いを全部断るより、その日の食べ方を調整して楽しむ方が長続きします。カギは、事前の調整（その日の他の食事を軽く）、選び方（低脂質・高タンパクを優先）、そして翌日以降で帳尻を合わせることです。",
+foods:[
+["刺身・焼き魚・冷奴","居酒屋・和食での低脂質タンパク質"],
+["焼き鳥（塩）・砂肝・枝豆","居酒屋の定番を賢く選ぶ"],
+["サラダ・海藻・お浸し","最初に食べて満腹感と血糖を安定させる"],
+["ハイボール・焼酎","飲むなら糖質の少ない蒸留酒"],
+["ステーキ・赤身肉","洋食なら脂の少ない部位を選ぶ"]],
+tips:["会食の日は朝昼を軽めにしてカロリー枠を空けておく","揚げ物・クリーム系・〆の炭水化物が最大の落とし穴","1食・1日崩れても1週間の平均で調整すれば問題ない","『完璧じゃないと意味がない』が挫折の最大要因。柔軟に"],
+ref:"Helms ER et al. JISSN. 2014（柔軟な食事管理）／Teixeira PJ et al. Int J Behav Nutr Phys Act. 2015（行動変容）"},
+
+{icon:"📿",t:"間欠的ファスティング（16時間断食）",s:"流行の断食法の実際",
+why:"16:8断食（食事を8時間内に収める）などは、要は総摂取カロリーを抑えやすくする一つの手段です。断食そのものに特別な脂肪燃焼効果があるわけではなく、効果の大半は『食べる時間が減ってカロリーが減るから』。合う人には有効ですが、トレーニーは筋量維持のためタンパク質と食事タイミングに注意が必要です。",
+foods:[
+["食事枠での高タンパク食","限られた時間で総タンパク質量を確保するのが最重要"],
+["ゆで卵・プロテイン","食事枠の始めと終わりに効率よくタンパク質を"],
+["野菜・きのこ・海藻","少ない食事回数でも満腹感を出す"],
+["ナッツ・チーズ","食事枠内の栄養密度を高める"],
+["水・お茶・ブラックコーヒー","断食時間中の水分（カロリーなし）"]],
+tips:["効果の本質は『総カロリーが減るから』。断食自体が痩せ薬ではない","筋量維持にはタンパク質量の確保が最優先。食事枠で意識的に","トレは食事枠に近い時間に配置するとパフォーマンスと回復に有利","合わない人（集中力低下・過食の反動）は無理に続けない"],
+ref:"Tinsley GM, La Bounty PM. Nutr Rev. 2015（間欠的断食レビュー）／Moro T et al. J Transl Med. 2016（16:8とトレーニー）"},
+
+{icon:"🍯",t:"糖質の種類（果糖・ブドウ糖）",s:"はちみつ・果物の位置づけ",
+why:"糖質にも種類があり、ブドウ糖は血糖を上げ筋・肝グリコーゲンになりますが、果糖は主に肝臓で代謝され肝グリコーゲンの回復に働きます。両方を含む食品（はちみつ・果物）はトレ後の回復に理にかなっています。ただし果糖の過剰（清涼飲料の大量摂取）は中性脂肪を上げるため、果物やはちみつの適量が現実的です。",
+foods:[
+["果物（バナナ・オレンジ）","果糖＋ブドウ糖＋ビタミン・繊維。トレ後や間食に"],
+["はちみつ","果糖とブドウ糖のバランスが良い天然糖。トレ前後に"],
+["白米・もち","ブドウ糖主体。筋グリコーゲン回復の主役"],
+["ドライフルーツ","携帯できる糖質補給。量に注意"]],
+tips:["トレ後はブドウ糖＋果糖の組み合わせが回復に有利","果糖の摂りすぎ（清涼飲料の多飲）は中性脂肪を上げる","果物の果糖は繊維とセットなので問題になりにくい","『異性化液糖（果糖ぶどう糖液糖）』の飲料は摂りすぎ注意"],
+ref:"Gonzalez JT et al. Nutrients. 2017（果糖・ブドウ糖とグリコーゲン）／Rippe JM, Angelopoulos TJ. Nutrients. 2016"},
+
+{icon:"🦷",t:"歯と食事（酸・糖のケア）",s:"競技者・間食が多い人へ",
+why:"頻繁な間食・スポーツドリンク・柑橘や酢の常用は、糖と酸で歯を溶かしやすくします（酸蝕・虫歯）。特にコンテスト前に炭水化物や酸味を頻繁に摂る競技者は要注意。栄養と歯の健康を両立するには、だらだら食べを避け、酸性のものの後のケアを工夫することが大切です。",
+foods:[
+["チーズ・牛乳","食後に摂ると口内の酸を中和し歯を守る"],
+["水","酸性・糖分の飲食後に口をゆすぐ"],
+["よく噛む食材（野菜・ナッツ）","唾液分泌を促し口内を洗浄・中和"],
+["緑茶","カテキン・フッ素が歯に良い影響"]],
+tips:["だらだら食べ・ちびちび飲みは歯にとって最悪（酸にさらされ続ける）","スポドリ・柑橘・酢の後は水で口をゆすぐ","酸性のものの直後の歯磨きは避け、30分ほど空ける","競技者は定期的な歯科検診を（コンディションにも影響）"],
+ref:"歯の酸蝕症に関する一般的知見／O'Toole S, Bartlett DW. Br Dent J. 2017（酸蝕と食習慣）"},
+
+{icon:"🌶️",t:"辛いもの・スパイスの効果",s:"代謝と食欲への影響",
+why:"唐辛子のカプサイシンは、一時的に代謝を上げ（食事誘発性熱産生の増加）、食欲を抑える効果が報告されています。効果は劇的ではありませんが、減量中の食事の満足度を上げる助けにはなります。生姜・シナモンなどのスパイスにも代謝・血糖に関する研究があります。過剰摂取は胃腸を荒らすので適量で。",
+foods:[
+["唐辛子・キムチ","カプサイシンで一時的な代謝アップと食欲抑制"],
+["生姜","体を温め、消化を助ける。冷え・食欲不振にも"],
+["シナモン","食後血糖の上昇をゆるやかにする研究がある"],
+["こしょう・スパイス全般","減塩しても満足感を出せる。塩分対策にも"]],
+tips:["カプサイシンの代謝効果は補助程度。過信は禁物","辛いものは食事の満足度を上げ、減量のストレスを減らす助けに","胃腸が弱い人・胃炎の人は摂りすぎに注意","スパイスで味変すると単調な減量食が続けやすくなる"],
+ref:"Ludy MJ et al. Chem Senses. 2012（カプサイシンと代謝・食欲）／Whiting S et al. Appetite. 2014"},
+
+{icon:"🍵",t:"お茶の種類と使い分け",s:"緑茶・ほうじ茶・麦茶",
+why:"お茶はほぼノンカロリーの水分補給になり、種類ごとに特徴があります。緑茶はカテキンとカフェインで集中・抗酸化に、ほうじ茶・麦茶はカフェインが少なく夜やリラックスに。減量中の甘い飲み物の置き換えとして、お茶を上手に使うとカロリーカットと満足感を両立できます。",
+foods:[
+["緑茶","カテキン（抗酸化）＋カフェイン。日中や食後に"],
+["ほうじ茶","カフェイン控えめで香ばしい。夜やリラックスに"],
+["麦茶","ノンカフェイン。水分補給・就寝前・子どもにも"],
+["ウーロン茶","脂質の多い食事のお供に。すっきり"],
+["ルイボスティー","ノンカフェインで抗酸化。夜のリラックスに"]],
+tips:["甘い飲み物をお茶に替えるだけで大きなカロリーカットに","カフェインを避けたい夜は麦茶・ほうじ茶・ルイボス","緑茶のカテキンは食後の血糖・脂質にゆるやかな好影響","濃い緑茶の飲みすぎ（空腹時）は胃を荒らすことも"],
+ref:"Hursel R, Westerterp-Plantenga MS. Am J Clin Nutr. 2013（緑茶カテキン）／カフェイン含有量に関する一般的データ"},
+
+{icon:"🥔",t:"満腹感を最大化する食べ方",s:"同じカロリーで満足する技術",
+why:"満腹感は食品ごとに大きく違います（満腹感指数）。カサが大きく、水分・繊維・タンパク質が多く、噛みごたえのある食品ほど満腹感が高い。減量の成否は『我慢』より『同じカロリーでいかに満足するか』の設計で決まります。液体より固体、精製より未精製が基本です。",
+foods:[
+["じゃがいも（蒸し）","満腹感指数トップクラス。白米の一部置き換えにも"],
+["ゆで卵・鶏むね","高タンパクは満腹感が最も持続する"],
+["オートミール","水分を吸ってゲル化し胃に長くとどまる"],
+["野菜・きのこ・海藻スープ","水分と繊維でカサを稼ぐ"],
+["りんご・みかん","噛む果物は飲むジュースより満腹感が高い"],
+["こんにゃく・しらたき","ほぼノンカロリーでカサ増しの王様"]],
+tips:["『飲むカロリー』を『噛むカロリー』に替えると満足度UP","食事の最初に汁物・野菜で胃を満たす","タンパク質を毎食しっかり入れると空腹が来にくい","よく噛む・ゆっくり食べると少量で満腹中枢が働く"],
+ref:"Holt SH et al. Eur J Clin Nutr. 1995（満腹感指数）／Rolls BJ. Physiol Behav. 2009（エネルギー密度と満腹感）"},
+
+{icon:"🍶",t:"発酵食品を活かす",s:"日本の食文化の強み",
+why:"日本には納豆・味噌・漬物・甘酒など優れた発酵食品が豊富です。発酵食品は生きた善玉菌（または菌の作った有用成分）を含み、腸内環境・免疫・栄養の吸収をサポートします。種類を日替わりで回すと腸内細菌の多様性が上がり、より効果的。和食中心の食生活はこの点で有利です。",
+foods:[
+["納豆","納豆菌＋ビタミンK2＋タンパク質＋繊維の万能発酵食品"],
+["味噌","発酵大豆のうま味。味噌汁で毎日手軽に"],
+["ぬか漬け・キムチ","乳酸菌が豊富な発酵漬物（塩分に注意）"],
+["ヨーグルト","乳酸菌・ビフィズス菌。種類を変えて試す"],
+["甘酒（米麹）","『飲む点滴』。ビタミンB群と麹の酵素"],
+["酢","血糖・食欲にゆるやかな好影響"]],
+tips:["発酵食品は種類を日替わりで回すと腸内細菌が多様化","納豆・味噌・漬物・甘酒など和食は発酵食品の宝庫","漬物・味噌は塩分が高いので量に注意","発酵食品（菌）＋食物繊維（エサ）をセットで摂ると効果的"],
+ref:"Marco ML et al. Curr Opin Biotechnol. 2017（発酵食品と健康）／Valdes AM et al. BMJ. 2018"},
+
+{icon:"⚖️",t:"体重が毎日変動して不安",s:"数字に振り回されないために",
+why:"体重は1日で1〜2kg簡単に変動します。原因は脂肪ではなく、水分・食事内容（塩分・炭水化物）・便通・女性は月経周期など。特に炭水化物1gは体内で約3gの水と結びつくため、食事内容で水分量が大きく動きます。判断は必ず『週平均』で。日々の上下は無視して大丈夫です。",
+foods:[
+["（食材ではなく計測方法が重要）","毎朝同条件で測り、週平均で比較する"],
+["塩分・炭水化物を一定に","日による摂取のバラつきが体重変動を大きくする"],
+["水分をしっかり","水を減らすと逆に体が溜め込み変動が増える"]],
+tips:["体重は毎日1〜2kg変動して当たり前。脂肪の増減ではない","毎朝『起床後・排尿後・空腹時』の同条件で測る","判断は週平均で。1日の数字に一喜一憂しない","体重に加え、写真・サイズ・服の感覚も指標にする"],
+ref:"Hall KD, Guo J. Gastroenterology. 2017（体重変動と体組成）／体水分と炭水化物貯蔵に関する生理学的知見"},
+
+{icon:"🧴",t:"減量中の肌のたるみ予防",s:"急激な減量のリスク",
+why:"急激すぎる減量（週1%超）や大幅な減量後には、皮膚が体積の変化に追いつかずたるみが生じることがあります。皮膚の材料であるタンパク質・ビタミンC（コラーゲン合成）・亜鉛を確保し、減量ペースを緩やかにし、筋トレで皮下の筋肉を保つことが予防につながります。",
+foods:[
+["タンパク質（肉・魚・卵）","皮膚の材料。減量中こそ十分に確保"],
+["ビタミンC（果物・野菜）","コラーゲン合成に必須"],
+["亜鉛（牡蠣・赤身肉）","皮膚のターンオーバーに関与"],
+["オメガ3（青魚）","肌のバリア機能・弾力をサポート"],
+["水分","肌の潤いとハリを保つ"]],
+tips:["減量ペースは週0.5〜0.7%に抑えるとたるみリスクが下がる","筋トレを続け皮下の筋肉を保つとハリが維持されやすい","極端なクラッシュダイエットは肌のたるみの最大要因","タンパク質・ビタミンC・亜鉛を切らさない"],
+ref:"減量速度と体組成に関する研究（Garthe I et al. IJSNEM. 2011）／皮膚とコラーゲン栄養の一般的知見"},
+
+{icon:"🍗",t:"高タンパク食で気をつけること",s:"腎臓・水分・繊維のバランス",
+why:"高タンパク食は筋肉づくりに有効ですが、いくつか注意点があります。健康な腎臓には高タンパクが害という証拠はほぼありませんが、腎機能に問題がある人は別。またタンパク質代謝で水分需要が増え、肉・卵中心だと繊維が不足しがち。水分と野菜をセットにするのがコツです。",
+foods:[
+["水（多めに）","タンパク質代謝で水分需要が増える。しっかり補給"],
+["野菜・きのこ・海藻","肉・卵中心で不足しがちな繊維を補う"],
+["果物・いも","繊維とカリウムでバランスを取る"],
+["発酵食品","高タンパクで乱れがちな腸内環境を整える"],
+["魚・大豆","肉に偏らずタンパク源を分散させる"]],
+tips:["健康な人では高タンパクが腎臓を害する証拠はほぼない","ただし腎機能に問題がある人は医師の指導が必須","高タンパク時は水分を多めに、野菜で繊維を補う","タンパク源を肉・魚・卵・大豆に分散させると栄養バランスが良い"],
+ref:"Devries MC et al. J Nutr. 2018（高タンパクと腎機能のメタ分析）／Antonio J et al. JISSN. 2016"},
+
+{icon:"🎯",t:"目標体重・体脂肪率の決め方",s:"現実的なゴール設定",
+why:"目標設定を誤ると、モチベーション低下や不健康な減量につながります。男性の健康的な体脂肪率は10〜20%、コンテスト時は一時的に5〜8%程度。ただし極端に低い体脂肪の長期維持はホルモン・免疫・骨に悪影響。まず現実的な中間目標を置き、体重だけでなく体組成で考えることが大切です。",
+foods:[
+["（食材ではなく設定の考え方が重要）","体重だけでなく体脂肪率・見た目で目標を"],
+["タンパク質を軸にした食事","目標が何であれ筋量維持の土台"],
+["段階的な調整","一気にではなく中間目標を刻む"]],
+tips:["男性の健康的な体脂肪率は10〜20%が目安","コンテストの極低体脂肪は一時的なもの。長期維持はリスク","まず現実的な中間目標（例：あと3kg）を設定する","体重より『鏡の中の見た目』『サイズ』『パフォーマンス』で判断"],
+ref:"ACSM 体脂肪率ガイドライン／Fahey TD et al.（体脂肪率の健康域）／Mountjoy M et al. RED-S. 2018（低体脂肪のリスク）"},
+
+{icon:"🔬",t:"栄養情報の見分け方",s:"ネットの健康情報に惑わされない",
+why:"SNSやネットには『これだけで痩せる』『〇〇は毒』といった極端な情報が溢れています。多くは一部の研究の誇張、または商品の宣伝です。信頼できる情報は、公的機関（厚労省等）・学会・査読付き論文・複数研究のメタ分析に基づくもの。『個人の体験談』と『科学的根拠』を区別する目を持つことが、遠回りを避ける最大の近道です。",
+foods:[
+["（食材ではなく情報リテラシーがテーマ）","『これだけで痩せる』は疑う"],
+["基本の食事を大切に","流行より、タンパク質・野菜・適正カロリーの基本が9割"],
+["エビデンスの階層を知る","体験談＜観察研究＜介入研究＜メタ分析"]],
+tips:["『たった〇〇だけで』『△△は絶対NG』の極論は大抵怪しい","商品を売りたいポジショントークに注意","公的機関・学会・査読論文・メタ分析を信頼の目安に","このアプリの各テーマにも参考文献を明記している。出典を確認する習慣を"],
+ref:"エビデンスに基づく栄養学（EBN）の考え方／Ioannidis JPA. JAMA. 2018（栄養研究の解釈）"},
+
+{icon:"🏃",t:"有酸素運動と食事の関係",s:"やりすぎ・空腹時有酸素の是非",
+why:"有酸素運動は消費カロリーを増やしますが、やりすぎると筋量減や食欲増加を招くこともあります。『空腹時有酸素が脂肪を燃やす』は、1回では脂肪をエネルギーに使う割合が上がるものの、1日トータルの脂肪減少に有意差はないとする研究が主流。食事管理を主、有酸素を補助と位置づけるのが効率的です。",
+foods:[
+["有酸素前の軽い糖質（任意）","バナナ等でパフォーマンスと筋分解抑制"],
+["有酸素後のタンパク質","筋量維持のため。プロテインや軽食で"],
+["水分・電解質","長時間の有酸素では脱水対策を"],
+["トータルの食事管理が主役","有酸素だけで痩せようとしない"]],
+tips:["空腹時有酸素の脂肪減効果は、満腹時と有意差なしの研究が主流","有酸素のやりすぎは筋量減・食欲増のリスク。適度に","減量は『食事8割・運動2割』。運動で食べた分を帳消しは難しい","筋量維持が目的なら筋トレを優先し、有酸素は補助的に"],
+ref:"Schoenfeld BJ et al. JISSN. 2014（空腹時有酸素）／Willis LH et al. J Appl Physiol. 2012（有酸素と筋量）"},
+
+{icon:"🍽️",t:"リバウンドを防ぐ",s:"減量後の体重維持",
+why:"減量の本当の難所は『減らした後』です。大幅な減量後は代謝適応で消費が下がり、食欲ホルモンは食べたい方向に傾き、リバウンドしやすい状態になります。防ぐには、急に元の食事に戻さず段階的にカロリーを戻す（リバースダイエット）、筋量を維持、そして続けられる食習慣を身につけることです。",
+foods:[
+["高タンパク食を維持","減量後も筋量とを満腹感を保つ土台"],
+["野菜・繊維・発酵食品","満腹感と腸内環境を維持"],
+["段階的にカロリーを戻す","一気に戻さず週ごとに少しずつ"],
+["続けられる範囲の食事","極端な制限は反動を生む。8割の維持を目指す"]],
+tips:["減量後、急に元の食事に戻すのがリバウンド最大の原因","カロリーは段階的に戻す（リバースダイエット）","減量で得た食習慣・筋量を維持することが再増加を防ぐ","『一生続けられる食べ方』こそが本当のゴール"],
+ref:"Trexler ET et al. JISSN. 2014（代謝適応とリバウンド）／Sumithran P et al. NEJM. 2011（減量後の食欲ホルモン）"},
+
+{icon:"🌱",t:"減量と増量の切り替え時期",s:"バルク・カットのサイクル",
+why:"体づくりは、筋肉を増やす『増量期』と体脂肪を落とす『減量期』を計画的に繰り返すのが効率的です。切り替えの目安は体脂肪率。男性なら増量は体脂肪15%前後を上限に、そこまで来たら減量へ。低い体脂肪（10%以下）から無理に増量すると脂肪ばかり増えがち。周期を体脂肪率で管理するのがコツです。",
+foods:[
+["増量期：カロリー+200〜300、糖質多め","筋合成を支える。白米・いも・果物"],
+["減量期：カロリー−、タンパク質多め","筋量を守りながら脂肪を落とす"],
+["どちらの時期もタンパク質は高く維持","体重×2g前後を通期でキープ"],
+["移行期は緩やかに","急な増減より段階的な切り替えを"]],
+tips:["切り替えの目安は体脂肪率（男性：増量は15%前後を上限に）","増量開始は体脂肪が低め（10〜12%）の時が脂肪を乗せにくい","1サイクルは数ヶ月単位で計画。頻繁な切り替えは非効率","オフシーズンの過度な増量は後の減量を苦しくする"],
+ref:"Helms ER et al. JISSN. 2014／Slater GJ et al. Front Nutr. 2019（増量戦略）／Ribeiro AS et al. 2019（体脂肪と増量効率）"},
+
+{icon:"💤",t:"寝る前に食べていい？",s:"就寝前のプロテインの是非",
+why:"『寝る前に食べると太る』は総量次第で、就寝前でも適切な内容なら問題ありません。むしろ就寝前のカゼイン（乳製品のタンパク質）は、睡眠中にゆっくり吸収され夜間の筋タンパク合成を高めるという研究があります。避けるべきは高脂質・大量の食事で、これは睡眠の質を下げます。",
+foods:[
+["カゼインプロテイン・ギリシャヨーグルト","就寝中にゆっくり吸収。夜間の筋合成を支える"],
+["カッテージチーズ","低脂質の夜向きタンパク質"],
+["牛乳","トリプトファンとカゼイン。温めると入眠にも"],
+["ゆで卵","消化に軽い高タンパク"]],
+tips:["就寝前のタンパク質（20〜40g）は筋合成にむしろ有利","避けるのは高脂質・大量の食事（睡眠の質を下げる）","『寝る前=太る』ではなく、1日の総カロリー次第","消化に軽いものを選べば就寝1時間前でもOK"],
+ref:"Snijders T et al. J Nutr. 2015（就寝前カゼインと筋量）／Res PT et al. Med Sci Sports Exerc. 2012"},
+
+{icon:"🧑‍🍳",t:"自炊が続かない・時間がない",s:"忙しい人の時短栄養術",
+why:"完璧な自炊を目指すと挫折します。栄養管理は『調理の手間を減らす仕組み』で続けやすくなります。作り置き、冷凍食材、缶詰、電子レンジ調理、そして質の良い市販品を賢く使えば、時間をかけずにPFCを整えられます。『毎回ちゃんと作る』より『続く仕組み』が勝ちです。",
+foods:[
+["サラダチキン・ゆで卵","調理不要の高タンパク。常備しておく"],
+["サバ缶・ツナ缶","開けるだけでタンパク質とオメガ3"],
+["冷凍ブロッコリー・冷凍野菜","レンジで繊維とビタミンを手軽に"],
+["パックご飯・冷凍玄米","チンするだけの主食"],
+["納豆・豆腐・ヨーグルト","調理なしで摂れるタンパク質・発酵食品"],
+["冷凍作り置き（鶏むね・作り置きおかず）","週末にまとめて作り冷凍"]],
+tips:["『毎回作る』より『続く仕組み』を優先","缶詰・冷凍・レンジ調理・市販品を賢く組み合わせる","週末に主菜を作り置き＆冷凍しておくと平日が楽","完璧じゃなくていい。8割続けば十分に結果は出る"],
+ref:"行動変容と食習慣の継続に関する研究（Teixeira PJ et al. 2015）／実践的栄養指導の一般的知見"},
+
+{icon:"💰",t:"食費を抑えて高タンパク",s:"コスパの良いタンパク源",
+why:"高タンパク食は食費がかさみがちですが、選び方でコストは大きく変わります。鶏むね肉・卵・豆腐・納豆・サバ缶などは、タンパク質1gあたりの単価が安く優秀。プロテインも1食あたりで見れば安価です。高い肉やサプリに頼らなくても、十分なタンパク質は現実的な予算で確保できます。",
+foods:[
+["鶏むね肉","タンパク質単価が最安クラス。冷凍で買い置き"],
+["卵","安価な完全タンパク質の代表"],
+["豆腐・納豆","植物性で最もコスパの良いタンパク源"],
+["サバ缶・ツナ缶","安くてオメガ3も摂れる"],
+["ホエイプロテイン","1食あたりで見ると安価。まとめ買いでさらに"],
+["鶏むねひき肉・豚こま","かさ増し料理でコスパよくタンパク質を"]],
+tips:["鶏むね・卵・豆腐・納豆・サバ缶が『安うまタンパク5強』","肉は特売時にまとめ買い→小分け冷凍","プロテインは大容量を買うと1食あたりが下がる","高価な牛肉やサプリに頼らなくても十分な栄養は摂れる"],
+ref:"食品のタンパク質単価に関する一般的データ／栄養と食費の実践的知見"},
+
+{icon:"🩹",t:"ケガからの回復を早めたい",s:"リハビリ期の栄養戦略",
+why:"ケガで動けない時期は、筋肉が落ちやすい（廃用性萎縮）一方、回復には十分な栄養が必要です。ポイントは、タンパク質をむしろ多めに保ち筋肉の減少を最小化すること、コラーゲン・ビタミンCで組織の修復を支えること、そして炎症を過度に抑えすぎないこと。安静でも栄養は削らないのが鉄則です。",
+foods:[
+["タンパク質（多め）","動けなくても筋量減を防ぐため確保。むしろ増やす"],
+["ゼラチン・手羽先＋ビタミンC","腱・靱帯の材料コラーゲンの合成を支える"],
+["青魚（オメガ3）","過度でない範囲で炎症をコントロール"],
+["緑黄色野菜・果物","ビタミンC・A・亜鉛で組織修復を促進"],
+["カルシウム・ビタミンD（骨折時）","骨の修復に必須"]],
+tips:["安静時こそタンパク質を削らない（筋量減を最小化）","カロリーを極端に減らすと回復が遅れる","コラーゲン＋ビタミンCで腱・靱帯の修復をサポート","医師・理学療法士の指示を最優先に、栄養は補助として"],
+ref:"Tipton KD. Sports Med. 2015（ケガと栄養）／Wall BT et al. 2013（不活動と筋量）／Shaw G et al. 2017（コラーゲン）"}
+];
+
+/* ================= アプリ本体 ================= */
+const $=id=>document.getElementById(id);
+const LS_STATE="mealdesign_state", LS_CLIENTS="mealdesign_clients", LS_TOTALS="mealdesign_totals";
+let state={goal:"cut",sex:"m",age:"",h:"",w:"",bf:"",pal:"1.55",bmrf:"msj",useTdee:false,tdee:"",adjMode:"pace",pace:"2",adj:"400",pkg:"",fpct:"",mB:25,mL:30,mD:30,mS:15,train:true};
+let totals=[]; // {i:foodIndex, g:grams}
+
+/* ---- タブ ---- */
+document.querySelectorAll("nav.tabbar button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("nav.tabbar button").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".tabpane").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); $(b.dataset.tab).classList.add("on");
+    window.scrollTo({top:0});
+  });
+});
+
+/* ---- セグメントボタン ---- */
+function segInit(id,key){
+  $(id).querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      $(id).querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); state[key]=b.dataset.v;
+      if(key==="goal") applyGoalDefaults();
+      if(key==="adjMode") toggleAdjRows();
+      recalc();
+    });
+  });
+}
+segInit("segGoal","goal"); segInit("segSex","sex"); segInit("segAdjMode","adjMode");
+
+function applyGoalDefaults(){
+  const cut=state.goal==="cut";
+  $("lblAdj").textContent = cut ? "1日のアンダーカロリー（kcal）" : "1日のオーバーカロリー（kcal）";
+  $("lblPace").textContent = cut ? "1ヶ月の減量ペース（kg）" : "1ヶ月の増量ペース（kg）";
+  // 目的切替時は推奨初期値に
+  $("inAdj").value = cut ? 400 : 250; state.adj=$("inAdj").value;
+  $("inPace").value = cut ? 2 : 0.75; state.pace=$("inPace").value;
+  $("inPkg").value = cut ? 2.2 : 2.0; state.pkg=$("inPkg").value;
+  $("inFpct").value = cut ? 20 : 25; state.fpct=$("inFpct").value;
+  updateAdjHint(); updatePaceHint();
+}
+function toggleAdjRows(){
+  const pace=state.adjMode!=="manual";
+  $("rowPace").style.display=pace?"block":"none";
+  $("rowAdj").style.display=pace?"none":"block";
+}
+function paceToKcal(){ return Math.round((+state.pace||0)*7200/30); }
+function updatePaceHint(){
+  const w=parseFloat(state.w), kc=paceToKcal();
+  const cut=state.goal==="cut";
+  let txt=`≒ ${cut?"−":"＋"}${kc.toLocaleString("ja-JP")} kcal/日（体脂肪1kg≒7,200kcalで換算）`;
+  if(w>0){
+    const wkPct=((+state.pace||0)/4.345)/w*100;
+    txt+=`｜週あたり体重の${wkPct.toFixed(2)}%`;
+    if(cut&&wkPct>1) txt+=" ⚠ 週1%超は筋量減リスクが高いペースです";
+    if(!cut&&wkPct>0.5) txt+=" ⚠ 週0.5%超は体脂肪が乗りやすいペースです";
+  }
+  $("hintPace").textContent=txt;
+}
+function updateAdjHint(){
+  const w=parseFloat(state.w);
+  if(state.goal==="cut"){
+    let r = w? `推奨：${Math.round(w*0.005*7200/7/10)*10}〜${Math.round(w*0.007*7200/7/10)*10} kcal（週0.5〜0.7%減）` : "推奨：300〜500 kcal（週0.5〜0.7%の体重減ペース）";
+    $("hintAdj").textContent=r;
+  }else{
+    $("hintAdj").textContent="推奨：200〜300 kcal（脂肪蓄積を抑えるリーンバルク帯）";
+  }
+}
+
+/* ---- 入力バインド ---- */
+const binds=[["inAge","age"],["inH","h"],["inW","w"],["inBF","bf"],["inPAL","pal"],["inBMRf","bmrf"],["inTDEE","tdee"],["inAdj","adj"],["inPace","pace"],["inPkg","pkg"],["inFpct","fpct"],["mB","mB"],["mL","mL"],["mD","mD"],["mS","mS"]];
+binds.forEach(([id,key])=>{
+  $(id).addEventListener("input",()=>{ state[key]=$(id).value; if(key==="w"||key==="pace"){updateAdjHint(); updatePaceHint();} recalc(); });
+});
+$("ckTDEE").addEventListener("change",()=>{ state.useTdee=$("ckTDEE").checked; $("rowTDEE").style.display=state.useTdee?"block":"none"; recalc(); });
+$("ckTrain").addEventListener("change",()=>{ state.train=$("ckTrain").checked; recalc(); });
+
+/* ---- 計算 ---- */
+function calc(){
+  const a=+state.age, h=+state.h, w=+state.w, bf=parseFloat(state.bf);
+  if(!(a>0&&h>0&&w>0)) return null;
+  let bmr, bmrLabel;
+  if(state.bmrf==="km" && bf>0){
+    const lbm=w*(1-bf/100);
+    bmr=370+21.6*lbm; bmrLabel=`Katch-McArdle（LBM ${lbm.toFixed(1)}kg）`;
+  }else{
+    bmr = state.sex==="m" ? 10*w+6.25*h-5*a+5 : 10*w+6.25*h-5*a-161;
+    bmrLabel="Mifflin-St Jeor";
+    if(state.bmrf==="km"&&!(bf>0)) bmrLabel+="（体脂肪率未入力のため代用）";
+  }
+  let tdee = state.useTdee && +state.tdee>0 ? +state.tdee : bmr*(+state.pal);
+  const adj = state.adjMode==="manual" ? (+state.adj||0) : paceToKcal();
+  const target = state.goal==="cut" ? tdee-adj : tdee+adj;
+  const pkg=+state.pkg||(state.goal==="cut"?2.2:2.0);
+  const fpct=+state.fpct||(state.goal==="cut"?20:25);
+  const P=w*pkg, Fg=target*(fpct/100)/9, C=Math.max(0,(target-P*4-Fg*9)/4);
+  const water=w*35;
+  const warns=[];
+  if(Fg/w<0.8) warns.push(`脂質が ${(Fg/w).toFixed(2)}g/kg です。ホルモン維持のため0.8g/kg以上（${Math.round(w*0.8)}g）を推奨します。脂質%を上げるか調整幅を見直してください。`);
+  if((target-P*4-Fg*9)<0) warns.push("タンパク質と脂質だけで目標カロリーを超えています。P係数またはF%を下げてください。");
+  if(state.goal==="cut" && target<bmr) warns.push("目標カロリーが基礎代謝を下回っています。長期間の継続は代謝適応・筋量減のリスクがあるため、アンダーカロリーの縮小かリフィードの併用を検討してください。");
+  if(state.adjMode!=="manual" && state.goal==="cut" && ((+state.pace||0)/4.345)/w*100>1) warns.push("減量ペースが週1%を超えています。筋量維持を優先するなら月ペースを下げることを推奨します（週0.5〜0.7%が目安）。");
+  return {bmr,bmrLabel,tdee,target,adj,P,Fg,C,water,warns,w};
+}
+
+function fmt(n){return Math.round(n).toLocaleString("ja-JP");}
+
+function recalc(){
+  saveState();
+  const r=calc();
+  $("chartTitle").textContent = state.goal==="cut" ? "減量プラン" : "リーンバルクプラン";
+  if(!r){ $("chartBody").innerHTML='<div class="emptymsg">年齢・身長・体重を入力すると自動で計算されます</div>'; $("shareBar").style.display="none"; renderTotals(); return; }
+  const pk=r.P*4, fk=r.Fg*9, ck=r.C*4, sum=pk+fk+ck;
+  const pp=Math.round(pk/sum*100), fp=Math.round(fk/sum*100), cp=100-pp-fp;
+  // 食事配分
+  let ms=[+state.mB,+state.mL,+state.mD,+state.mS];
+  const msum=ms.reduce((x,y)=>x+y,0);
+  $("mealSumHint").textContent = msum===100 ? "合計 100%" : `合計 ${msum}%（100%になるよう按分して計算します）`;
+  const norm = msum>0 ? ms.map(x=>x/msum) : [0.25,0.3,0.3,0.15];
+  const names=["朝食","昼食","夕食","間食"];
+  let mealRows=names.map((nm,i)=>{
+    return `<tr><td>${nm}<span style="color:var(--sub);font-weight:400;font-size:.7rem;"> ${Math.round(norm[i]*100)}%</span></td><td class="num">${fmt(r.target*norm[i])}</td><td class="num" style="color:var(--p);">${Math.round(r.P*norm[i])}</td><td class="num" style="color:var(--f);">${Math.round(r.Fg*norm[i])}</td><td class="num" style="color:var(--c);">${Math.round(r.C*norm[i])}</td></tr>`;
+  }).join("");
+  const waterTxt = state.train
+    ? `${(r.water/1000).toFixed(1)}L <small>＋トレ日 0.5〜1.0L</small>`
+    : `${(r.water/1000).toFixed(1)}L`;
+  $("chartBody").innerHTML=`
+    <div class="crow"><span class="k">基礎代謝（BMR）<small>${r.bmrLabel}</small></span><span class="v num">${fmt(r.bmr)}<small>kcal</small></span></div>
+    <div class="crow"><span class="k">維持カロリー（TDEE）<small>${state.useTdee&&+state.tdee>0?"実測値":"BMR × 活動係数 "+state.pal}</small></span><span class="v num">${fmt(r.tdee)}<small>kcal</small></span></div>
+    <div class="crow big"><span class="k"><strong>目標摂取カロリー</strong><small>${state.goal==="cut"?"−":"＋"}${fmt(r.adj)} kcal/日${state.adjMode!=="manual"?`・月${state.pace}kgペース`:""}</small></span><span class="v num">${fmt(r.target)}<small>kcal</small></span></div>
+    <div class="macros">
+      <div class="m"><div class="lbl" style="color:var(--p);">P タンパク質</div><div class="g num">${Math.round(r.P)}<small>g</small></div><div class="kc num">${fmt(pk)}kcal・${pp}%</div></div>
+      <div class="m"><div class="lbl" style="color:var(--f);">F 脂質</div><div class="g num">${Math.round(r.Fg)}<small>g</small></div><div class="kc num">${fmt(fk)}kcal・${fp}%</div></div>
+      <div class="m"><div class="lbl" style="color:var(--c);">C 炭水化物</div><div class="g num">${Math.round(r.C)}<small>g</small></div><div class="kc num">${fmt(ck)}kcal・${cp}%</div></div>
+    </div>
+    <div class="pfcbar"><div style="width:${pp}%;background:var(--p);"></div><div style="width:${fp}%;background:var(--f);"></div><div style="width:${cp}%;background:var(--c);"></div></div>
+    <div class="pfclegend"><span><span class="dot" style="background:var(--p);"></span>P ${pp}%</span><span><span class="dot" style="background:var(--f);"></span>F ${fp}%</span><span><span class="dot" style="background:var(--c);"></span>C ${cp}%</span></div>
+    <table class="meals">
+      <thead><tr><th>食事</th><th>kcal</th><th>P(g)</th><th>F(g)</th><th>C(g)</th></tr></thead>
+      <tbody>${mealRows}</tbody>
+    </table>
+    <div class="crow"><span class="k">1日の水分量<small>体重 × 35ml</small></span><span class="v num">${waterTxt}</span></div>
+    <div class="note">1食あたりのタンパク質目安：体重×0.4g ＝ 約${Math.round(r.w*0.4)}g／食（筋合成の効率が最大化する量）。数値は推定値のため、週平均体重の推移を見ながら100〜200kcal単位で調整してください。根拠は「計算式の根拠」タブ参照。</div>
+    ${r.warns.map(w=>`<div class="warnbox">⚠ ${w}</div>`).join("")}
+  `;
+  lastShare=buildShareText(r,norm,names);
+  lastR={r,norm,names};
+  $("shareBar").style.display="block";
+  renderTotals();
+}
+
+/* ---- プラン共有（LINE等） ---- */
+let lastShare="", lastR=null;
+
+/* --- 画像レンダリング（Canvas・外部ライブラリ不使用） --- */
+const IMG_W=1080, PAD=64;
+const F_SANS='"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,sans-serif';
+const F_SERIF='"Hiragino Mincho ProN","Yu Mincho","YuMincho",serif';
+function newCtx(hTmp=6000){ const c=document.createElement("canvas"); c.width=IMG_W; c.height=hTmp; const x=c.getContext("2d"); return {c,x}; }
+function cropCanvas(c,h){ const o=document.createElement("canvas"); o.width=IMG_W; o.height=h; o.getContext("2d").drawImage(c,0,0); return o; }
+function rrect(x,px,py,w,h,r){ x.beginPath(); x.moveTo(px+r,py); x.arcTo(px+w,py,px+w,py+h,r); x.arcTo(px+w,py+h,px,py+h,r); x.arcTo(px,py+h,px,py,r); x.arcTo(px,py,px+w,py,r); x.closePath(); }
+function wrapText(x,text,maxW){
+  const lines=[]; let line="";
+  for(const ch of String(text)){
+    if(ch==="\n"){ lines.push(line); line=""; continue; }
+    const t=line+ch;
+    if(x.measureText(t).width>maxW && line){ lines.push(line); line=ch; } else line=t;
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+
+/* --- 栄養の優先順位ピラミッド画像 --- */
+function renderPyramidImage(){
+  const W=IMG_W, H=1300;
+  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+  x.fillStyle="#F3F1EA"; x.fillRect(0,0,W,H);
+
+  x.textAlign="left";
+  x.fillStyle="#6E7268"; x.font=`600 24px ${F_SANS}`;
+  x.fillText("N U T R I T I O N   P R I O R I T Y", 56, 66);
+  x.fillStyle="#22261F"; x.font=`700 54px ${F_SERIF}`;
+  x.fillText("栄養の優先順位", 56, 126);
+  x.fillStyle="#6E7268"; x.font=`400 25px ${F_SANS}`;
+  x.fillText("大事なのは順番。土台（下）から積み上げるのが近道です。", 56, 170);
+
+  // 5層（下＝最重要）
+  const layers=[
+    {no:1, t:"カロリー収支", s:"減量も増量も、まずここ。すべての土台", col:"#1F4A73", edge:"#173A5B"},
+    {no:2, t:"三大栄養素 ＋ 繊維", s:"P・F・C のバランスと食物繊維", col:"#2E7FB0", edge:"#24678F"},
+    {no:3, t:"微量栄養素 ＋ 水分", s:"ビタミン・ミネラルと十分な水分", col:"#E7B93A", edge:"#C99A22"},
+    {no:4, t:"食事回数 ＋ タイミング", s:"1日の配分・トレ前後の摂り方", col:"#E8862E", edge:"#C96E1E"},
+    {no:5, t:"サプリメント", s:"土台が整ってからの最後の一押し", col:"#D24B36", edge:"#B23A28"}
+  ];
+
+  // ピラミッド（左寄せ・番号だけ中に入れる）
+  const cx=330, topY=250, baseY=1010;
+  const halfBase=270, totalH=baseY-topY, n=5, segH=totalH/n;
+  const dx=40, dy=-24;
+  const xAt=(yy)=>halfBase*(yy-topY)/totalH;
+  const geo=[];
+  for(let i=n-1;i>=0;i--){
+    const L=layers[i];
+    const yTop=topY+segH*(n-1-i), yBot=yTop+segH;
+    const wTop=xAt(yTop), wBot=xAt(yBot);
+    const lTop=cx-wTop, rTop=cx+wTop, lBot=cx-wBot, rBot=cx+wBot;
+    geo[i]={yTop,yBot,midY:(yTop+yBot)/2,rTop,rBot};
+    // 右側面
+    x.beginPath();
+    x.moveTo(rTop,yTop); x.lineTo(rTop+dx,yTop+dy); x.lineTo(rBot+dx,yBot+dy); x.lineTo(rBot,yBot); x.closePath();
+    x.fillStyle=L.edge; x.fill();
+    // 前面
+    x.beginPath();
+    x.moveTo(lTop,yTop); x.lineTo(rTop,yTop); x.lineTo(rBot,yBot); x.lineTo(lBot,yBot); x.closePath();
+    x.fillStyle=L.col; x.fill();
+    // 区切り
+    x.strokeStyle="#F3F1EA"; x.lineWidth=6;
+    x.beginPath(); x.moveTo(lTop,yTop); x.lineTo(rTop,yTop); x.stroke();
+    // 段の番号だけ中央に
+    x.textAlign="center"; x.fillStyle="#FFFFFF"; x.font=`700 40px ${F_SERIF}`;
+    x.fillText(L.no, cx, (yTop+yBot)/2+14);
+  }
+
+  // 右側にレジェンド（全段そろえて）
+  const lx=660, lw=W-lx-56;
+  let ly=300;
+  const rowGap=(baseY-300)/n;
+  layers.slice().reverse().forEach((L)=>{ // 上（5）から下（1）へ並べる
+    const cyc=ly+rowGap/2;
+    // カラーチップ（番号入り）
+    x.fillStyle=L.col; rrect(x,lx,cyc-30,54,54,12); x.fill();
+    x.textAlign="center"; x.fillStyle="#FFFFFF"; x.font=`700 30px ${F_SERIF}`;
+    x.fillText(L.no, lx+27, cyc+4);
+    // テキスト
+    x.textAlign="left";
+    x.fillStyle="#22261F"; x.font=`700 30px ${F_SANS}`;
+    x.fillText(L.t, lx+72, cyc-4);
+    x.fillStyle="#6E7268"; x.font=`400 21px ${F_SANS}`;
+    wrapText(x,L.s,lw-72).forEach((line,idx)=>{ x.fillText(line, lx+72, cyc+28+idx*28); });
+    ly+=rowGap;
+  });
+
+  // 下の矢印説明
+  x.textAlign="left";
+  x.fillStyle="#B23A28"; x.font=`700 26px ${F_SANS}`;
+  x.fillText("▲ 上ほど効果は小さい（後回しでOK）", 56, baseY+70);
+  x.fillStyle="#1F4A73"; x.font=`700 28px ${F_SANS}`;
+  x.fillText("▼ 下ほど結果への影響が大きい（最優先）", 56, baseY+116);
+
+  x.fillStyle="#22261F"; x.fillRect(56,baseY+152,W-112,5);
+  x.fillStyle="#6E7268"; x.font=`400 23px ${F_SANS}`;
+  x.fillText("食事設計カルテ｜まずは土台から整えましょう", 56, baseY+196);
+
+  return c;
+}
+
+/* --- お客様向けデザインの減量/増量プラン画像 --- */
+function renderPlanImage(){
+  if(!lastR) return null;
+  const {r,norm,names}=lastR;
+  const {c,x}=newCtx(3800);
+  const W=IMG_W, CW=W-(PAD-24)*2, CX=PAD-24;
+  x.fillStyle="#F3F1EA"; x.fillRect(0,0,W,c.height);
+
+  /* ヘッダー帯 */
+  x.fillStyle="#1F4130"; x.fillRect(0,0,W,210);
+  const d=new Date(), cname=$("clientSel").value;
+  x.fillStyle="rgba(255,255,255,.7)"; x.font=`600 24px ${F_SANS}`;
+  x.fillText(`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 作成`, PAD, 60);
+  x.fillStyle="#FFFFFF"; x.font=`700 54px ${F_SERIF}`;
+  x.fillText(`${cname?cname+"さんの":""}食事プラン`, PAD, 130);
+  /* 目的チップ */
+  const gt = state.goal==="cut"
+    ? (state.adjMode!=="manual" ? `目標：1ヶ月 −${state.pace}kg` : "減量プラン")
+    : (state.adjMode!=="manual" ? `目標：1ヶ月 ＋${state.pace}kg` : "リーンバルクプラン");
+  x.font=`700 26px ${F_SANS}`;
+  const chipW=x.measureText(gt).width+48;
+  x.fillStyle="#FFFFFF"; rrect(x,PAD,152,chipW,44,22); x.fill();
+  x.fillStyle="#1F4130"; x.fillText(gt, PAD+24, 183);
+
+  let y=250;
+  const card=(h)=>{ x.fillStyle="#FFFFFF"; rrect(x,CX,y,CW,h,22); x.fill(); x.strokeStyle="#E0DCD0"; x.lineWidth=2; x.stroke(); };
+  const title=(t)=>{ x.fillStyle="#22261F"; x.font=`700 31px ${F_SANS}`; x.fillText(t, PAD, y+56); };
+
+  /* ① 目標カロリー */
+  card(236); title("🔥 1日の目標カロリー");
+  x.textAlign="center";
+  x.fillStyle="#1F4130"; x.font=`700 104px ${F_SERIF}`;
+  x.fillText(fmt(r.target), W/2-44, y+164);
+  x.font=`400 34px ${F_SANS}`; x.fillStyle="#6E7268";
+  x.fillText("kcal", W/2+x.measureText(fmt(r.target)).width+40, y+162);
+  x.font=`400 24px ${F_SANS}`;
+  x.fillText(`維持カロリー ${fmt(r.tdee)} kcal ${state.goal==="cut"?"−":"＋"} ${fmt(r.adj)} kcal`, W/2, y+208);
+  x.textAlign="left"; y+=236+26;
+
+  /* ② PFC */
+  const pfcH=352; card(pfcH); title("💪 3大栄養素（PFC）の目標");
+  const pk=r.P*4, fk=r.Fg*9, ck=r.C*4, sum=pk+fk+ck;
+  const pp=Math.round(pk/sum*100), fp=Math.round(fk/sum*100), cp=100-pp-fp;
+  const inW=(CW-48-32)/3;
+  const mac=[
+    ["タンパク質","#BF4A3C",Math.round(r.P),"筋肉の材料",pp],
+    ["脂質","#D2951F",Math.round(r.Fg),"ホルモン・肌",fp],
+    ["炭水化物","#3D6C9E",Math.round(r.C),"体を動かす燃料",cp]
+  ];
+  mac.forEach((m,i)=>{
+    const px=CX+24+(inW+16)*i, py=y+82, ph=180;
+    x.fillStyle="#FCFBF6"; rrect(x,px,py,inW,ph,16); x.fill();
+    x.fillStyle=m[1]; rrect(x,px,py,inW,12,6); x.fill();
+    x.textAlign="center";
+    x.fillStyle=m[1]; x.font=`700 27px ${F_SANS}`; x.fillText(m[0], px+inW/2, py+52);
+    x.fillStyle="#22261F"; x.font=`700 62px ${F_SERIF}`; x.fillText(m[2]+"g", px+inW/2, py+124);
+    x.fillStyle="#6E7268"; x.font=`400 21px ${F_SANS}`; x.fillText(m[3], px+inW/2, py+158);
+    x.textAlign="left";
+  });
+  /* バー */
+  const by=y+296, barW=CW-48, barH=24; let bx=CX+24;
+  [[pp,"#BF4A3C"],[fp,"#D2951F"],[cp,"#3D6C9E"]].forEach(([p,col],i)=>{
+    x.fillStyle=col; x.fillRect(bx,by,barW*p/100,barH);
+    x.fillStyle="#6E7268"; x.font=`400 20px ${F_SANS}`; x.textAlign="center";
+    x.fillText(p+"%", bx+barW*p/100/2, by+50);
+    x.textAlign="left"; bx+=barW*p/100;
+  });
+  y+=pfcH+26;
+
+  /* ③ 食事の配分 */
+  const rowH=88, mealsH=92+rowH*4; card(mealsH); title("🍽 食事の分け方");
+  const mEmoji=["🌅","☀️","🌙","🍎"];
+  let my=y+88;
+  names.forEach((nm,i)=>{
+    if(i%2===0){ x.fillStyle="#FCFBF6"; x.fillRect(CX+16,my,CW-32,rowH); }
+    x.fillStyle="#22261F"; x.font=`700 30px ${F_SANS}`;
+    x.fillText(`${mEmoji[i]} ${nm}`, PAD, my+40);
+    x.fillStyle="#6E7268"; x.font=`400 22px ${F_SANS}`;
+    x.fillText(`全体の${Math.round(norm[i]*100)}%`, PAD, my+72);
+    x.textAlign="right";
+    x.fillStyle="#1F4130"; x.font=`700 40px ${F_SERIF}`;
+    x.fillText(`${fmt(r.target*norm[i])} kcal`, W-PAD, my+42);
+    x.fillStyle="#6E7268"; x.font=`400 23px ${F_SANS}`;
+    x.fillText(`P ${Math.round(r.P*norm[i])}g・F ${Math.round(r.Fg*norm[i])}g・C ${Math.round(r.C*norm[i])}g`, W-PAD, my+74);
+    x.textAlign="left";
+    my+=rowH;
+  });
+  y+=mealsH+26;
+
+  /* ④ 水分 */
+  card(130); title("💧 1日の水分");
+  x.textAlign="right";
+  x.fillStyle="#1F4130"; x.font=`700 52px ${F_SERIF}`;
+  x.fillText(`${(r.water/1000).toFixed(1)}L`, W-PAD, y+66);
+  if(state.train){ x.fillStyle="#6E7268"; x.font=`400 22px ${F_SANS}`; x.fillText("トレーニングの日は ＋500ml〜1L", W-PAD, y+102); }
+  x.textAlign="left"; y+=130+26;
+
+  /* ⑤ ポイント */
+  const pts=[
+    `毎食タンパク質を 約${Math.round(r.w*0.4)}g 摂るのが目標です`,
+    "体重は「週の平均」でチェック。毎日の上下は気にしなくてOK",
+    "この数値はスタート地点。体の変化を見ながら一緒に調整していきます"
+  ];
+  x.font=`400 25px ${F_SANS}`;
+  let ptLines=[]; pts.forEach(p=>{ ptLines.push(...wrapText(x,"✅ "+p,CW-48)); });
+  let warnLines=[]; r.warns.forEach(w=>{ warnLines.push(...wrapText(x,"⚠ "+w,CW-48)); });
+  const ptH=90+(ptLines.length+warnLines.length)*40+(warnLines.length?16:0);
+  card(ptH); title("📌 ポイント");
+  let py2=y+92;
+  x.fillStyle="#22261F"; x.font=`400 25px ${F_SANS}`;
+  ptLines.forEach(l=>{ x.fillText(l, PAD, py2+25); py2+=40; });
+  if(warnLines.length){ py2+=16; x.fillStyle="#A05A1C"; warnLines.forEach(l=>{ x.fillText(l, PAD, py2+25); py2+=40; }); }
+  y+=ptH+30;
+
+  /* フッター */
+  x.textAlign="center"; x.fillStyle="#6E7268"; x.font=`400 21px ${F_SANS}`;
+  x.fillText("食事設計カルテ｜数値は科学的な推定式に基づく目安です", W/2, y+21);
+  x.textAlign="left"; y+=64;
+  return cropCanvas(c,y);
+}
+
+/* --- お悩み別ガイド画像（単体） --- */
+function renderConcernImage(cn){
+  const {c,x}=newCtx();
+  const M=52; // 余白を詰めて文字を大きく（画面いっぱいに）
+  x.fillStyle="#FFFDF7"; x.fillRect(0,0,IMG_W,c.height);
+  let y=56;
+  x.fillStyle="#6E7268"; x.font=`600 24px ${F_SANS}`; x.fillText("F O O D   G U I D E", M, y+10); y+=64;
+  x.fillStyle="#22261F"; x.font=`700 62px ${F_SERIF}`; x.fillText(`${cn.icon} ${cn.t}`, M, y+48); y+=84;
+  x.fillStyle="#6E7268"; x.font=`400 30px ${F_SANS}`; x.fillText(cn.s, M, y+24); y+=60;
+  x.fillStyle="#22261F"; x.fillRect(M,y,IMG_W-M*2,6); y+=44;
+  const h4=t=>{ x.fillStyle="#1F4130"; x.font=`700 34px ${F_SANS}`; x.fillText(t,M,y+34); y+=58; };
+  h4("なぜ起こる？どう効く？");
+  x.fillStyle="#22261F"; x.font=`400 31px ${F_SANS}`;
+  wrapText(x,cn.why,IMG_W-M*2).forEach(l=>{ x.fillText(l,M,y+31); y+=48; });
+  y+=26;
+  h4("おすすめ食材");
+  cn.foods.forEach(([fn,fw])=>{
+    x.fillStyle="#22261F"; x.font=`700 33px ${F_SANS}`; x.fillText("● "+fn, M, y+33); y+=48;
+    x.fillStyle="#6E7268"; x.font=`400 28px ${F_SANS}`;
+    wrapText(x,fw,IMG_W-M*2-48).forEach(l=>{ x.fillText(l,M+48,y+28); y+=42; });
+    y+=16;
+  });
+  y+=14;
+  h4("実践ポイント");
+  x.fillStyle="#22261F"; x.font=`400 29px ${F_SANS}`;
+  cn.tips.forEach(t=>{
+    wrapText(x,"・"+t,IMG_W-M*2).forEach(l=>{ x.fillText(l,M,y+29); y+=44; });
+    y+=8;
+  });
+  y+=20;
+  if(cn.ref){
+    x.fillStyle="#6E7268"; x.font=`400 23px ${F_SANS}`;
+    wrapText(x,"📖 参考文献："+cn.ref,IMG_W-M*2).forEach(l=>{ x.fillText(l,M,y+23); y+=34; });
+    y+=14;
+  }
+  y+=14;
+  x.fillStyle="#22261F"; x.fillRect(M,y,IMG_W-M*2,6); y+=48;
+  x.fillStyle="#6E7268"; x.font=`400 25px ${F_SANS}`; x.fillText("食事設計カルテ｜お悩み別ガイド",M,y); y+=52;
+  x.strokeStyle="#22261F"; x.lineWidth=8; x.strokeRect(6,6,IMG_W-12,y-12);
+  return cropCanvas(c,y);
+}
+
+/* --- 複数のお悩みを1枚に結合 --- */
+function renderConcernsImage(idxs){
+  const cards=idxs.map(i=>renderConcernImage(CONCERNS[i]));
+  const gap=28;
+  // 1〜2件：縦1列（スマホ幅そのままで文字が大きく読める）
+  if(cards.length<=2){
+    const H=cards.reduce((s,cv)=>s+cv.height,0)+gap*(cards.length-1)+gap*2;
+    const o=document.createElement("canvas"); o.width=IMG_W+gap*2; o.height=H;
+    const g=o.getContext("2d");
+    g.fillStyle="#F3F1EA"; g.fillRect(0,0,o.width,o.height);
+    let y=gap;
+    cards.forEach(cv=>{ g.drawImage(cv,gap,y); y+=cv.height+gap; });
+    return o;
+  }
+  // 3件以上：2カラムに振り分けて縦の間延びを半減
+  const colW=IMG_W, cols=[[],[]], colH=[0,0];
+  cards.forEach(cv=>{ const t=colH[0]<=colH[1]?0:1; cols[t].push(cv); colH[t]+=cv.height+gap; });
+  const H=Math.max(colH[0],colH[1])+gap;
+  const o=document.createElement("canvas"); o.width=colW*2+gap*3; o.height=H;
+  const g=o.getContext("2d");
+  g.fillStyle="#F3F1EA"; g.fillRect(0,0,o.width,o.height);
+  [0,1].forEach(ci=>{
+    let y=gap; const x=gap+ci*(colW+gap);
+    cols[ci].forEach(cv=>{ g.drawImage(cv,x,y); y+=cv.height+gap; });
+  });
+  return o;
+}
+
+/* --- 画像プレビュー＆共有モーダル --- */
+let curImg={url:"",name:""};
+function showImageModal(canvas,filename){
+  try{
+    if(!canvas) return;
+    curImg={url:canvas.toDataURL("image/png"),name:filename};
+    $("imPic").src=curImg.url;
+    $("imgModal").classList.add("on");
+  }catch(e){ alert("画像の生成に失敗しました："+e.message); }
+}
+function dataURLtoBlob(u){
+  const parts=u.split(","); const mime=(parts[0].match(/:(.*?);/)||[])[1]||"image/png";
+  const bstr=atob(parts[1]); const u8=new Uint8Array(bstr.length);
+  for(let i=0;i<bstr.length;i++) u8[i]=bstr.charCodeAt(i);
+  return new Blob([u8],{type:mime});
+}
+function dataURLtoFile(u,name){ return new File([dataURLtoBlob(u)],name,{type:"image/png"}); }
+function openImageFallback(){
+  // アプリ内ブラウザでボタンが効かない環境向け：画像を別画面で開き、長押し保存を促す
+  try{
+    const blob=dataURLtoBlob(curImg.url);
+    const url=URL.createObjectURL(blob);
+    const w=window.open(url,"_blank");
+    if(!w){ alert("上のプレビュー画像を長押しして「写真に保存」または「共有」を選んでください。"); }
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){ alert("上のプレビュー画像を長押しして「写真に保存」または「共有」を選んでください。"); }
+}
+$("imClose").addEventListener("click",()=>$("imgModal").classList.remove("on"));
+$("imgModal").addEventListener("click",e=>{ if(e.target.id==="imgModal") $("imgModal").classList.remove("on"); });
+$("imPic").addEventListener("click",e=>{ e.stopPropagation(); openImageFallback(); });
+$("imSave").addEventListener("click",()=>{
+  try{
+    const a=document.createElement("a"); a.href=curImg.url; a.download=curImg.name;
+    document.body.appendChild(a); a.click(); a.remove();
+    // ダウンロードが効かない環境向けに別タブでも開く
+    setTimeout(openImageFallback,200);
+  }catch(e){ openImageFallback(); }
+});
+$("imShare").addEventListener("click",async()=>{
+  try{
+    const file=dataURLtoFile(curImg.url,curImg.name);
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:"食事設計カルテ"});
+      return;
+    }
+  }catch(e){ if(e && e.name==="AbortError") return; }
+  // 共有APIが使えない環境：画像を別画面で開き長押し保存を案内
+  openImageFallback();
+});
+$("btnImg").addEventListener("click",()=>{ showImageModal(renderPlanImage(),"meal-plan.png"); });
+$("btnPyramid").addEventListener("click",()=>{ showImageModal(renderPyramidImage(),"nutrition-priority.png"); });
+
+function buildShareText(r,norm,names){
+  const goal=state.goal==="cut"?"減量":"リーンバルク";
+  const cname=$("clientSel").value?`${$("clientSel").value}さんの`:"";
+  let t=`📋 ${cname}食事設計カルテ（${goal}プラン）\n\n`;
+  t+=`◆ 目標摂取カロリー：${fmt(r.target)} kcal/日\n`;
+  t+=`　維持 ${fmt(r.tdee)} kcal ${state.goal==="cut"?"−":"＋"} ${fmt(r.adj)} kcal`;
+  if(state.adjMode!=="manual") t+=`（月${state.pace}kgペース）`;
+  t+=`\n\n◆ PFCバランス\n`;
+  t+=`・タンパク質 P：${Math.round(r.P)} g\n・脂質 F：${Math.round(r.Fg)} g\n・炭水化物 C：${Math.round(r.C)} g\n\n`;
+  t+=`◆ 食事配分（kcal｜P/F/C g）\n`;
+  names.forEach((nm,i)=>{ t+=`${nm} ${Math.round(norm[i]*100)}%：${fmt(r.target*norm[i])}kcal｜${Math.round(r.P*norm[i])}/${Math.round(r.Fg*norm[i])}/${Math.round(r.C*norm[i])}\n`; });
+  t+=`\n◆ 水分：1日 ${(r.water/1000).toFixed(1)}L`;
+  if(state.train) t+=`（トレーニング日は＋0.5〜1.0L）`;
+  t+=`\n1食あたりのタンパク質目安：約${Math.round(r.w*0.4)}g\n`;
+  t+=`\n※数値は推定値です。週平均体重の推移を見ながら一緒に調整していきましょう。`;
+  return t;
+}
+$("btnLine").addEventListener("click",()=>{
+  if(!lastShare) return;
+  window.open("https://line.me/R/share?text="+encodeURIComponent(lastShare),"_blank");
+});
+$("btnShare").addEventListener("click",async()=>{
+  if(!lastShare) return;
+  if(navigator.share){
+    try{ await navigator.share({text:lastShare}); }catch(e){}
+  }else{
+    try{ await navigator.clipboard.writeText(lastShare); alert("プランをコピーしました。LINE等に貼り付けて送信できます。"); }
+    catch(e){ prompt("以下を長押しでコピーしてください", lastShare); }
+  }
+});
+
+/* ---- クライアント保存 ---- */
+function getClients(){ try{return JSON.parse(localStorage.getItem(LS_CLIENTS))||{};}catch(e){return{};} }
+function renderClientSel(sel){
+  const cs=getClients();
+  $("clientSel").innerHTML='<option value="">— 未選択（新規入力）—</option>'+Object.keys(cs).sort().map(n=>`<option value="${n.replace(/"/g,"&quot;")}">${n}</option>`).join("");
+  if(sel) $("clientSel").value=sel;
+}
+$("btnSave").addEventListener("click",()=>{
+  let name=$("clientSel").value || prompt("クライアント名を入力してください");
+  if(!name) return;
+  const cs=getClients(); cs[name]=JSON.parse(JSON.stringify(state));
+  localStorage.setItem(LS_CLIENTS,JSON.stringify(cs));
+  renderClientSel(name);
+  alert(`「${name}」さんの設計を保存しました`);
+});
+$("btnDel").addEventListener("click",()=>{
+  const name=$("clientSel").value; if(!name) return;
+  if(!confirm(`「${name}」さんのデータを削除しますか？`)) return;
+  const cs=getClients(); delete cs[name];
+  localStorage.setItem(LS_CLIENTS,JSON.stringify(cs));
+  renderClientSel("");
+});
+$("clientSel").addEventListener("change",()=>{
+  const name=$("clientSel").value; if(!name) return;
+  const cs=getClients(); if(!cs[name]) return;
+  state=Object.assign({},state,cs[name]);
+  pushStateToUI(); recalc();
+});
+
+function pushStateToUI(){
+  $("segGoal").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===state.goal));
+  $("segSex").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===state.sex));
+  $("segAdjMode").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===(state.adjMode||"pace")));
+  $("lblAdj").textContent = state.goal==="cut" ? "1日のアンダーカロリー（kcal）" : "1日のオーバーカロリー（kcal）";
+  $("lblPace").textContent = state.goal==="cut" ? "1ヶ月の減量ペース（kg）" : "1ヶ月の増量ペース（kg）";
+  [["inAge","age"],["inH","h"],["inW","w"],["inBF","bf"],["inPAL","pal"],["inBMRf","bmrf"],["inTDEE","tdee"],["inAdj","adj"],["inPace","pace"],["inPkg","pkg"],["inFpct","fpct"],["mB","mB"],["mL","mL"],["mD","mD"],["mS","mS"]].forEach(([id,k])=>{ $(id).value=state[k]??""; });
+  $("ckTDEE").checked=!!state.useTdee; $("rowTDEE").style.display=state.useTdee?"block":"none";
+  $("ckTrain").checked=state.train!==false;
+  toggleAdjRows(); updateAdjHint(); updatePaceHint();
+}
+function saveState(){ localStorage.setItem(LS_STATE,JSON.stringify(state)); }
+
+/* ---- 食材検索 ---- */
+let curCat="すべて";
+const CATS=["すべて","肉","魚介","卵・乳","大豆・豆","穀類","いも","野菜","果物","ナッツ・油","調味料","飲料・酒","菓子","料理(目安)","その他"];
+$("catChips").innerHTML=CATS.map(c=>`<button data-c="${c}" class="${c==="すべて"?"on":""}">${c}</button>`).join("");
+$("catChips").querySelectorAll("button").forEach(b=>{
+  b.addEventListener("click",()=>{
+    $("catChips").querySelectorAll("button").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on"); curCat=b.dataset.c; renderFoods();
+  });
+});
+$("inSearch").addEventListener("input",renderFoods);
+
+function renderFoods(){
+  const q=$("inSearch").value.trim().toLowerCase();
+  const hits=FOODS.map((f,i)=>({f,i})).filter(({f})=>{
+    if(curCat!=="すべて"&&f.c!==curCat) return false;
+    if(!q) return true;
+    return (f.n+f.k).toLowerCase().includes(q);
+  });
+  if(!hits.length){ $("foodList").innerHTML='<div class="emptymsg">該当する食材がありません。ひらがな・カタカナでも試してみてください。</div>'; return; }
+  const shown=hits.slice(0,80);
+  $("foodList").innerHTML=(hits.length>80?`<div class="hint" style="margin-bottom:8px;">${hits.length}件ヒット（先頭80件を表示。検索語で絞り込めます）</div>`:"")+shown.map(({f,i})=>`
+    <li data-i="${i}">
+      <div class="foodrow">
+        <div><div class="fname">${f.n}</div><div class="fcat">${f.c}｜100gあたり P${f.p} F${f.f} C${f.cb}</div></div>
+        <div class="fkcal num">${f.kcal}<small> kcal/100g</small></div>
+      </div>
+      <div class="fdetail">
+        <div class="gramrow"><input type="number" class="gIn" value="100" min="1" max="2000" inputmode="numeric"><span class="unit">g で計算</span></div>
+        <div class="pfcline">
+          <div class="cell"><div class="t">kcal</div><div class="n gk num">${f.kcal}</div></div>
+          <div class="cell P"><div class="t">P (g)</div><div class="n gp num">${f.p}</div></div>
+          <div class="cell F"><div class="t">F (g)</div><div class="n gf num">${f.f}</div></div>
+          <div class="cell C"><div class="t">C (g)</div><div class="n gc num">${f.cb}</div></div>
+        </div>
+        <button class="btn addBtn" style="width:100%;">合計リストに追加</button>
+      </div>
+    </li>`).join("");
+  $("foodList").querySelectorAll("li").forEach(li=>{
+    const i=+li.dataset.i, f=FOODS[i];
+    li.querySelector(".foodrow").addEventListener("click",()=>li.classList.toggle("open"));
+    const g=li.querySelector(".gIn");
+    const upd=()=>{
+      const gr=Math.max(0,+g.value||0), r=gr/100;
+      li.querySelector(".gk").textContent=Math.round(f.kcal*r);
+      li.querySelector(".gp").textContent=(f.p*r).toFixed(1);
+      li.querySelector(".gf").textContent=(f.f*r).toFixed(1);
+      li.querySelector(".gc").textContent=(f.cb*r).toFixed(1);
+    };
+    g.addEventListener("input",upd);
+    li.querySelector(".addBtn").addEventListener("click",()=>{
+      totals.push({i,g:Math.max(1,+g.value||100)});
+      localStorage.setItem(LS_TOTALS,JSON.stringify(totals));
+      renderTotals();
+      window.scrollTo({top:0,behavior:"smooth"});
+    });
+  });
+}
+
+/* ---- 合計リスト ---- */
+function renderTotals(){
+  if(!totals.length){ $("totalsCard").style.display="none"; return; }
+  $("totalsCard").style.display="block";
+  let K=0,P=0,F=0,C=0;
+  $("totalsList").innerHTML=totals.map((t,idx)=>{
+    const f=FOODS[t.i], r=t.g/100;
+    K+=f.kcal*r; P+=f.p*r; F+=f.f*r; C+=f.cb*r;
+    return `<div class="titem"><span class="tn">${f.n}</span><input type="number" data-idx="${idx}" class="tG num" value="${t.g}" min="1" inputmode="numeric"><span style="font-size:.75rem;color:var(--sub);">g</span><span class="num" style="width:70px;text-align:right;">${Math.round(f.kcal*r)}kcal</span><button class="x" data-idx="${idx}" aria-label="削除">×</button></div>`;
+  }).join("");
+  $("tKcal").textContent=Math.round(K).toLocaleString("ja-JP");
+  $("tPFC").textContent=`P ${P.toFixed(1)} / F ${F.toFixed(1)} / C ${C.toFixed(1)} g`;
+  const r=calc();
+  $("tVs").textContent = r ? `目標との差：カロリー 残り${Math.round(r.target-K).toLocaleString("ja-JP")}kcal｜P 残り${Math.round(r.P-P)}g｜F 残り${Math.round(r.Fg-F)}g｜C 残り${Math.round(r.C-C)}g` : "";
+  $("totalsList").querySelectorAll(".tG").forEach(inp=>{
+    inp.addEventListener("change",()=>{ totals[+inp.dataset.idx].g=Math.max(1,+inp.value||1); localStorage.setItem(LS_TOTALS,JSON.stringify(totals)); renderTotals(); });
+  });
+  $("totalsList").querySelectorAll(".x").forEach(b=>{
+    b.addEventListener("click",()=>{ totals.splice(+b.dataset.idx,1); localStorage.setItem(LS_TOTALS,JSON.stringify(totals)); renderTotals(); });
+  });
+}
+$("btnClearTotals").addEventListener("click",()=>{ totals=[]; localStorage.setItem(LS_TOTALS,"[]"); renderTotals(); });
+
+/* ---- お悩み ---- */
+let concernSel=new Set();
+function renderConcerns(){
+  const q=($("inConcernSearch").value||"").trim().toLowerCase();
+  const hits=CONCERNS.map((c,i)=>({c,i})).filter(({c})=>{
+    if(!q) return true;
+    const hay=(c.t+" "+c.s+" "+c.why+" "+c.foods.map(f=>f[0]+f[1]).join(" ")+" "+c.tips.join(" ")).toLowerCase();
+    return hay.includes(q);
+  });
+  if(!hits.length){ $("concernList").innerHTML='<div class="emptymsg">該当するお悩みが見つかりません。別のキーワードでお試しください。</div>'; return; }
+  $("concernList").innerHTML=hits.map(({c,i})=>`
+  <details class="concern${concernSel.has(i)?" sel":""}" data-idx="${i}">
+    <summary><span class="icon">${c.icon}</span><span class="ct"><span class="t">${c.t}</span><br><span class="s">${c.s}</span></span><span class="selbtn" data-i="${i}" role="button" aria-label="まとめ画像に追加">${concernSel.has(i)?"✓ 追加済":"＋ 追加"}</span><span class="arrow">▶</span></summary>
+    <div class="cbody">
+      <h4>なぜ起こる？どう効く？</h4>
+      <p>${c.why}</p>
+      <h4>おすすめ食材</h4>
+      ${c.foods.map(([fn,fw])=>`<div class="cfood"><span class="fn">${fn}</span><span class="fw">${fw}</span></div>`).join("")}
+      <h4>実践ポイント</h4>
+      <ul class="tips">${c.tips.map(t=>`<li>${t}</li>`).join("")}</ul>
+      ${c.ref?`<div class="cref">📖 参考：${c.ref}</div>`:""}
+      <button class="btn cShare" data-i="${i}" style="width:100%; margin-top:14px;">📷 この解説だけ画像で共有（LINE）</button>
+    </div>
+  </details>`).join("");
+  $("concernList").querySelectorAll(".cShare").forEach(b=>{
+    b.addEventListener("click",()=>{ const cn=CONCERNS[+b.dataset.i]; showImageModal(renderConcernImage(cn), `guide-${cn.t}.png`); });
+  });
+  $("concernList").querySelectorAll(".selbtn").forEach(el=>{
+    el.addEventListener("click",e=>{
+      e.preventDefault(); e.stopPropagation();
+      const i=+el.dataset.i;
+      if(concernSel.has(i)){ concernSel.delete(i); el.textContent="＋ 追加"; el.closest(".concern").classList.remove("sel"); }
+      else { concernSel.add(i); el.textContent="✓ 追加済"; el.closest(".concern").classList.add("sel"); }
+      updateCMulti();
+    });
+  });
+}
+function selectedConcerns(){ return [...concernSel]; }
+function updateCMulti(){
+  const n=concernSel.size;
+  $("btnCMulti").style.display = n>0 ? "block" : "none";
+  $("btnCMulti").textContent = n>=3 ? `📷 選択した${n}件を1枚にまとめる（2列レイアウト）` : `📷 選択した${n}件をまとめて画像で共有`;
+}
+$("inConcernSearch").addEventListener("input",renderConcerns);
+$("btnCMulti").addEventListener("click",()=>{
+  const idxs=selectedConcerns();
+  if(!idxs.length) return;
+  if(idxs.length>8){ alert("一度にまとめられるのは8件までです（画像が長くなりすぎるため）。選択を減らしてください。"); return; }
+  showImageModal(renderConcernsImage(idxs), "food-guide.png");
+});
+renderConcerns();
+
+/* ---- 起動 ---- */
+(function init(){
+  try{ const s=JSON.parse(localStorage.getItem(LS_STATE)); if(s) state=Object.assign(state,s); }catch(e){}
+  try{ const t=JSON.parse(localStorage.getItem(LS_TOTALS)); if(Array.isArray(t)) totals=t.filter(x=>FOODS[x.i]); }catch(e){}
+  if(!state.pkg) state.pkg = state.goal==="cut"?2.2:2.0;
+  if(!state.fpct) state.fpct = state.goal==="cut"?20:25;
+  if(!state.adjMode) state.adjMode="pace";
+  if(!state.pace) state.pace = state.goal==="cut"?2:0.75;
+  renderClientSel("");
+  pushStateToUI();
+  renderFoods();
+  recalc();
+})();
+</script>
+</body>
+</html>
