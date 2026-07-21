@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PEAK PLAN — 8/23 大会</title>
+<style>
+  :root{
+    --ink:#17181C;
+    --ink-soft:#2A2C31;
+    --paper:#EDEBE6;
+    --paper-2:#F5F3EF;
+    --card:#FFFFFF;
+    --bronze:#B47738;
+    --bronze-deep:#8A5A29;
+    --oxblood:#8A3E36;
+    --sage:#3F6357;
+    --muted:#6B6A65;
+    --line:#DCD9D2;
+    --line-dk:rgba(255,255,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    font-feature-settings:"tnum" 1;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:0 20px}
+
+  /* ---------- HERO ---------- */
+  .hero{background:var(--ink);color:#EDEBE6;padding:44px 0 38px;border-bottom:4px solid var(--bronze)}
+  .eyebrow{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--bronze);margin-bottom:14px}
+  .hero h1{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:clamp(38px,9vw,74px);line-height:.98;letter-spacing:.01em;text-transform:uppercase}
+  .hero h1 .date{color:var(--bronze)}
+  .hero-sub{margin-top:16px;font-size:14.5px;color:#B9B6AE;max-width:640px}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .chip{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:12px;letter-spacing:.04em;padding:7px 12px;border:1px solid var(--line-dk);border-radius:2px;color:#D8D5CD}
+  .chip b{color:var(--bronze);font-weight:700}
+
+  .thesis{background:var(--ink-soft);border-left:3px solid var(--bronze);padding:16px 18px;margin-top:26px;border-radius:2px}
+  .thesis .t-label{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--bronze);margin-bottom:6px}
+  .thesis p{font-size:14.5px;color:#E4E1D9}
+  .thesis b{color:#fff}
+
+  /* ---------- NAV ---------- */
+  nav{position:sticky;top:0;z-index:20;background:rgba(237,235,230,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .nav-inner{max-width:960px;margin:0 auto;padding:10px 20px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+  .nav-inner::-webkit-scrollbar{display:none}
+  nav a{white-space:nowrap;font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.04em;font-size:13px;color:var(--ink);text-decoration:none;padding:6px 11px;border-radius:2px}
+  nav a:hover{background:var(--bronze);color:#fff}
+
+  /* ---------- SECTION ---------- */
+  section{padding:44px 0 8px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:8px}
+  .sec-num{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:13px;color:var(--bronze);font-weight:700}
+  .sec-head h2{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:clamp(24px,5vw,34px);text-transform:uppercase;letter-spacing:.01em}
+  .sec-lead{color:var(--muted);font-size:14.5px;margin-bottom:24px;max-width:680px}
+
+  /* ---------- PHASE CARDS ---------- */
+  .phase{background:var(--card);border:1px solid var(--line);border-radius:4px;margin-bottom:16px;overflow:hidden}
+  .phase-top{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line);background:var(--paper-2)}
+  .daysout{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:700;font-size:15px;color:#fff;background:var(--bronze);padding:4px 10px;border-radius:2px;letter-spacing:.02em}
+  .phase-top .range{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:12.5px;color:var(--muted)}
+  .phase-top h3{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:20px;text-transform:uppercase;letter-spacing:.02em;margin-left:auto}
+  .phase-body{padding:18px}
+  .goal{font-size:14px;margin-bottom:16px}
+  .goal b{color:var(--bronze-deep)}
+
+  .macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .m{background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:10px 8px;text-align:center}
+  .m .k{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .m .v{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:22px;line-height:1.1;margin-top:3px}
+  .m .u{font-size:10px;color:var(--muted)}
+  .m.kcal .v{color:var(--ink)}
+  .m.p .v{color:var(--oxblood)}
+  .m.c .v{color:var(--sage)}
+  .m.f .v{color:var(--bronze-deep)}
+
+  .subgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .sb{font-size:13.5px}
+  .sb .lbl{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin-bottom:4px}
+  .sb ul{list-style:none}
+  .sb li{padding-left:14px;position:relative;margin-bottom:2px}
+  .sb li::before{content:"";position:absolute;left:0;top:10px;width:5px;height:5px;background:var(--bronze);border-radius:50%}
+
+  /* ---------- TABLE ---------- */
+  .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:4px;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;min-width:640px;background:var(--card);font-size:13px}
+  thead th{background:var(--ink);color:#EDEBE6;font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:500;text-transform:uppercase;letter-spacing:.03em;font-size:12.5px;padding:11px 12px;text-align:left;white-space:nowrap}
+  tbody td{padding:11px 12px;border-top:1px solid var(--line);vertical-align:top}
+  tbody tr:nth-child(even){background:var(--paper-2)}
+  .day{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:14px;white-space:nowrap}
+  .do{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:11px;color:var(--muted);display:block}
+  td.num{font-family:ui-monospace,"SF Mono","Menlo",monospace;white-space:nowrap}
+  .tag{display:inline-block;font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:2px;color:#fff}
+  .tag.dep{background:var(--oxblood)}
+  .tag.load{background:var(--sage)}
+  .tag.hold{background:var(--muted)}
+  .tag.show{background:var(--bronze)}
+
+  /* ---------- FOOD / LIST COLUMNS ---------- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .fcard{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px}
+  .fcard h4{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.p{background:var(--oxblood)}.dot.c{background:var(--sage)}.dot.f{background:var(--bronze-deep)}.dot.v{background:#5a7d4a}.dot.x{background:var(--bronze)}
+  .fcard ul{list-style:none}
+  .fcard li{padding:4px 0 4px 15px;position:relative;font-size:13.5px;border-bottom:1px dashed var(--line)}
+  .fcard li:last-child{border-bottom:none}
+  .fcard li::before{content:"›";position:absolute;left:0;color:var(--bronze);font-weight:700}
+  .fcard .note{font-size:12px;color:var(--muted);margin-top:8px}
+
+  /* ---------- SPLIT / GENERIC BLOCK ---------- */
+  .block{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:18px;margin-bottom:14px}
+  .block h4{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:12px;color:var(--bronze-deep)}
+  .split{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .split .d{background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:9px 11px}
+  .split .d .dn{font-family:"Oswald","Arial Narrow","Roboto Condensed",system-ui,sans-serif;font-weight:600;font-size:13px;color:var(--bronze);text-transform:uppercase}
+  .split .d .dt{font-size:13px;margin-top:1px}
+  .steps{list-style:none;counter-reset:s}
+  .steps li{counter-increment:s;position:relative;padding:7px 0 7px 34px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .steps li:last-child{border-bottom:none}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:7px;width:22px;height:22px;background:var(--ink);color:var(--bronze);font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;border-radius:2px}
+  .steps li b{color:var(--bronze-deep)}
+
+  .callout{border-left:3px solid var(--oxblood);background:#fff;padding:12px 16px;border-radius:2px;margin:8px 0 0;font-size:13.5px}
+  .callout.good{border-left-color:var(--sage)}
+  .callout .cl{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--oxblood);margin-bottom:4px}
+  .callout.good .cl{color:var(--sage)}
+
+  .foot{background:var(--ink);color:#B9B6AE;padding:26px 0 34px;margin-top:42px;font-size:13px;border-top:4px solid var(--bronze)}
+  .foot b{color:var(--bronze)}
+  .foot .wm{font-family:ui-monospace,"SF Mono","Menlo",monospace;font-size:11px;color:#6b6a65;margin-top:14px}
+
+  @media(max-width:640px){
+    .macros{grid-template-columns:repeat(4,1fr);gap:5px}
+    .m .v{font-size:17px}
+    .m{padding:8px 3px}
+    .subgrid,.cols{grid-template-columns:1fr}
+    .phase-top h3{margin-left:0;width:100%}
+    .split{grid-template-columns:1fr 1fr}
+  }
+  @media print{
+    nav{display:none}
+    body{background:#fff}
+    .hero,.foot{background:#fff;color:#000;border-color:var(--bronze)}
+    .hero h1 .date,.eyebrow,.chip b{color:var(--bronze)}
+    .chip{color:#333;border-color:#ccc}
+    .thesis{background:#f4f2ed}.thesis p,.thesis b{color:#000}
+    thead th{background:#333!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    section{page-break-inside:avoid}
+  }
+  @media(prefers-reduced-motion:no-preference){
+    .phase,.fcard,.block,.table-scroll{animation:rise .5s ease both}
+    @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Men's Physique / Contest Prep</div>
+    <h1>Peak Plan<br><span class="date">→ 8 / 23</span></h1>
+    <p class="hero-sub">7/21（火）〜 8/23（日・本番）の33日間。前回7/19の反省を反映した、水・塩を一定に保つ設計。183cm／狙いはフルで77kg前後。</p>
+    <div class="hero-meta">
+      <span class="chip">本番まで <b>33日</b></span>
+      <span class="chip">前回当日 <b>74.6kg（萎み）</b></span>
+      <span class="chip">通常コンテスト体重 <b>77–78kg</b></span>
+    </div>
+    <div class="thesis">
+      <div class="t-label">今回の設計思想</div>
+      <p>敗因は絞り不足ではなく<b>水・塩の抜きすぎ</b>（7/16→7/17で1日1.7kgの水抜け）。<b>4週間はフルのまま締め、水と塩は最後まで一定。膨らみはカーボだけで作る。</b></p>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <a href="#phases">フェーズ</a>
+    <a href="#peak">ピーク週</a>
+    <a href="#food">食材</a>
+    <a href="#train">トレ</a>
+    <a href="#tan">日焼け</a>
+    <a href="#supp">サプリ</a>
+    <a href="#drink">プレ/イントラ</a>
+    <a href="#timing">トレ日</a>
+    <a href="#showday">当日</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- PHASES -->
+  <section id="phases">
+    <div class="sec-head"><span class="sec-num">01</span><h2>週ごとのPFCと方針</h2></div>
+    <p class="sec-lead">体重は約76kgで計算。数字は目安、週の頭の鏡と体重で微調整。脂質はホルモンのため0にしない。</p>
+
+    <!-- P1 -->
+    <div class="phase">
+      <div class="phase-top">
+        <span class="daysout">33–27日前</span>
+        <span class="range">7/21（火）– 7/27（日）</span>
+        <h3>Phase 1 ・ 回復／リストア</h3>
+      </div>
+      <div class="phase-body">
+        <p class="goal"><b>目的：</b>前回のカーボアップ・水抜きからの回復。グリコーゲンと水分・電解質を戻す。<b>脂肪は増やさない（過食しない）</b>。</p>
+        <div class="macros">
+          <div class="m kcal"><div class="k">kcal</div><div class="v">2500</div></div>
+          <div class="m p"><div class="k">Protein</div><div class="v">180<span class="u">g</span></div></div>
+          <div class="m c"><div class="k">Carb</div><div class="v">320<span class="u">g</span></div></div>
+          <div class="m f"><div class="k">Fat</div><div class="v">55<span class="u">g</span></div></div>
+        </div>
+        <div class="subgrid">
+          <div class="sb"><div class="lbl">水分 / 塩分</div><ul><li>水 4–5L（普通の水）</li><li>塩 8–10g で電解質を戻す</li></ul></div>
+          <div class="sb"><div class="lbl">トレ / 有酸素</div><ul><li>通常分割で強度を戻す</li><li>有酸素は軽め（15–20分）</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P2 -->
+    <div class="phase">
+      <div class="phase-top">
+        <span class="daysout">26–20日前</span>
+        <span class="range">7/28（月）– 8/3（日）</span>
+        <h3>Phase 2 ・ シャープ ①</h3>
+      </div>
+      <div class="phase-body">
+        <p class="goal"><b>目的：</b>軽い減量で締めていく。<b>張りは残す</b>。ここからが実質の仕上げ区間。</p>
+        <div class="macros">
+          <div class="m kcal"><div class="k">kcal</div><div class="v">2200</div></div>
+          <div class="m p"><div class="k">Protein</div><div class="v">185<span class="u">g</span></div></div>
+          <div class="m c"><div class="k">Carb</div><div class="v">250<span class="u">g</span></div></div>
+          <div class="m f"><div class="k">Fat</div><div class="v">45<span class="u">g</span></div></div>
+        </div>
+        <div class="subgrid">
+          <div class="sb"><div class="lbl">水分 / 塩分</div><ul><li>水 4–5L 一定</li><li>塩 8g 一定（絞らない）</li></ul></div>
+          <div class="sb"><div class="lbl">トレ / 有酸素</div><ul><li>分割ピーク強度</li><li>LISS 20–30分 × 4–5</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P3 -->
+    <div class="phase">
+      <div class="phase-top">
+        <span class="daysout">19–13日前</span>
+        <span class="range">8/4（月）– 8/10（日）</span>
+        <h3>Phase 3 ・ シャープ ②</h3>
+      </div>
+      <div class="phase-body">
+        <p class="goal"><b>目的：</b>週次で微調整。<b>停滞したらカーボを−20〜30g、または有酸素を+10分</b>。カロリーをむやみに削らない。</p>
+        <div class="macros">
+          <div class="m kcal"><div class="k">kcal</div><div class="v">2150</div></div>
+          <div class="m p"><div class="k">Protein</div><div class="v">185<span class="u">g</span></div></div>
+          <div class="m c"><div class="k">Carb</div><div class="v">230<span class="u">g</span></div></div>
+          <div class="m f"><div class="k">Fat</div><div class="v">45<span class="u">g</span></div></div>
+        </div>
+        <div class="subgrid">
+          <div class="sb"><div class="lbl">水分 / 塩分</div><ul><li>水 4–5L 一定</li><li>塩 8g 一定</li></ul></div>
+          <div class="sb"><div class="lbl">トレ / 有酸素</div><ul><li>強度維持、ボリューム維持</li><li>LISS 25–30分 × 5</li></ul></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- P4 -->
+    <div class="phase">
+      <div class="phase-top">
+        <span class="daysout">12–7日前</span>
+        <span class="range">8/11（月）– 8/16（日）</span>
+        <h3>Phase 4 ・ 最終ホールド</h3>
+      </div>
+      <div class="phase-body">
+        <p class="goal"><b>目的：</b><b>フルで絞れた状態でピーク週に入る</b>。ここで絞りきらない・削りすぎない。前回はここまでを引っ張りすぎて萎んだ。</p>
+        <div class="macros">
+          <div class="m kcal"><div class="k">kcal</div><div class="v">2200</div></div>
+          <div class="m p"><div class="k">Protein</div><div class="v">185<span class="u">g</span></div></div>
+          <div class="m c"><div class="k">Carb</div><div class="v">270<span class="u">g</span></div></div>
+          <div class="m f"><div class="k">Fat</div><div class="v">40<span class="u">g</span></div></div>
+        </div>
+        <div class="subgrid">
+          <div class="sb"><div class="lbl">水分 / 塩分</div><ul><li>水 4–5L 一定</li><li>塩 8g 一定</li></ul></div>
+          <div class="sb"><div class="lbl">トレ / 有酸素</div><ul><li>ボリュームを少し落とす</li><li>新しい筋肉痛を作らない</li></ul></div>
+        </div>
+        <div class="callout good"><div class="cl">チェックポイント</div>8/16の朝の鏡で「絞れてるが張っている」ならOK。ここが判断の分岐点。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PEAK WEEK -->
+  <section id="peak">
+    <div class="sec-head"><span class="sec-num">02</span><h2>ピークウィーク（8/17–8/23）</h2></div>
+    <p class="sec-lead">ここが本番の核心。<strong>水と塩は一定〜緩やかに、レバーはカーボの枯渇→ロードだけ</strong>。前回と真逆の作り方。</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>日程</th><th>区分</th><th>水分</th><th>塩分</th><th>P / C / F</th><th>やること</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="day">月 8/17<span class="do">6日前</span></td>
+            <td><span class="tag hold">通常</span></td>
+            <td class="num">5L</td><td class="num">8g</td>
+            <td class="num">180 / 370 / 40</td>
+            <td>最後の通常トレ（全身中程度）</td>
+          </tr>
+          <tr>
+            <td class="day">火 8/18<span class="do">5日前</span></td>
+            <td><span class="tag dep">枯渇</span></td>
+            <td class="num">5–6L</td><td class="num">8g</td>
+            <td class="num">200 / 150 / 40</td>
+            <td>全身・高レップ15–20で枯渇</td>
+          </tr>
+          <tr>
+            <td class="day">水 8/19<span class="do">4日前</span></td>
+            <td><span class="tag dep">枯渇</span></td>
+            <td class="num">5–6L</td><td class="num">8g</td>
+            <td class="num">200 / 150 / 40</td>
+            <td>上半身中心・高レップで枯渇</td>
+          </tr>
+          <tr>
+            <td class="day">木 8/20<span class="do">3日前</span></td>
+            <td><span class="tag load">ロード開始</span></td>
+            <td class="num">5L</td><td class="num">8g</td>
+            <td class="num">160 / 450 / 35</td>
+            <td>軽いパンプ＋ポージング</td>
+          </tr>
+          <tr>
+            <td class="day">金 8/21<span class="do">2日前</span></td>
+            <td><span class="tag load">大ロード</span></td>
+            <td class="num">4–5L</td><td class="num">6–8g</td>
+            <td class="num">140 / 600 / 30</td>
+            <td>ポージングのみ・一番積む日</td>
+          </tr>
+          <tr>
+            <td class="day">土 8/22<span class="do">前日</span></td>
+            <td><span class="tag load">調整</span></td>
+            <td class="num">のどに合わせ 3–4L</td><td class="num">5–6g</td>
+            <td class="num">140 / 480 / 30</td>
+            <td>休養。夜に鏡で張りを確認し翌朝を決める</td>
+          </tr>
+          <tr>
+            <td class="day">日 8/23<span class="do">当日</span></td>
+            <td><span class="tag show">本番</span></td>
+            <td class="num">普通に飲む</td><td class="num">朝食に塩</td>
+            <td class="num">朝:米+塩 → 直前:糖質+塩</td>
+            <td>パンプアップ給油（下記タイムライン）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><div class="cl">前回との決定的な違い</div>塩を0gにしない（6–8gで通す）／蒸留水で脱水しない／枯渇→ロードで supercompensation。塩を抜くとアルドステロンが上がり逆に水を抱えてぼやける ── 前回まさにこれ。</div>
+  </section>
+
+  <!-- FOOD -->
+  <section id="food">
+    <div class="sec-head"><span class="sec-num">03</span><h2>食べる食材</h2></div>
+    <p class="sec-lead">和食ベースで、脂質を抑えつつ質を確保。ピーク週のロードは和菓子（あんこ系）が主役。</p>
+    <div class="cols">
+      <div class="fcard">
+        <h4><span class="dot p"></span>タンパク質</h4>
+        <ul>
+          <li>鶏むね肉・ささみ</li>
+          <li>白身魚（タラ・カレイ）</li>
+          <li>まぐろ赤身・カツオ</li>
+          <li>エビ・イカ・タコ</li>
+          <li>卵白（＋全卵1–2個）</li>
+          <li>牛赤身（ヒレ・もも）</li>
+          <li>WPIプロテイン</li>
+        </ul>
+      </div>
+      <div class="fcard">
+        <h4><span class="dot c"></span>炭水化物</h4>
+        <ul>
+          <li>白米・餅</li>
+          <li>オートミール</li>
+          <li>さつまいも・じゃがいも</li>
+          <li>蕎麦・バナナ</li>
+          <li class="note" style="border:none;padding-left:0;font-weight:600;color:var(--sage)">＝ ピーク週のロード用 ＝</li>
+          <li>大福・あんこ・水ようかん</li>
+          <li>ラムネ・ブドウ糖（当日）</li>
+        </ul>
+      </div>
+      <div class="fcard">
+        <h4><span class="dot f"></span>脂質（少量・質重視）</h4>
+        <ul>
+          <li>全卵の黄身</li>
+          <li>素焼きアーモンド 少量</li>
+          <li>オリーブ油・MCT 少量</li>
+          <li>鮭（水分に響かない範囲で）</li>
+        </ul>
+        <div class="note">ホルモンのため40g前後は死守。ピーク週だけ30gまで。</div>
+      </div>
+      <div class="fcard">
+        <h4><span class="dot v"></span>野菜・味付け</h4>
+        <ul>
+          <li>ブロッコリー・アスパラ</li>
+          <li>ほうれん草・きのこ・キャベツ</li>
+          <li class="note" style="border:none;padding-left:0;font-weight:600;color:var(--bronze)">＝ 低〜無塩の味変 ＝</li>
+          <li>酢・レモン・すだち</li>
+          <li>スパイス各種（カレー粉・山椒・七味）</li>
+          <li>きな粉＋砂糖・シナモン（米用）</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAINING -->
+  <section id="train">
+    <div class="sec-head"><span class="sec-num">04</span><h2>トレーニング</h2></div>
+    <p class="sec-lead">Men's Physique優先度：<strong>三角筋（特に中部）＞背中の広がり／Vテーパー＞腕・上部胸・腹＞コンディション</strong>。脚はボードショーツで隠れるので維持でOK。</p>
+
+    <div class="block">
+      <h4>Phase 1–4（〜8/16）の分割</h4>
+      <div class="split">
+        <div class="d"><div class="dn">月</div><div class="dt">肩 ＋ 腹</div></div>
+        <div class="d"><div class="dn">火</div><div class="dt">背中（広がり優先）</div></div>
+        <div class="d"><div class="dn">水</div><div class="dt">胸 ＋ 三頭</div></div>
+        <div class="d"><div class="dn">木</div><div class="dt">腕 ＋ リアデルト</div></div>
+        <div class="d"><div class="dn">金</div><div class="dt">脚（中程度）＋ 腹</div></div>
+        <div class="d"><div class="dn">土</div><div class="dt">弱点 or 肩 or 休</div></div>
+        <div class="d"><div class="dn">日</div><div class="dt">休 ＋ ポージング</div></div>
+      </div>
+      <div class="note" style="font-size:12.5px;color:var(--muted);margin-top:10px">Phase 4はボリュームを1割落とし、直前に新しい筋肉痛を作らない。</div>
+    </div>
+
+    <div class="block">
+      <h4>ピークウィークのトレ</h4>
+      <ul class="steps">
+        <li><b>8/17 月：</b>通常の最後（全身中程度、いつも通り）</li>
+        <li><b>8/18 火 枯渇：</b>全身・高レップ15–20回・インターバル短め。全部位を回して glycogen を抜く</li>
+        <li><b>8/19 水 枯渇：</b>上半身中心にもう一度高レップ。ここまでで枯らし切る</li>
+        <li><b>8/20 木：</b>軽いパンプのみ＋ポージング。枯渇はしない</li>
+        <li><b>8/21 金：</b>ポージング練習のみ（or ごく軽いパンプ）</li>
+        <li><b>8/22 土：</b>完全休養＋ポージング確認</li>
+        <li><b>8/23 日：</b>バックステージでパンプアップのみ</li>
+      </ul>
+      <div class="note" style="font-size:12.5px;color:var(--muted);margin-top:10px">有酸素は木曜以降ウォーキングのみに落とす。</div>
+    </div>
+  </section>
+
+  <!-- TANNING -->
+  <section id="tan">
+    <div class="sec-head"><span class="sec-num">05</span><h2>日焼け（タンニング）</h2></div>
+    <p class="sec-lead">大前提：<strong>ステージの色の約8割は大会用タン剤</strong>。素の日焼けはあくまで乗りを良くする下地。真っ黒にする必要はない（焼きすぎは皮むけ・オレンジ化・肌ダメージのリスク）。</p>
+
+    <div class="block">
+      <h4>下地づくりのスケジュール</h4>
+      <ul class="steps">
+        <li><b>7/21–8/15：</b>日サロ or 日光を<b>短時間・週2回</b>ずつ徐々に。薄〜中程度でムラなく。焼いた後の皮むけは厳禁</li>
+        <li><b>安全策：</b>UVを避けたいなら<b>セルフタンニング（塗るタイプ）で下地</b>を作るのも有効。肌トラブルを避けたいならこちら推奨</li>
+        <li><b>8/16以降：</b>日焼け中止。直前の赤み・皮むけを防ぐ</li>
+        <li><b>体毛：</b>大会2–3日前に全身を剃る／整える（タンの乗りが段違い）。初回は早めに一度テスト剃りして荒れ回避</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h4>大会用タン（本番の色）</h4>
+      <ul class="steps">
+        <li><b>8/21 金 夜〜8/22：</b>下地コートを数回</li>
+        <li><b>8/22 土：</b>重ね塗りで深さを出す</li>
+        <li><b>8/23 日 朝：</b>最終コート＋グレーズ／オイルで仕上げ</li>
+        <li><b>肌の準備：</b>前週まで保湿しっかり（乗りUP）→ 塗布直前はローション・オイルなし。前日までにスクラブで角質ケア</li>
+      </ul>
+      <div class="callout good"><div class="cl">おすすめ</div>会場に公式タンニングサービスがあれば予約推奨。自前より圧倒的にムラが出にくい。</div>
+      <div class="callout"><div class="cl">肌の注意</div>UV過多は皮膚がん・肌老化のリスク。下地は控えめに、顔は特に保護（今のスキンケアを崩さない範囲で）。心配ならUVなしのセルフタンで下地を。</div>
+    </div>
+  </section>
+
+  <!-- SUPPLEMENTS -->
+  <section id="supp">
+    <div class="sec-head"><span class="sec-num">06</span><h2>サプリメント</h2></div>
+    <p class="sec-lead">今のスタックを基本そのまま継続。ピーク週で切らないことが重要なものが1つある。</p>
+    <div class="cols">
+      <div class="fcard">
+        <h4><span class="dot x"></span>継続（毎日）</h4>
+        <ul>
+          <li>クレアチン</li>
+          <li>EAA</li>
+          <li>マグネシウム</li>
+          <li>ビタミンC / D・マルチ</li>
+          <li>プレワークアウト</li>
+        </ul>
+      </div>
+      <div class="fcard">
+        <h4><span class="dot x"></span>ピーク週のポイント</h4>
+        <ul>
+          <li><b>クレアチンは切らない</b>（張り＝細胞内水分を維持。「抜く」は旧説）</li>
+          <li>マグネシウム＋カリウムで電解質バランス</li>
+          <li>プレワークアウト（シトルリン）は<b>当日パンプに有効</b></li>
+        </ul>
+        <div class="note">追加検討：ホエイ(WPI)・オメガ3。プレ／イントラの詳細は次項。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRE / INTRA -->
+  <section id="drink">
+    <div class="sec-head"><span class="sec-num">07</span><h2>プレ／イントラ・ワークアウト</h2></div>
+    <p class="sec-lead">プレワークアウトは<strong>カフェイン抜き</strong>で構成。夜トレでも睡眠に響かず、パンプ・集中・持久力は刺激物なしで確保する。</p>
+    <div class="cols">
+      <div class="fcard">
+        <h4><span class="dot x"></span>プレワークアウト（カフェインなし・トレ20–30分前）</h4>
+        <ul>
+          <li>シトルリンマレート 6–8g（血流・パンプ）</li>
+          <li>ベタイン 2.5g（細胞ボリューム・張り）</li>
+          <li>ベータアラニン 3–5g（後半の持久力）</li>
+          <li>L-チロシン 1–2g（刺激物なしの集中）</li>
+          <li>塩ひとつまみ（電解質）</li>
+        </ul>
+        <div class="note">パンプ源は硝酸塩（ビーツ/ほうれん草）でも代替可。クレアチンは時間帯問わず別途継続。</div>
+      </div>
+      <div class="fcard">
+        <h4><span class="dot x"></span>イントラ（トレ中に少しずつ）</h4>
+        <ul>
+          <li>EAA 10g</li>
+          <li>イントラカーボ（クラスターデキストリン/HBCD）15–40g</li>
+          <li>塩ひとつまみ（発汗分の電解質）</li>
+          <li>水 500ml–1L を分けて飲む</li>
+        </ul>
+        <div class="note">カーボ量はフェーズで調整：減量が深い時は15–20g、維持期・長いセッションは30–40g。</div>
+      </div>
+    </div>
+    <div class="callout"><div class="cl">ピーク週の扱い</div>8/18–19の<b>枯渇日はイントラカーボを抜く</b>（枯渇の邪魔をしない）。EAAと塩・水は継続。ロード日はトレ自体が軽いので通常量でOK。</div>
+  </section>
+
+  <!-- TRAINING-DAY TIMING -->
+  <section id="timing">
+    <div class="sec-head"><span class="sec-num">08</span><h2>トレ日のタイミング（2パターン）</h2></div>
+    <p class="sec-lead">有酸素(LISS)は<strong>トレと分けるのが理想＝朝イチが第一候補</strong>。無理ならリフト直後に。リフト前には入れない（パフォーマンス低下）。常に低強度・会話できるペースで。<br><b>心拍の目安（30歳）：</b>最大心拍190の60–70%＝約<strong>114–133拍/分</strong>（狙いは下寄りの114–124）。会話はできるが鼻歌はキツい強度。</p>
+    <div class="cols">
+      <div class="block">
+        <h4>① 夜トレ（19:30–20:30 開始）</h4>
+        <ul class="steps">
+          <li><b>起床後：</b>LISS 20–30分（有酸素はここがベスト）</li>
+          <li><b>〜17:00：</b>プレ食＝糖質＋タンパク質（トレ2–3時間前）</li>
+          <li><b>19:00頃：</b>カフェインなしプレワークアウト</li>
+          <li><b>19:30–20:30：</b>トレ（イントラを飲みながら）</li>
+          <li><b>20:45〜：</b>夕食＝タンパク質＋糖質でリカバリー</li>
+        </ul>
+        <div class="callout" style="margin-top:12px"><div class="cl">注意</div>有酸素を夜トレ後（20:30以降）に回さない。就寝と夕食を圧迫するので<b>必ず朝に</b>。</div>
+      </div>
+      <div class="block">
+        <h4>② 昼トレ（14:00頃 開始）</h4>
+        <ul class="steps">
+          <li><b>起床後 or 昼前：</b>LISS 20–30分（朝が理想）</li>
+          <li><b>〜12:30：</b>昼食＝糖質＋タンパク質</li>
+          <li><b>13:30頃：</b>カフェインなしプレワークアウト</li>
+          <li><b>14:00〜：</b>トレ（イントラ）</li>
+          <li><b>トレ直後：</b>食事＝ご飯（タンパク質＋糖質）。※朝に有酸素できなければ<b>ここで実施</b></li>
+          <li><b>移動中：</b>マッチョバー（プロテインバー）</li>
+          <li><b>終電後・帰宅：</b>軽め＝タンパク質中心・糖質は控えめに</li>
+        </ul>
+        <div class="callout good" style="margin-top:12px"><div class="cl">ポイント</div>帰宅後の1食は遅いので、糖質を盛らずタンパク質中心に。1日の糖質はトレ前後に寄せる。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOW DAY -->
+  <section id="showday">
+    <div class="sec-head"><span class="sec-num">09</span><h2>当日（8/23）のタイムライン</h2></div>
+    <p class="sec-lead">前回あなたが会場で見た「水・プレワークアウト・ポテチ組」が正解に近い。糖質＋塩＋少量の水をセットで入れる。</p>
+    <div class="block">
+      <ul class="steps">
+        <li><b>起床：</b>体重・鏡チェックで張り具合を確認</li>
+        <li><b>朝食：</b>米150–200g ＋ <b>塩ひとつまみ</b> ＋ 少量のタンパク質。水は普通に飲む</li>
+        <li><b>会場入り：</b>タン最終仕上げ・グレーズ</li>
+        <li><b>パンプ約2時間前：</b><b>糖質＋塩＋少量の水</b>をセットで（塩むすび／大福＋塩など）。ナトリウムが血管に水を呼んで張りが出る</li>
+        <li><b>パンプアップ：</b>バンドで軽く、上半身中心。萎んで見えたら直前にブドウ糖／ラムネを少量</li>
+        <li><b>ステージ直前：</b>深呼吸、オイルで仕上げ、ポーズ確認</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>この計画はコーチの方針（塩0g・蒸留水で脱水）と正面から食い違います。次の本番前に<b>方針転換を切り出す</b>か、<b>自己判断で一部だけ握る</b>かを事前に決めておくこと。当日にブレるのが一番まずい。数字は約76kg想定の目安 ── 毎週の体重と鏡で微調整を。</p>
+    <p class="wm">PEAK PLAN → 8/23 ・ Men's Physique</p>
+  </div>
+</footer>
+
+</body>
+</html>
