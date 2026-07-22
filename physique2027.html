@@ -11,6 +11,7 @@
     --txt:#e7edf1; --mut:#7f8b94; --mut2:#566069;
     --cyan:#29d3e0; --cyan-dim:#0e3b40; --gold:#f3b34a; --gold-dim:#3a2d12; --red:#e0564a;
     --radius:14px;
+    --navh:60px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0}
@@ -18,7 +19,7 @@
     background:radial-gradient(1200px 600px at 50% -10%, #11181d 0%, transparent 60%), var(--bg);
     color:var(--txt);
     font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
-    line-height:1.5;min-height:100vh;padding-bottom:150px;
+    line-height:1.5;min-height:100vh;padding-bottom:calc(var(--navh) + env(safe-area-inset-bottom) + 90px);
   }
   .num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
   .wrap{max-width:560px;margin:0 auto;padding:0 14px}
@@ -95,6 +96,9 @@
   .tag.t-str{background:var(--gold-dim);color:var(--gold)}
   .meta .pr{color:var(--gold);font-weight:700}
   .meta .prev .num{color:var(--txt)}
+  .meta .prev i{font-style:normal;color:var(--mut2);font-size:10.5px;margin-right:2px}
+  .meta .prev.prev2{color:var(--mut2)}
+  .meta .prev.prev2 .num{color:var(--mut)}
 
   table.sets{width:100%;border-collapse:collapse}
   table.sets th{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut2);font-weight:700;text-align:left;padding:0 0 4px}
@@ -196,7 +200,7 @@
   .cchip.leg{background:rgba(243,179,74,.18);color:var(--gold)}
   .cchip.other{background:var(--line);color:var(--mut)}
 
-  .save{position:fixed;left:0;right:0;bottom:64px;z-index:20;pointer-events:none}
+  .save{position:fixed;left:0;right:0;bottom:calc(var(--navh) + env(safe-area-inset-bottom));z-index:20;pointer-events:none}
   .save .wrap{pointer-events:auto}
   .save button{width:100%;background:var(--cyan);color:#04181a;border:none;border-radius:12px;padding:15px;
     font-weight:800;font-size:15px;letter-spacing:.04em;cursor:pointer;box-shadow:0 8px 28px rgba(41,211,224,.22)}
@@ -243,8 +247,9 @@
 
   nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(10,12,14,.92);backdrop-filter:blur(12px);
     border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-  nav .inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
-  nav button{background:none;border:none;color:var(--mut2);padding:11px 0 13px;font-size:11px;font-weight:700;letter-spacing:.05em;cursor:pointer}
+  nav .inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--navh)}
+  nav button{background:none;border:none;color:var(--mut2);font-size:11px;font-weight:700;letter-spacing:.05em;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:0}
   nav button .ic{display:block;font-size:18px;margin-bottom:2px;line-height:1}
   nav button.on{color:var(--cyan)}
 
@@ -426,8 +431,11 @@
   }
   function daysToShow(){ var s=new Date(settings.showDate+"T00:00:00"),n=new Date(todayISO()+"T00:00:00"); return Math.round((s-n)/86400000); }
   function resolveName(e){ return e.sel==="other" ? (e.custom||"").trim() : e.variants[+e.sel]; }
-  function lastTimeFor(name){ if(!name) return null; var logs=loadLogs();
-    for(var i=logs.length-1;i>=0;i--){ var e=(logs[i].entries||[]).find(function(x){return x.n===name;}); if(e&&e.sets&&e.sets.length) return e.sets; } return null; }
+  function lastTimesFor(name,count){ if(!name) return []; var logs=loadLogs(), out=[];
+    for(var i=logs.length-1;i>=0&&out.length<count;i--){ var e=(logs[i].entries||[]).find(function(x){return x.n===name;});
+      if(e&&e.sets&&e.sets.length) out.push({date:logs[i].date,sets:e.sets}); }
+    return out; }
+  function mdShort(iso){ if(!iso) return ""; var d=new Date(iso+"T00:00:00"); if(isNaN(d.getTime())) return ""; return (d.getMonth()+1)+"/"+d.getDate(); }
   function bestFor(name){ var logs=loadLogs(),best=null;
     logs.forEach(function(l){ (l.entries||[]).forEach(function(e){ if(e.n!==name)return;
       (e.sets||[]).forEach(function(s){ var w=parseFloat(s.w); if(isNaN(w))return;
@@ -503,7 +511,7 @@
         +'</div>';
 
     session.entries.forEach(function(e,ei){
-      var name=resolveName(e), prev=lastTimeFor(name);
+      var name=resolveName(e), hist=lastTimesFor(name,2);
       html+='<div class="ex'+(e.big3?' big3':'')+'">';
       html+='<div class="selrow"><span class="ordno">'+(ei+1)+'</span>'
           + '<select class="exsel" data-sel="'+ei+'">'+optionsFor(e)+'</select>'
@@ -516,8 +524,9 @@
         html+='<select class="mgsel" data-mg="'+ei+'">'+mgOptions(e.mg||"")+'</select>'; }
       var tcur=e.tp?(e.tp[settings.phase]||""):(e.t||"");
       html+='<div class="meta">'+(e.big3?'<span class="tag t-str">Big3</span>':'')+((!e.big3&&tcur)?'<span class="tag t-target">'+esc(tcur)+'</span>':'');
-      if(prev) html+='<span class="prev">前回 <span class="num">'+esc(fmtSets(prev))+'</span></span>';
+      if(hist[0]) html+='<span class="prev">前回<i>('+mdShort(hist[0].date)+')</i> <span class="num">'+esc(fmtSets(hist[0].sets))+'</span></span>';
       else if(name) html+='<span class="prev" style="color:var(--mut2)">前回なし</span>';
+      if(hist[1]) html+='<span class="prev prev2">前々回<i>('+mdShort(hist[1].date)+')</i> <span class="num">'+esc(fmtSets(hist[1].sets))+'</span></span>';
       if(e.big3&&name){ var b=bestFor(name); if(b) html+='<span class="pr">自己ベスト '+b.w+'kg×'+(b.r||"–")+'</span>'; }
       html+='</div>';
       if(e.big3&&e.b3){ var blk=e.b3[settings.phase]||[], ok=ORM_KEY[name], orm=ok?parseFloat(settings.orm[ok]):NaN, has1=(ok&&orm>0);
